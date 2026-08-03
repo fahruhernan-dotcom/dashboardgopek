@@ -80,17 +80,17 @@ function ProductSheet({ product, onClose }) {
   const updateMut = useUpdateSembakoProduct()
 
   const [form, setForm] = useState({
-    product_name:    product?.product_name    || '',
-    category:        product?.category        || 'SKM (Sigaret Kretek Mesin)',
-    unit:            product?.unit            || 'slop',
-    sell_price:      product?.sell_price      || '',
-    avg_buy_price:   product?.avg_buy_price   || '',
-    current_stock:   product?.current_stock   || 0,
+    product_name: product?.product_name || '',
+    category: product?.category || 'SKM (Sigaret Kretek Mesin)',
+    unit: product?.unit || 'slop',
+    sell_price: product?.sell_price || '',
+    avg_buy_price: product?.avg_buy_price || '',
+    current_stock: product?.current_stock || 0,
     min_stock_alert: product?.min_stock_alert || '',
-    notes:           product?.notes           || '',
-    is_active:       product?.is_active       ?? true,
-    secondary_unit:  product?.secondary_unit   || '',
-    conversion_rate: product?.conversion_rate  || '',
+    notes: product?.notes || '',
+    is_active: product?.is_active ?? true,
+    secondary_unit: product?.secondary_unit || '',
+    conversion_rate: product?.conversion_rate || '',
   })
   const [catOpen, setCatOpen] = useState(false)
 
@@ -101,8 +101,8 @@ function ProductSheet({ product, onClose }) {
     if (!form.product_name.trim()) return toast.error('Nama produk wajib diisi')
     const payload = {
       ...form,
-      sell_price:      form.sell_price      ? Number(String(form.sell_price).replace(/\D/g, ''))      : null,
-      avg_buy_price:   form.avg_buy_price   ? Number(String(form.avg_buy_price).replace(/\D/g, ''))   : null,
+      sell_price: form.sell_price ? Number(String(form.sell_price).replace(/\D/g, '')) : null,
+      avg_buy_price: form.avg_buy_price ? Number(String(form.avg_buy_price).replace(/\D/g, '')) : null,
       min_stock_alert: form.min_stock_alert ? Number(String(form.min_stock_alert).replace(/\D/g, '')) : null,
       conversion_rate: form.conversion_rate ? Number(form.conversion_rate) : null,
     }
@@ -354,7 +354,7 @@ function ProductSheet({ product, onClose }) {
             >
               {form.is_active
                 ? <ToggleRight size={32} color={C.accent} />
-                : <ToggleLeft  size={32} color="#4B5563" />}
+                : <ToggleLeft size={32} color="#4B5563" />}
             </button>
           </div>
 
@@ -484,7 +484,7 @@ const inputStyle = {
 // ── Product card ──────────────────────────────────────────────────────────────
 
 function ProductCard({ product, onEdit, onDelete }) {
-  const pct    = stockPercent(product)
+  const pct = stockPercent(product)
   const sColor = stockColor(pct)
   const margin = marginInfo(product)
   const warning = stockLabel(product)
@@ -586,9 +586,9 @@ export default function Produk() {
   const { data: products = [], isLoading, isError, error, refetch } = useSembakoProducts()
   const deleteMut = useSoftDeleteSembakoProduct()
 
-  const [search,    setSearch]    = useState('')
+  const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('Semua')
-  const [sheet,     setSheet]     = useState(null) // null | 'new' | product object
+  const [sheet, setSheet] = useState(null) // null | 'new' | product object
   const [showInactive, setShowInactive] = useState(false)
   const [productToDelete, setProductToDelete] = useState(null)
 
@@ -615,7 +615,7 @@ export default function Produk() {
   }, [products, search, catFilter, showInactive])
 
   const stats = useMemo(() => {
-    const active   = products.filter(p => p.is_active && !p.is_deleted)
+    const active = products.filter(p => p.is_active && !p.is_deleted)
     const lowStock = active.filter(p => p.min_stock_alert > 0 && p.current_stock <= p.min_stock_alert)
     const nilaiStok = active.reduce((s, p) => s + (p.current_stock * (p.avg_buy_price || 0)), 0)
     return { total: active.length, lowStock: lowStock.length, nilaiStok }
@@ -647,7 +647,7 @@ export default function Produk() {
     <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
       {/* Header */}
       {!isDesktop && <BrokerMobileHeader title="Produk" onMenuClick={() => setSidebarOpen(true)} />}
-      
+
       <div style={{ padding: '20px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: isDesktop ? 'block' : 'none' }}>
           <h1 style={{ fontFamily: 'Sora', fontSize: 20, fontWeight: 800, color: C.text, margin: 0 }}>Manajemen Produk</h1>
@@ -655,10 +655,10 @@ export default function Produk() {
         </div>
         <button
           onClick={() => setSheet('new')}
-          style={{ 
-            display: 'flex', alignItems: 'center', gap: 6, background: C.accent, border: 'none', 
-            borderRadius: 12, padding: '10px 16px', color: 'white', fontFamily: 'Sora', 
-            fontSize: 14, fontWeight: 700, cursor: 'pointer', 
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: C.accent, border: 'none',
+            borderRadius: 12, padding: '10px 16px', color: 'white', fontFamily: 'Sora',
+            fontSize: 14, fontWeight: 700, cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(234,88,12,0.35)',
             marginLeft: isDesktop ? 0 : 'auto'
           }}
@@ -669,9 +669,9 @@ export default function Produk() {
 
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, padding: '16px 16px 0' }}>
-        <StatCard label="Total Produk"  value={stats.total}         color={C.text} />
-        <StatCard label="Stok Menipis"  value={stats.lowStock}      color={stats.lowStock > 0 ? '#F87171' : '#021a02'} sub={stats.lowStock > 0 ? 'perlu restock' : 'aman'} />
-        <StatCard label="Nilai Stok"    value={`Rp ${stats.nilaiStok >= 1_000_000 ? (stats.nilaiStok / 1_000_000).toFixed(1) + 'jt' : fmt(stats.nilaiStok)}`} color={C.accent} />
+        <StatCard label="Total Produk" value={stats.total} color={C.text} />
+        <StatCard label="Stok Menipis" value={stats.lowStock} color={stats.lowStock > 0 ? '#F87171' : '#021a02'} sub={stats.lowStock > 0 ? 'perlu restock' : 'aman'} />
+        <StatCard label="Nilai Stok" value={`Rp ${stats.nilaiStok >= 1_000_000 ? (stats.nilaiStok / 1_000_000).toFixed(1) + 'jt' : fmt(stats.nilaiStok)}`} color={C.accent} />
       </div>
 
       {/* Search + filter */}

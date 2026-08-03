@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense } from 'react'
-import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { queryClient } from './lib/queryClient'
@@ -12,39 +12,96 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import AppSidebar from './dashboard/_shared/components/AppSidebar'
 import DesktopSidebarLayout from './dashboard/_shared/layouts/DesktopSidebarLayout'
 import BottomNav from './dashboard/_shared/components/BottomNav'
+import SuperadminLayout from './dashboard/_shared/layouts/SuperadminLayout'
 import { useMediaQuery } from './lib/hooks/useMediaQuery'
 import { useForceDarkMode } from './lib/hooks/useForceDarkMode'
 
-// Sembako Broker Pages
-import SembakoBeranda from './dashboard/broker/sembako_broker/Beranda'
-import SembakoPenjualan from './dashboard/broker/sembako_broker/Penjualan'
-import SembakoProduk from './dashboard/broker/sembako_broker/Produk'
-import SembakoGudang from './dashboard/broker/sembako_broker/Gudang'
-import SembakoTokoSupplier from './dashboard/broker/sembako_broker/TokoSupplier'
-import SembakoTokoSupplierDetail from './dashboard/broker/sembako_broker/TokoSupplierDetail'
-import SembakoRetur from './dashboard/broker/sembako_broker/Retur'
-import SembakoLaporan from './dashboard/broker/sembako_broker/Laporan'
-import SembakoTimManajemenPage from './dashboard/broker/sembako_broker/TimManajemenPage'
-import SembakoAkun from './dashboard/_shared/pages/Akun'
-import SembakoTutorial from './dashboard/broker/sembako_broker/SembakoTutorial'
+const SuperadminDashboard = React.lazy(() => import('./dashboard/superadmin/SuperadminDashboardPage'))
 
+// Auth pages — kecil, tetap static (tidak ada manfaat lazy)
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 
+// Tutorial — dipakai di semua layout, tetap static
+import SembakoTutorial from './dashboard/broker/sembako_broker/SembakoTutorial'
+
+// ─── Module Importers dengan Background Prefetching ─────────────────────────────
+const pageImporters = {
+  beranda:          () => import('./dashboard/broker/sembako_broker/Beranda'),
+  penjualan:        () => import('./dashboard/broker/sembako_broker/Penjualan'),
+  produk:           () => import('./dashboard/broker/sembako_broker/Produk'),
+  gudang:           () => import('./dashboard/broker/sembako_broker/Gudang'),
+  tokoSupplier:     () => import('./dashboard/broker/sembako_broker/TokoSupplier'),
+  tokoSupplierDetail: () => import('./dashboard/broker/sembako_broker/TokoSupplierDetail'),
+  retur:            () => import('./dashboard/broker/sembako_broker/Retur'),
+  laporan:          () => import('./dashboard/broker/sembako_broker/Laporan'),
+  tim:              () => import('./dashboard/broker/sembako_broker/TimManajemenPage'),
+  akun:             () => import('./dashboard/_shared/pages/Akun'),
+  kelolaAkun:       () => import('./dashboard/broker/sembako_broker/KelolaAkunPage'),
+}
+
+// Prefetch semua modul halaman di background secara senyap
+export function prefetchAppModules() {
+  if (typeof window === 'undefined') return
+  const prefetcher = () => {
+    Object.values(pageImporters).forEach(importFn => {
+      try { importFn() } catch { /* silnet cache preload */ }
+    })
+  }
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(prefetcher, { timeout: 3000 })
+  } else {
+    setTimeout(prefetcher, 1500)
+  }
+}
+
+const SembakoBeranda          = React.lazy(pageImporters.beranda)
+const SembakoPenjualan        = React.lazy(pageImporters.penjualan)
+const SembakoProduk           = React.lazy(pageImporters.produk)
+const SembakoGudang           = React.lazy(pageImporters.gudang)
+const SembakoTokoSupplier     = React.lazy(pageImporters.tokoSupplier)
+const SembakoTokoSupplierDetail = React.lazy(pageImporters.tokoSupplierDetail)
+const SembakoRetur            = React.lazy(pageImporters.retur)
+const SembakoLaporan          = React.lazy(pageImporters.laporan)
+const SembakoTimManajemenPage = React.lazy(pageImporters.tim)
+const SembakoAkun             = React.lazy(pageImporters.akun)
+const SembakoDevAdminHub      = React.lazy(pageImporters.kelolaAkun)
+
+// ─── Fase 2: Single source of truth untuk semua route ───────────────────────
+// Format: [slug, element]
+// Setiap entry otomatis generate 2 route: /slug DAN /broker/:type/slug
+// Tambah halaman baru = tambah 1 baris di sini
+const SEMBAKO_ROUTES = [
+  ['beranda',                 <SembakoBeranda />],
+  ['penjualan',               <SembakoPenjualan />],
+  ['pos',                     <SembakoPenjualan />],
+  ['produk',                  <SembakoProduk />],
+  ['inventori',               <SembakoProduk />],
+  ['gudang',                  <SembakoGudang />],
+  ['toko-supplier',           <SembakoTokoSupplier />],
+  ['toko-supplier/:type/:id', <SembakoTokoSupplierDetail />],
+  ['retur',                   <SembakoRetur />],
+  ['laporan',                 <SembakoLaporan />],
+  ['tim',                     <SembakoTimManajemenPage />],
+  ['pegawai',                 <SembakoTimManajemenPage />],
+  ['karyawan',                <SembakoTimManajemenPage />],
+  ['akun',                    <SembakoAkun />],
+  ['kelola-akun',             <SembakoDevAdminHub />],
+]
+
 // Scroll to top on route change
 const ScrollToTop = () => {
   const { pathname } = useLocation()
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
   return null
 }
 
 function ProtectedRoute({ children }) {
-  const { loading } = useAuth()
+  const { loading, user } = useAuth()
   if (loading) return <LoadingScreen />
+  if (!user) return <Navigate to="/login" replace />
   return children
 }
 
@@ -54,6 +111,7 @@ function SembakoLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
 
   React.useEffect(() => {
+    prefetchAppModules()
     const openHandler = () => setSidebarOpen(true)
     const toggleHandler = () => setSidebarOpen(prev => !prev)
     window.addEventListener('open-mobile-sidebar', openHandler)
@@ -98,6 +156,19 @@ function AppContentLayout() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
+          {/* Protected Superadmin Routes */}
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedRoute>
+                <SuperadminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<SuperadminDashboard />} />
+            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+          </Route>
+
           {/* Protected Sembako Routes */}
           <Route
             path="/*"
@@ -105,39 +176,14 @@ function AppContentLayout() {
               <ProtectedRoute>
                 <SembakoLayout>
                   <Routes>
-                    {/* Direct Routes */}
                     <Route path="/" element={<SembakoBeranda />} />
-                    <Route path="/beranda" element={<SembakoBeranda />} />
-                    <Route path="/penjualan" element={<SembakoPenjualan />} />
-                    <Route path="/pos" element={<SembakoPenjualan />} />
-                    <Route path="/produk" element={<SembakoProduk />} />
-                    <Route path="/inventori" element={<SembakoProduk />} />
-                    <Route path="/gudang" element={<SembakoGudang />} />
-                    <Route path="/toko-supplier" element={<SembakoTokoSupplier />} />
-                    <Route path="/toko-supplier/:type/:id" element={<SembakoTokoSupplierDetail />} />
-                    <Route path="/retur" element={<SembakoRetur />} />
-                    <Route path="/laporan" element={<SembakoLaporan />} />
-                    <Route path="/tim" element={<SembakoTimManajemenPage />} />
-                    <Route path="/pegawai" element={<SembakoTimManajemenPage />} />
-                    <Route path="/karyawan" element={<SembakoTimManajemenPage />} />
-                    <Route path="/akun" element={<SembakoAkun />} />
 
-                    {/* Broker Prefix Route Aliases (used by internal links) */}
-                    <Route path="/broker/:brokerType/beranda" element={<SembakoBeranda />} />
-                    <Route path="/broker/:brokerType/penjualan" element={<SembakoPenjualan />} />
-                    <Route path="/broker/:brokerType/pos" element={<SembakoPenjualan />} />
-                    <Route path="/broker/:brokerType/produk" element={<SembakoProduk />} />
-                    <Route path="/broker/:brokerType/inventori" element={<SembakoProduk />} />
-                    <Route path="/broker/:brokerType/gudang" element={<SembakoGudang />} />
-                    <Route path="/broker/:brokerType/toko-supplier" element={<SembakoTokoSupplier />} />
-                    <Route path="/broker/:brokerType/toko-supplier/:type/:id" element={<SembakoTokoSupplierDetail />} />
-                    <Route path="/broker/:brokerType/retur" element={<SembakoRetur />} />
-                    <Route path="/broker/:brokerType/laporan" element={<SembakoLaporan />} />
-                    <Route path="/broker/:brokerType/tim" element={<SembakoTimManajemenPage />} />
-                    <Route path="/broker/:brokerType/karyawan" element={<SembakoTimManajemenPage />} />
-                    <Route path="/broker/:brokerType/akun" element={<SembakoAkun />} />
+                    {/* Fase 2: Generate route langsung + broker-prefix dari satu array */}
+                    {SEMBAKO_ROUTES.flatMap(([slug, element]) => [
+                      <Route key={slug}        path={`/${slug}`}                     element={element} />,
+                      <Route key={`b-${slug}`} path={`/broker/:brokerType/${slug}`}  element={element} />,
+                    ])}
 
-                    {/* Fallback redirect */}
                     <Route path="*" element={<Navigate to="/beranda" replace />} />
                   </Routes>
                 </SembakoLayout>

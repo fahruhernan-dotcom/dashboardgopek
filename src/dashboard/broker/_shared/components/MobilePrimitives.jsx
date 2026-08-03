@@ -87,7 +87,7 @@ export function ProgressBar({ value, max = 100, tone = 'accent', className = '' 
   return (
     <div className={`h-1.5 rounded-full bg-white/10 overflow-hidden ${className}`}>
       <div
-        className={`h-full rounded-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${fillColor}`}
+        className={`h-full rounded-full transition-all duration-700 ease-out ${fillColor}`}
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -108,7 +108,7 @@ export function DonutRing({ value, max, size = 64, stroke = 6, color = '#021a02'
           stroke={color} strokeWidth={stroke} fill="none"
           strokeDasharray={`${dash} ${c}`}
           strokeLinecap="round"
-          className="transition-[stroke-dasharray] duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+          className="transition-[stroke-dasharray] duration-700 ease-out"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">{children}</div>

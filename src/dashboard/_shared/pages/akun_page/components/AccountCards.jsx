@@ -6,6 +6,8 @@ import {
   ClipboardList, BarChart2, Users, ShoppingCart, Truck, Warehouse,
   AlertTriangle, CreditCard, BellOff,
 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
 import { useTheme, THEME_PRESETS } from '@/lib/hooks/useTheme'
 import { useLanguage } from '@/lib/i18n/useLanguage'
 import { useBrowserNotifications } from '@/lib/hooks/useBrowserNotifications'
@@ -933,7 +935,7 @@ export function HelpAboutCard({ navigate, canDeleteBusiness, onDeleteClick }) {
         ))}
       </div>
       <div style={{ marginTop: 8, padding: '10px 14px', textAlign: 'center', fontSize: 11, color: T.textMute }}>
-        TernakOS · {APP_VERSION}
+        Sembako OS · {APP_VERSION}
       </div>
     </Section>
   )
@@ -958,5 +960,122 @@ export function LogoutBtn({ onLogout }) {
         <LogOut size={16} strokeWidth={2} /> {t('logout_btn')}
       </button>
     </div>
+  )
+}
+
+export function DevUserAccountProvisioningCard({ accent, tenant }) {
+  const [openModal, setOpenModal] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [role, setRole] = useState('admin')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleCreateAccount = async (e) => {
+    e.preventDefault()
+    if (!email || !password || !fullName) {
+      return toast.error('Email, Password, dan Nama Wajib diisi!')
+    }
+    if (password.length < 6) {
+      return toast.error('Password minimal 6 karakter!')
+    }
+
+    setIsSubmitting(true)
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            role,
+            tenant_id: tenant?.id,
+          }
+        }
+      })
+
+      if (authError) throw authError
+
+      if (authData?.user) {
+        await supabase.from('profiles').insert([{
+          auth_user_id: authData.user.id,
+          tenant_id: tenant?.id,
+          email,
+          full_name: fullName,
+          role,
+        }])
+      }
+
+      toast.success(`Akun login (${role.toUpperCase()}) berhasil dibuat!`)
+      setEmail('')
+      setPassword('')
+      setFullName('')
+      setOpenModal(false)
+    } catch (err) {
+      toast.error(err.message || 'Gagal membuat akun login')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Section title="MODE DEVELOPER — KELOLA AKUN" icon={<Shield size={13} />} iconColor="oklch(0.65 0.20 290)" delay={0.14}>
+      <div style={{ ...cardStyle(), background: 'linear-gradient(135deg, oklch(0.65 0.20 290 / 0.15), transparent)', border: '1px solid oklch(0.65 0.20 290 / 0.3)' }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>
+          🔐 Pembuat Akses Login (Khusus Role Dev)
+        </div>
+        <div style={{ fontSize: 12, color: T.textDim, lineHeight: 1.5, marginBottom: 12 }}>
+          Sebagai Developer, Anda adalah satu-satunya role yang berhak menambahkan akun login untuk Admin & Owner.
+        </div>
+        <button
+          onClick={() => setOpenModal(true)}
+          style={{
+            width: '100%', padding: '11px', borderRadius: 12, border: 'none', cursor: 'pointer',
+            background: 'oklch(0.65 0.20 290)', color: '#fff', fontSize: 13, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            boxShadow: '0 6px 18px oklch(0.65 0.20 290 / 0.4)',
+          }}
+        >
+          + Buat Login Akun Baru (Admin / Owner / Dev)
+        </button>
+
+        {openModal && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div style={{ background: '#13191A', border: '1px solid oklch(0.65 0.20 290 / 0.4)', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#fff', margin: 0 }}>Buat Akun Login Baru</h3>
+                <button onClick={() => setOpenModal(false)} style={{ background: 'none', border: 'none', color: '#9BA29B', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
+
+              <form onSubmit={handleCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#9BA29B', display: 'block', marginBottom: 4 }}>NAMA LENGKAP</label>
+                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required placeholder="Contoh: Budi Santoso" style={{ width: '100%', height: 40, background: '#0F1416', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0 12px', color: '#fff', fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#9BA29B', display: 'block', marginBottom: 4 }}>EMAIL LOGIN</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="budi@kasir.com" style={{ width: '100%', height: 40, background: '#0F1416', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0 12px', color: '#fff', fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#9BA29B', display: 'block', marginBottom: 4 }}>PASSWORD</label>
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Minimal 6 karakter" style={{ width: '100%', height: 40, background: '#0F1416', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0 12px', color: '#fff', fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#9BA29B', display: 'block', marginBottom: 4 }}>ROLE HAK AKSES</label>
+                  <select value={role} onChange={e => setRole(e.target.value)} style={{ width: '100%', height: 40, background: '#0F1416', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0 12px', color: '#fff', fontSize: 13 }}>
+                    <option value="admin">Admin (Kasir - Tanpa Akses Profit)</option>
+                    <option value="owner">Owner (Pemilik - Akses Laporan & Profit)</option>
+                    <option value="dev">Dev (Developer - Full Akses System)</option>
+                  </select>
+                </div>
+                <button type="submit" disabled={isSubmitting} style={{ width: '100%', height: 42, background: 'oklch(0.65 0.20 290)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 14, cursor: 'pointer', marginTop: 8 }}>
+                  {isSubmitting ? 'Memproses...' : 'Simpan Akun Login Baru'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </Section>
   )
 }

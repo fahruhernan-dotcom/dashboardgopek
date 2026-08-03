@@ -24,6 +24,8 @@ import {
   RotateCcw,
   Sparkles,
   Shield,
+  ShieldAlert,
+  ArrowRight,
   CreditCard,
   ShoppingCart,
   Package,
@@ -42,6 +44,7 @@ import {
   Bot,
   TrendingUp,
   MessageSquareText,
+  Wrench,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -77,6 +80,7 @@ import { WA_URL } from '@/lib/constants/contact'
 import { getSubscriptionStatus } from '@/lib/subscriptionUtils'
 import { supabase } from '@/lib/supabase'
 import { isSuperadmin as checkIsSuperadmin, isOwner, isStaff } from '@/lib/auth'
+import { isDevUser, isOwnerUser, isAdminUser } from '@/lib/auth/business-roles'
 import { checkQuotaUsage } from '@/lib/quotaUtils'
 import { useSembakoReturns } from '@/lib/hooks/useSembakoData'
 import { toast } from 'sonner'
@@ -88,7 +92,7 @@ import { useTheme } from '@/lib/hooks/useTheme'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 
 export default function AppSidebar({ open, onClose }) {
-  const { user, profile, profiles, tenant, ownerTenant, isSuperadmin, switchTenant } = useAuth()
+  const { user, profile, profiles, tenant, ownerTenant, isSuperadmin, switchTenant, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -114,13 +118,13 @@ export default function AppSidebar({ open, onClose }) {
       const trialEnd = new Date(Date.now() + trialDurationDays * 24 * 60 * 60 * 1000).toISOString()
       const { error } = await supabase
         .from('tenants')
-        .update({ 
-           plan: 'pro', 
-           trial_ends_at: trialEnd, 
-           kandang_limit: 2
+        .update({
+          plan: 'pro',
+          trial_ends_at: trialEnd,
+          kandang_limit: 2
         })
         .eq('id', tenant?.id)
-      
+
       if (error) throw error
       toast.success('🎉 Trial PRO ' + trialDurationDays + ' Hari dimulai!')
       setTimeout(() => window.location.reload(), 500)
@@ -128,7 +132,7 @@ export default function AppSidebar({ open, onClose }) {
       toast.error('Gagal: ' + err.message)
     }
   }
-  
+
   const isDesktop = useMediaQuery('(min-width: 1024px)')
 
   // Farms for peternak multi-kandang sidebar
@@ -181,20 +185,20 @@ export default function AppSidebar({ open, onClose }) {
   const { accentColor } = useTheme()
 
   const vertical = resolveBusinessVertical(profile, tenant)
-  const model      = BUSINESS_MODELS[vertical]
-  const isPoultry  = vertical === 'poultry_broker'
-  const isEgg      = vertical === 'egg_broker'
+  const model = BUSINESS_MODELS[vertical]
+  const isPoultry = vertical === 'poultry_broker'
+  const isEgg = vertical === 'egg_broker'
   const isPeternak = model?.category === 'peternak'   // true for ALL peternak verticals
-  const isBroiler  = vertical === 'peternak'
+  const isBroiler = vertical === 'peternak'
   const isDombaPenggemukan = vertical === 'peternak_domba_penggemukan'
-  const isDombaBreeding    = vertical === 'peternak_domba_breeding'
+  const isDombaBreeding = vertical === 'peternak_domba_breeding'
   const isKambingPenggemukan = vertical === 'peternak_kambing_penggemukan'
-  const isKambingBreeding    = vertical === 'peternak_kambing_breeding'
+  const isKambingBreeding = vertical === 'peternak_kambing_breeding'
   const _isFatteningPremium = isDombaPenggemukan || isKambingPenggemukan
-  const isSapiPenggemukan    = vertical === 'peternak_sapi_penggemukan'
-  const isSapiBreeding       = vertical === 'peternak_sapi_breeding'
-  const isRPA      = vertical === 'rumah_potong_rpa' || model?.category === 'rumah_potong'
-  const isSembako  = ['distributor_sembako', 'sembako_broker'].includes(vertical)
+  const isSapiPenggemukan = vertical === 'peternak_sapi_penggemukan'
+  const isSapiBreeding = vertical === 'peternak_sapi_breeding'
+  const isRPA = vertical === 'rumah_potong_rpa' || model?.category === 'rumah_potong'
+  const isSembako = ['distributor_sembako', 'sembako_broker'].includes(vertical)
 
   // Peternak permission matrix (null for non-peternak users)
   const pp = isPeternak ? peternakPermissions(profile?.role) : null
@@ -204,7 +208,7 @@ export default function AppSidebar({ open, onClose }) {
 
   const brokerBase = getBrokerBasePath(tenant)
   const peternakBase = getXBasePath(tenant, profile)
-  
+
   const color = accentColor || (isSembako ? '#EA580C' : isEgg ? '#7C3AED' : isRPA ? '#F59E0B' : '#10B981')
 
   const getBerandaPath = (v, t = tenant) => {
@@ -218,7 +222,7 @@ export default function AppSidebar({ open, onClose }) {
   }
 
   const berandaPath = getBerandaPath(vertical)
-  const akunPath    = getAkunPath(vertical)
+  const akunPath = getAkunPath(vertical)
 
   const getVerticalInfo = (v) => {
     let modelKey = v;
@@ -231,12 +235,12 @@ export default function AppSidebar({ open, onClose }) {
     if (v === 'peternak_kambing_breeding') modelKey = 'kambing_breeding';
     if (v === 'sembako_broker') modelKey = 'distributor_sembako';
     if (v === 'rpa') modelKey = 'rumah_potong_rpa';
-    
+
     const m = BUSINESS_MODELS[modelKey] || BUSINESS_MODELS[v];
     if (m) {
       return { icon: m.icon || '🏢', label: m.name || m.label || 'Bisnis' };
     }
-    
+
     return { icon: '🏢', label: 'Bisnis' }
   }
 
@@ -266,84 +270,84 @@ export default function AppSidebar({ open, onClose }) {
 
         // Broker Ayam
         ...(isPoultry ? [
-          { title: 'Transaksi',     url: `${brokerBase}/transaksi`, icon: ArrowLeftRight, dataTutorial: 'broker-transaksi' },
-          { title: 'RPA & Piutang', url: `${brokerBase}/rpa`,       icon: Building2, roles: ['owner', 'staff'] },
-          { title: 'Kandang',       url: `${brokerBase}/kandang`,   icon: Warehouse,  roles: ['owner', 'staff'], dataTutorial: 'broker-kandang' },
-          { title: 'Tim & Akses',   url: `${brokerBase}/tim`,       icon: Users,      roles: ['owner'] },
+          { title: 'Transaksi', url: `${brokerBase}/transaksi`, icon: ArrowLeftRight, dataTutorial: 'broker-transaksi' },
+          { title: 'RPA & Piutang', url: `${brokerBase}/rpa`, icon: Building2, roles: ['owner', 'staff'] },
+          { title: 'Kandang', url: `${brokerBase}/kandang`, icon: Warehouse, roles: ['owner', 'staff'], dataTutorial: 'broker-kandang' },
+          { title: 'Tim & Akses', url: `${brokerBase}/tim`, icon: Users, roles: ['owner'] },
         ] : []),
 
         // Broker Telur
         ...(isEgg ? [
-          { title: 'POS / Jual',        url: `${brokerBase}/pos`,        icon: ArrowLeftRight, dataTutorial: 'egg-pos' },
-          { title: 'Inventori & HPP',   url: `${brokerBase}/inventori`,  icon: Warehouse,  roles: ['owner', 'staff'], dataTutorial: 'egg-inventori' },
-          { title: 'Supplier Telur',    url: `${brokerBase}/suppliers`,  icon: Building2,  roles: ['owner', 'staff'], dataTutorial: 'egg-supplier' },
-          { title: 'Pelanggan Telur',   url: `${brokerBase}/customers`,  icon: User,       roles: ['owner', 'staff'] },
-          { title: 'Riwayat Transaksi', url: `${brokerBase}/transaksi`,  icon: BarChart2,  roles: ['owner', 'staff'] },
+          { title: 'POS / Jual', url: `${brokerBase}/pos`, icon: ArrowLeftRight, dataTutorial: 'egg-pos' },
+          { title: 'Inventori & HPP', url: `${brokerBase}/inventori`, icon: Warehouse, roles: ['owner', 'staff'], dataTutorial: 'egg-inventori' },
+          { title: 'Supplier Telur', url: `${brokerBase}/suppliers`, icon: Building2, roles: ['owner', 'staff'], dataTutorial: 'egg-supplier' },
+          { title: 'Pelanggan Telur', url: `${brokerBase}/customers`, icon: User, roles: ['owner', 'staff'] },
+          { title: 'Riwayat Transaksi', url: `${brokerBase}/transaksi`, icon: BarChart2, roles: ['owner', 'staff'] },
         ] : []),
 
         // Peternak Broiler — global links
         ...(isBroiler ? [
-          { title: 'Semua Siklus',   url: `${peternakBase}/siklus`,       icon: RefreshCw,  show: pp?.canViewSiklus      ?? true },
-          { title: 'Anak Kandang',   url: `${peternakBase}/anak-kandang`,  icon: Users,      show: pp?.canViewAnakKandang ?? true },
+          { title: 'Semua Siklus', url: `${peternakBase}/siklus`, icon: RefreshCw, show: pp?.canViewSiklus ?? true },
+          { title: 'Anak Kandang', url: `${peternakBase}/anak-kandang`, icon: Users, show: pp?.canViewAnakKandang ?? true },
         ].filter(item => item.show !== false) : []),
 
         // Domba Penggemukan
         ...(isDombaPenggemukan ? [
-          { title: 'Batch Aktif',    url: `${peternakBase}/batch`,       icon: RefreshCw,    show: pp?.canViewSiklus    ?? true, dataTutorial: 'peternak-siklus' },
-          { title: 'Data Ternak',    url: `${peternakBase}/ternak`,      icon: Tag },
-          { title: 'Penjualan',      url: `${peternakBase}/penjualan`,   icon: ShoppingCart, show: pp?.canViewPenjualan ?? true },
-          { title: 'Denah Kandang',  url: `${peternakBase}/kandang-view`,icon: LayoutGrid, dataTutorial: 'peternak-kandang' },
+          { title: 'Batch Aktif', url: `${peternakBase}/batch`, icon: RefreshCw, show: pp?.canViewSiklus ?? true, dataTutorial: 'peternak-siklus' },
+          { title: 'Data Ternak', url: `${peternakBase}/ternak`, icon: Tag },
+          { title: 'Penjualan', url: `${peternakBase}/penjualan`, icon: ShoppingCart, show: pp?.canViewPenjualan ?? true },
+          { title: 'Denah Kandang', url: `${peternakBase}/kandang-view`, icon: LayoutGrid, dataTutorial: 'peternak-kandang' },
         ] : []),
 
         // Domba Breeding
         ...(isDombaBreeding ? [
-          { title: 'Data Ternak',    url: `${peternakBase}/ternak`,      icon: Tag },
-          { title: 'Reproduksi',     url: `${peternakBase}/reproduksi`,  icon: Heart },
+          { title: 'Data Ternak', url: `${peternakBase}/ternak`, icon: Tag },
+          { title: 'Reproduksi', url: `${peternakBase}/reproduksi`, icon: Heart },
         ] : []),
 
         // Kambing Penggemukan
         ...(isKambingPenggemukan ? [
-          { title: 'Batch Aktif',    url: `${peternakBase}/batch`,       icon: RefreshCw,    show: pp?.canViewSiklus    ?? true, dataTutorial: 'peternak-siklus' },
-          { title: 'Data Ternak',    url: `${peternakBase}/ternak`,      icon: Tag },
-          { title: 'Penjualan',      url: `${peternakBase}/penjualan`,   icon: ShoppingCart, show: pp?.canViewPenjualan ?? true },
-          { title: 'Denah Kandang',  url: `${peternakBase}/kandang-view`,icon: LayoutGrid, dataTutorial: 'peternak-kandang' },
+          { title: 'Batch Aktif', url: `${peternakBase}/batch`, icon: RefreshCw, show: pp?.canViewSiklus ?? true, dataTutorial: 'peternak-siklus' },
+          { title: 'Data Ternak', url: `${peternakBase}/ternak`, icon: Tag },
+          { title: 'Penjualan', url: `${peternakBase}/penjualan`, icon: ShoppingCart, show: pp?.canViewPenjualan ?? true },
+          { title: 'Denah Kandang', url: `${peternakBase}/kandang-view`, icon: LayoutGrid, dataTutorial: 'peternak-kandang' },
         ] : []),
 
         // Kambing Breeding
         ...(isKambingBreeding ? [
-          { title: 'Data Ternak',    url: `${peternakBase}/ternak`,      icon: Tag },
-          { title: 'Reproduksi',     url: `${peternakBase}/reproduksi`,  icon: Heart },
+          { title: 'Data Ternak', url: `${peternakBase}/ternak`, icon: Tag },
+          { title: 'Reproduksi', url: `${peternakBase}/reproduksi`, icon: Heart },
         ] : []),
 
         ...(isSapiPenggemukan || isSapiBreeding ? [
-          { title: 'Sapi Aktif',    url: `${peternakBase}/batch`,        icon: RefreshCw,  show: isSapiPenggemukan, dataTutorial: 'peternak-siklus' },
-          { title: 'Data Ternak',   url: `${peternakBase}/ternak`,       icon: Tag },
-          { title: 'Penjualan',     url: `${peternakBase}/penjualan`,    icon: ShoppingCart, show: isSapiPenggemukan && (pp?.canViewPenjualan ?? true) },
+          { title: 'Sapi Aktif', url: `${peternakBase}/batch`, icon: RefreshCw, show: isSapiPenggemukan, dataTutorial: 'peternak-siklus' },
+          { title: 'Data Ternak', url: `${peternakBase}/ternak`, icon: Tag },
+          { title: 'Penjualan', url: `${peternakBase}/penjualan`, icon: ShoppingCart, show: isSapiPenggemukan && (pp?.canViewPenjualan ?? true) },
           { title: 'Denah Kandang', url: `${peternakBase}/kandang-view`, icon: LayoutGrid, show: isSapiPenggemukan, dataTutorial: 'peternak-kandang' },
-          { title: 'Reproduksi',    url: `${peternakBase}/reproduksi`,   icon: Heart,      show: isSapiBreeding,    dataTutorial: 'peternak-siklus' },
+          { title: 'Reproduksi', url: `${peternakBase}/reproduksi`, icon: Heart, show: isSapiBreeding, dataTutorial: 'peternak-siklus' },
         ].filter(item => item.show !== false) : []),
 
         // RPA
         // Rumah Potong
         ...(isRPA ? [
           ...(profile?.sub_type?.startsWith('rpa') ? [
-            { title: 'Order',      url: '/rumah_potong/rpa/order',      icon: ArrowLeftRight, dataTutorial: 'rpa-order' },
-            { title: 'Hutang',     url: '/rumah_potong/rpa/hutang',     icon: Wallet },
+            { title: 'Order', url: '/rumah_potong/rpa/order', icon: ArrowLeftRight, dataTutorial: 'rpa-order' },
+            { title: 'Hutang', url: '/rumah_potong/rpa/hutang', icon: Wallet },
             { title: 'Distribusi', url: '/rumah_potong/rpa/distribusi', icon: Truck, dataTutorial: 'rpa-distribusi' },
-            { title: 'Laporan',    url: '/rumah_potong/rpa/laporan',    icon: BarChart2, roles: ['owner'], planRequired: 'pro', dataTutorial: 'rpa-laporan' },
+            { title: 'Laporan', url: '/rumah_potong/rpa/laporan', icon: BarChart2, roles: ['owner'], planRequired: 'pro', dataTutorial: 'rpa-laporan' },
           ] : [
             /* RPH placeholder items if any */
-            { title: 'Dashboard',   url: '/rumah_potong/rph/beranda',   icon: Home },
+            { title: 'Dashboard', url: '/rumah_potong/rph/beranda', icon: Home },
           ])
         ] : []),
 
         // Sembako Broker
         ...(isSembako ? [
-          { title: 'Penjualan',       url: `${brokerBase}/penjualan`,     icon: ArrowLeftRight, dataTutorial: 'sembako-penjualan' },
+          { title: 'Penjualan', url: `${brokerBase}/penjualan`, icon: ArrowLeftRight, dataTutorial: 'sembako-penjualan' },
           { title: 'Toko & Supplier', url: `${brokerBase}/toko-supplier`, icon: Store, dataTutorial: 'sembako-toko' },
-          { title: 'Gudang',          url: `${brokerBase}/gudang`,        icon: Warehouse, dataTutorial: 'sembako-gudang' },
-          { title: 'Retur Produk',    url: `${brokerBase}/retur`,         icon: RotateCcw, badge: pendingRetursCount > 0 ? String(pendingRetursCount) : null },
-          { title: 'Inventori & HPP', url: `${brokerBase}/produk`,        icon: Package,        roles: ['owner', 'staff'] },
+          { title: 'Gudang', url: `${brokerBase}/gudang`, icon: Warehouse, dataTutorial: 'sembako-gudang' },
+          { title: 'Retur Produk', url: `${brokerBase}/retur`, icon: RotateCcw, badge: pendingRetursCount > 0 ? String(pendingRetursCount) : null },
+          { title: 'Inventori & HPP', url: `${brokerBase}/produk`, icon: Package, roles: ['owner', 'staff'] },
         ] : []),
       ]
     },
@@ -356,10 +360,10 @@ export default function AppSidebar({ open, onClose }) {
         // (broiler has it inside the per-farm collapsible). Tugas Harian is the
         // closest daily-tracking entry-point for fattening/breeding/dairy users,
         // so use it as the spotlight target for the `peternak-input` step.
-        { title: 'Tugas Harian',     url: `${peternakBase}/daily_task`,   icon: ClipboardList, dataTutorial: !isBroiler ? 'peternak-input' : undefined },
+        { title: 'Tugas Harian', url: `${peternakBase}/daily_task`, icon: ClipboardList, dataTutorial: !isBroiler ? 'peternak-input' : undefined },
         ...((isSapiPenggemukan || isSapiBreeding || isDombaPenggemukan || isDombaBreeding || isKambingPenggemukan || isKambingBreeding || isBroiler) ? [
-          { title: 'Penugasan',        url: `${peternakBase}/task_assign`,  icon: Users2, roles: ['owner', 'manajer'] },
-          { title: 'Pengaturan Tugas', url: `${peternakBase}/task_settings`,icon: Settings2, roles: ['owner', 'manajer'] },
+          { title: 'Penugasan', url: `${peternakBase}/task_assign`, icon: Users2, roles: ['owner', 'manajer'] },
+          { title: 'Pengaturan Tugas', url: `${peternakBase}/task_settings`, icon: Settings2, roles: ['owner', 'manajer'] },
         ] : []),
       ]
     }] : []),
@@ -377,33 +381,34 @@ export default function AppSidebar({ open, onClose }) {
       label: 'OPERASIONAL',
       items: [
         { title: isBroiler ? 'Program Vaksin' : 'Kesehatan', url: `${peternakBase}/${isBroiler ? 'vaksinasi' : 'kesehatan'}`, icon: Syringe, show: isBroiler ? (pp?.canViewVaksinasi ?? true) : true },
-        { title: 'Stok Pakan',    url: `${peternakBase}/pakan`,        icon: Warehouse, show: isBroiler ? (pp?.canViewPakan ?? true) : true },
+        { title: 'Stok Pakan', url: `${peternakBase}/pakan`, icon: Warehouse, show: isBroiler ? (pp?.canViewPakan ?? true) : true },
         { title: isBroiler ? 'Laporan Siklus' : 'Laporan', url: `${peternakBase}/laporan`, icon: FileText, show: pp?.canViewLaporan ?? true, dataTutorial: 'peternak-laporan' },
         // Listrik & Air — hanya untuk peternak yang punya data batch (penggemukan)
         ...((isDombaPenggemukan || isKambingPenggemukan || isSapiPenggemukan || isSapiBreeding) ? [
-          { title: 'Listrik & Air',  url: `${peternakBase}/listrik-air`, icon: Zap, roles: ['owner', 'manajer'] },
+          { title: 'Listrik & Air', url: `${peternakBase}/listrik-air`, icon: Zap, roles: ['owner', 'manajer'] },
         ] : []),
       ].filter(item => item.show !== false)
     }] : []),
 
     // ── OPERASIONAL — Sembako ───────────────────────────────
-    ...(isSembako ? [{
-      label: 'LAPORAN & AKUN',
+    ...(isSembako && !isAdminUser(profile) ? [{
+      label: 'LAPORAN & MANAJEMEN',
       items: [
-        { title: 'Laporan',       url: `${brokerBase}/laporan`, icon: BarChart2, roles: ['owner'], planRequired: 'pro', dataTutorial: 'sembako-laporan' },
-        { title: 'Tim & Karyawan',url: `${brokerBase}/tim`,     icon: Users,     roles: ['owner'] },
-        { title: 'Akun & Profil', url: `${brokerBase}/akun`,    icon: User },
+        { title: 'Laporan Bisnis', url: `${brokerBase}/laporan`, icon: BarChart2, roles: ['owner', 'dev'], planRequired: 'pro', dataTutorial: 'sembako-laporan' },
+        { title: 'Tim & Karyawan', url: `${brokerBase}/tim`, icon: Users, roles: ['owner', 'dev'] },
       ]
     }] : []),
+
+
 
     // ── OPERASIONAL (broker only) ───────────────────────────
     ...(isPoultry ? [{
       label: 'OPERASIONAL',
       items: [
-        { title: 'Pengiriman', url: `${brokerBase}/pengiriman`, icon: Truck,      roles: ['owner', 'staff'], dataTutorial: 'broker-pengiriman' },
-        { title: 'Cash Flow',  url: `${brokerBase}/cashflow`,   icon: Wallet,     roles: ['owner'],          planRequired: 'pro' },
-        { title: 'Armada',     url: `${brokerBase}/armada`,     icon: Car,        roles: ['owner'] },
-        { title: 'Simulator',  url: `${brokerBase}/simulator`,  icon: Calculator, roles: ['owner'],          planRequired: 'pro' },
+        { title: 'Pengiriman', url: `${brokerBase}/pengiriman`, icon: Truck, roles: ['owner', 'staff'], dataTutorial: 'broker-pengiriman' },
+        { title: 'Cash Flow', url: `${brokerBase}/cashflow`, icon: Wallet, roles: ['owner'], planRequired: 'pro' },
+        { title: 'Armada', url: `${brokerBase}/armada`, icon: Car, roles: ['owner'] },
+        { title: 'Simulator', url: `${brokerBase}/simulator`, icon: Calculator, roles: ['owner'], planRequired: 'pro' },
       ]
     }] : []),
 
@@ -418,9 +423,9 @@ export default function AppSidebar({ open, onClose }) {
     ...(isPeternak ? [{
       label: 'INTELIGENSI AI',
       items: [
-        { title: 'Tanya AI Assistant', url: `${peternakBase}/ai-chat`,      icon: MessageSquareText, badge: 'DEV', locked: true },
-        { title: 'Analisis Performa',  url: `${peternakBase}/ai-analysis`,  icon: Brain,             badge: 'DEV', locked: true },
-        { title: 'Prediksi Hasil',    url: `${peternakBase}/ai-prediction`,icon: TrendingUp,        badge: 'DEV', locked: true },
+        { title: 'Tanya AI Assistant', url: `${peternakBase}/ai-chat`, icon: MessageSquareText, badge: 'DEV', locked: true },
+        { title: 'Analisis Performa', url: `${peternakBase}/ai-analysis`, icon: Brain, badge: 'DEV', locked: true },
+        { title: 'Prediksi Hasil', url: `${peternakBase}/ai-prediction`, icon: TrendingUp, badge: 'DEV', locked: true },
       ]
     }] : []),
   ]
@@ -445,21 +450,29 @@ export default function AppSidebar({ open, onClose }) {
   }, [dropdownOpen])
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut({ scope: 'local' })
-    if (error) toast.error(error.message)
-    else {
-      toast.success('Logged out successfully')
-      navigate('/login')
+    try {
+      if (logout) {
+        await logout()
+      } else {
+        localStorage.removeItem('sembako_active_role')
+        localStorage.removeItem('ternakos_active_tenant_id')
+        await supabase.auth.signOut({ scope: 'local' })
+      }
+      toast.success('Berhasil keluar')
+    } catch (err) {
+      // ignore
+    } finally {
+      navigate('/login', { replace: true })
     }
   }
 
   // Subscription status — single source of truth
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active':   return { color: '#34D399', bg: 'rgba(52, 211, 153, 0.1)', border: 'rgba(52, 211, 153, 0.2)' }
-      case 'trial':    return { color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' }
-      case 'expired':  return { color: '#F87171', bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.25)' }
-      default:         return { color: '#64748B', bg: 'rgba(100,116,139,0.10)', border: 'rgba(100,116,139,0.20)' }
+      case 'active': return { color: '#34D399', bg: 'rgba(52, 211, 153, 0.1)', border: 'rgba(52, 211, 153, 0.2)' }
+      case 'trial': return { color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' }
+      case 'expired': return { color: '#F87171', bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.25)' }
+      default: return { color: '#64748B', bg: 'rgba(100,116,139,0.10)', border: 'rgba(100,116,139,0.20)' }
     }
   }
 
@@ -471,21 +484,21 @@ export default function AppSidebar({ open, onClose }) {
   const canStartTrial = !isSuperadmin && sub.plan === 'starter' && !tenant?.trial_ends_at
   // Plan-tier gating
   const planTier = isSuperadmin ? 'business' : (sub.plan || 'starter')
-  const isPro     = ['pro', 'business'].includes(planTier) || sub.status === 'trial'
+  const isPro = ['pro', 'business'].includes(planTier) || sub.status === 'trial'
   const isBusiness = planTier === 'business' || (sub.status === 'trial' && sub.plan === 'business')
 
   const sidebarContent = (
     <>
-      <SidebarHeader style={{padding: '16px 16px 8px'}}>
+      <SidebarHeader style={{ padding: '16px 16px 8px' }}>
         {/* Clean Logo & Brand Header */}
-        <div 
+        <div
           className="flex items-center gap-3 px-3 py-3 select-none bg-slate-50 dark:bg-[#121A23] border border-slate-200 dark:border-white/[0.08] rounded-xl shadow-sm cursor-pointer"
           onClick={() => navigate(berandaPath)}
         >
           <div className="relative w-8 h-8 flex-shrink-0 flex items-center justify-center">
-            <img 
-              src="/logo.png" 
-              alt="Broker Dashboard Icon" 
+            <img
+              src="/logo.png"
+              alt="Broker Dashboard Icon"
               className="w-8 h-8 rounded-lg object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
@@ -507,6 +520,20 @@ export default function AppSidebar({ open, onClose }) {
             </p>
           </div>
         </div>
+
+        {/* Mode Switcher Banner untuk Dev/Superadmin */}
+        {isDevUser(profile) && (
+          <div className="px-3 pt-2 pb-1">
+            <button
+              onClick={() => navigate('/admin/dashboard')}
+              className="w-full py-2.5 px-3.5 bg-[#EA580C]/10 hover:bg-[#EA580C]/20 border border-[#EA580C]/30 text-[#EA580C] hover:text-orange-300 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer group"
+            >
+              <ShieldAlert size={14} className="text-[#EA580C] shrink-0" />
+              <span className="truncate">Switch ke Admin Pusat</span>
+              <ArrowRight size={12} className="ml-auto opacity-70 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </div>
+        )}
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-2">
@@ -514,115 +541,119 @@ export default function AppSidebar({ open, onClose }) {
           const isUtama = group.label === 'UTAMA'
           // Only make UTAMA collapsible for peternak (they have per-farm sections to focus on)
           const collapsible = isUtama && isBroiler && peternakFarms.length > 0
-          const collapsed   = collapsible && utamaCollapsed
+          const collapsed = collapsible && utamaCollapsed
           return (
-          <SidebarGroup key={group.label}>
-            {collapsible ? (
-              <button
-                onClick={() => setUtamaCollapsed(v => !v)}
-                className="w-full flex items-center justify-between px-2 mb-1 bg-transparent border-none cursor-pointer select-none group"
-              >
-                <span className="text-[10px] font-bold tracking-[0.15em] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+            <SidebarGroup key={group.label}>
+              {collapsible ? (
+                <button
+                  onClick={() => setUtamaCollapsed(v => !v)}
+                  className="w-full flex items-center justify-between px-2 mb-1 bg-transparent border-none cursor-pointer select-none group"
+                >
+                  <span className="text-[10px] font-bold tracking-[0.15em] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+                    {group.label}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-all duration-200"
+                    style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+                  />
+                </button>
+              ) : (
+                <SidebarGroupLabel className="text-[10px] font-bold tracking-[0.15em] text-slate-400 px-2 mb-1 select-none cursor-default">
                   {group.label}
-                </span>
-                <ChevronDown
-                  size={12}
-                  className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-all duration-200"
-                  style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
-                />
-              </button>
-            ) : (
-              <SidebarGroupLabel className="text-[10px] font-bold tracking-[0.15em] text-slate-400 px-2 mb-1 select-none cursor-default">
-                {group.label}
-              </SidebarGroupLabel>
-            )}
-            {!collapsed && (
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  const isActive = location.pathname === item.url
-                  const isPlanLocked = !isSuperadmin && (
-                    (item.planRequired === 'pro'      && !isPro) ||
-                    (item.planRequired === 'business' && !isBusiness)
-                  )
-                  const isLocked = item.locked || (!isSuperadmin && (!isAccountActive || isPlanLocked))
-                  const lockTooltip = isPlanLocked
-                    ? `${item.title} — Upgrade ke ${item.planRequired === 'business' ? 'Business' : 'Pro'}`
-                    : `${item.title} (Segera Hadir)`
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild={!isLocked}
-                        isActive={isActive}
-                        tooltip={isLocked ? lockTooltip : item.title}
-                        className={`rounded-xl mb-0.5 transition-all duration-200 select-none ${
-                          isLocked
-                            ? 'opacity-50 cursor-not-allowed'
-                            : isActive
-                              ? 'bg-opacity-10 cursor-pointer'
-                              : 'hover:bg-slate-100 dark:hover:bg-white/[0.04] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer'
-                        }`}
-                        style={isActive && !isLocked ? { 
-                          background: `${color}18`, 
-                          border: `1px solid ${color}33`, 
-                          color: color
-                        } : {}}
-                      >
-                        {isLocked ? (
-                          <div className="flex items-center gap-3 w-full px-2 py-1.5">
-                            <item.icon
-                              size={18}
-                              className="text-slate-500"
-                              strokeWidth={2}
-                            />
-                            <span className="font-body text-[14px] flex-1 font-medium text-slate-500">
-                              {item.title}
-                            </span>
-                            {item.badge ? (
-                              <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                                {item.badge}
-                              </span>
-                            ) : isPlanLocked ? (
-                              <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500/60 border border-emerald-500/15">
-                                PRO
-                              </span>
+                </SidebarGroupLabel>
+              )}
+              {!collapsed && (
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map((item) => {
+                      const isActive = location.pathname === item.url
+                      const isPlanLocked = !isSuperadmin && (
+                        (item.planRequired === 'pro' && !isPro) ||
+                        (item.planRequired === 'business' && !isBusiness)
+                      )
+                      const isLocked = item.locked || (!isSuperadmin && (!isAccountActive || isPlanLocked))
+                      const lockTooltip = isPlanLocked
+                        ? `${item.title} — Upgrade ke ${item.planRequired === 'business' ? 'Business' : 'Pro'}`
+                        : `${item.title} (Segera Hadir)`
+                      return (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton
+                            asChild={!isLocked}
+                            isActive={isActive}
+                            tooltip={isLocked ? lockTooltip : item.title}
+                            className={`rounded-xl mb-0.5 transition-all duration-200 select-none ${isLocked
+                                ? 'opacity-50 cursor-not-allowed'
+                                : isActive
+                                  ? 'bg-opacity-10 cursor-pointer'
+                                  : 'hover:bg-slate-100 dark:hover:bg-white/[0.04] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer'
+                              }`}
+                            style={isActive && !isLocked ? {
+                              background: `${color}18`,
+                              border: `1px solid ${color}33`,
+                              color: color
+                            } : {}}
+                          >
+                            {isLocked ? (
+                              <div className="flex items-center gap-3 w-full px-2 py-1.5">
+                                <item.icon
+                                  size={18}
+                                  className="text-slate-500"
+                                  strokeWidth={2}
+                                />
+                                <span className="font-body text-[14px] flex-1 font-medium text-slate-500">
+                                  {item.title}
+                                </span>
+                                {item.badge ? (
+                                  <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                    {item.badge}
+                                  </span>
+                                ) : isPlanLocked ? (
+                                  <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500/60 border border-emerald-500/15">
+                                    PRO
+                                  </span>
+                                ) : (
+                                  <Lock size={12} className="text-slate-500" />
+                                )}
+                              </div>
                             ) : (
-                              <Lock size={12} className="text-slate-500" />
+                              <NavLink to={item.url} data-tutorial={item.dataTutorial} className="flex items-center gap-3 w-full group">
+                                <item.icon
+                                  size={18}
+                                  style={isActive ? { color: color } : {}}
+                                  className={!isActive ? 'text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors' : ''}
+                                  strokeWidth={isActive ? 2.5 : 2}
+                                />
+                                <span className={`font-body text-[14px] flex-1 ${isActive ? 'font-semibold text-white' : 'font-medium text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors'}`} style={isActive ? { color: color } : {}}>
+                                  {item.title}
+                                </span>
+                                {item.isDevItem ? (
+                                  <span className="text-[9px] font-black uppercase tracking-wider bg-[#EA580C]/20 text-[#EA580C] border border-[#EA580C]/40 rounded-md px-1.5 py-0.5 shrink-0 animate-pulse shadow-sm">
+                                    DEV
+                                  </span>
+                                ) : item.badge && (
+                                  <span className="text-[9px] font-black bg-amber-500/15 text-amber-500 border border-amber-500/25 rounded-[4px] px-1.5 py-0.5 animate-pulse">
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </NavLink>
                             )}
-                          </div>
-                        ) : (
-                          <NavLink to={item.url} data-tutorial={item.dataTutorial} className="flex items-center gap-3 w-full group">
-                            <item.icon
-                              size={18}
-                              style={isActive ? { color: color } : {}}
-                              className={!isActive ? 'text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors' : ''}
-                              strokeWidth={isActive ? 2.5 : 2}
-                            />
-                            <span className={`font-body text-[14px] flex-1 ${isActive ? 'font-semibold text-white' : 'font-medium text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors'}`} style={isActive ? { color: color } : {}}>
-                              {item.title}
-                            </span>
-                            {item.badge && (
-                              <span className="text-[9px] font-black bg-amber-500/15 text-amber-500 border border-amber-500/25 rounded-[4px] px-1.5 py-0.5 animate-pulse">
-                                {item.badge}
-                              </span>
-                            )}
-                          </NavLink>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-            )}
-          </SidebarGroup>
-        )})}
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      )
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
+            </SidebarGroup>
+          )
+        })}
 
         {/* ── Peternak: per-farm collapsible sections ── */}
         {isBroiler && (
           <>
             <SidebarSeparator className="my-1" />
-            
+
             {/* Empty State CTA */}
             {peternakFarms.length === 0 && (
               <div className="px-3 py-4">
@@ -646,11 +677,11 @@ export default function AppSidebar({ open, onClose }) {
             )}
 
             {peternakFarms.map((farm) => {
-              const isOpen    = expandedFarms[farm.id] ?? false
-              const farmBase  = `${peternakBase}/kandang/${farm.id}`
-              const isOnFarm  = location.pathname.startsWith(farmBase)
+              const isOpen = expandedFarms[farm.id] ?? false
+              const farmBase = `${peternakBase}/kandang/${farm.id}`
+              const isOnFarm = location.pathname.startsWith(farmBase)
               const LIVESTOCK = { ayam_broiler: '🐔', ayam_petelur: '🥚', domba: '🐑', kambing: '🐐', sapi: '🐄' }
-              const emoji     = LIVESTOCK[farm.livestock_type] ?? '🏚'
+              const emoji = LIVESTOCK[farm.livestock_type] ?? '🏚'
 
               const farmColor = accentColor || '#7C3AED'
               return (
@@ -662,9 +693,8 @@ export default function AppSidebar({ open, onClose }) {
                       background: `${farmColor}18`,
                       border: `1px solid ${farmColor}33`,
                     } : {}}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl mb-0.5 transition-colors text-left cursor-pointer border-none ${
-                      isOnFarm ? '' : 'bg-transparent hover:bg-slate-100 dark:hover:bg-white/[0.03]'
-                    }`}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl mb-0.5 transition-colors text-left cursor-pointer border-none ${isOnFarm ? '' : 'bg-transparent hover:bg-slate-100 dark:hover:bg-white/[0.03]'
+                      }`}
                   >
                     <span className="text-base flex-shrink-0">{emoji}</span>
                     <span
@@ -684,12 +714,12 @@ export default function AppSidebar({ open, onClose }) {
                     <SidebarGroupContent>
                       <SidebarMenu className="pl-2">
                         {[
-                          { title: 'Dashboard',    url: `${farmBase}/beranda`,       icon: Home,          show: true                       },
-                          { title: 'Siklus',       url: `${farmBase}/siklus`,        icon: RefreshCw,     show: pp?.canViewSiklus   ?? true, dataTutorial: 'peternak-siklus' },
-                          { title: 'Input Harian', url: `${farmBase}/input`,         icon: ClipboardList, show: pp?.canInputHarian  ?? true, dataTutorial: 'peternak-input' },
-                          { title: 'Laporan',      url: `${peternakBase}/laporan`,   icon: FileText,      show: pp?.canViewLaporan  ?? true, dataTutorial: 'peternak-laporan' },
-                          { title: 'Pakan',        url: `${farmBase}/pakan`,         icon: Warehouse,     show: pp?.canViewPakan    ?? true },
-                          { title: 'Vaksinasi',    url: `${peternakBase}/vaksinasi`, icon: Syringe,       show: pp?.canViewVaksinasi ?? true },
+                          { title: 'Dashboard', url: `${farmBase}/beranda`, icon: Home, show: true },
+                          { title: 'Siklus', url: `${farmBase}/siklus`, icon: RefreshCw, show: pp?.canViewSiklus ?? true, dataTutorial: 'peternak-siklus' },
+                          { title: 'Input Harian', url: `${farmBase}/input`, icon: ClipboardList, show: pp?.canInputHarian ?? true, dataTutorial: 'peternak-input' },
+                          { title: 'Laporan', url: `${peternakBase}/laporan`, icon: FileText, show: pp?.canViewLaporan ?? true, dataTutorial: 'peternak-laporan' },
+                          { title: 'Pakan', url: `${farmBase}/pakan`, icon: Warehouse, show: pp?.canViewPakan ?? true },
+                          { title: 'Vaksinasi', url: `${peternakBase}/vaksinasi`, icon: Syringe, show: pp?.canViewVaksinasi ?? true },
                         ].filter(item => item.show !== false).map((item) => {
                           const isActive = location.pathname === item.url || location.pathname.startsWith(item.url + '?')
                           return (
@@ -697,9 +727,8 @@ export default function AppSidebar({ open, onClose }) {
                               <SidebarMenuButton
                                 asChild
                                 isActive={isActive}
-                                className={`rounded-xl mb-0.5 transition-all select-none cursor-pointer ${
-                                  isActive ? '' : 'hover:bg-slate-100 dark:hover:bg-white/[0.03] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                                }`}
+                                className={`rounded-xl mb-0.5 transition-all select-none cursor-pointer ${isActive ? '' : 'hover:bg-slate-100 dark:hover:bg-white/[0.03] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                                  }`}
                                 style={isActive ? {
                                   background: `${farmColor}18`,
                                   border: `1px solid ${farmColor}33`,
@@ -732,21 +761,20 @@ export default function AppSidebar({ open, onClose }) {
 
             {/* ── Kandang limit + Add button ── */}
             {(() => {
-              const kandangLimit  = tenant?.kandang_limit ?? 1
-              const currentCount  = peternakFarms.reduce((s, f) => s + (f.kandang_count || 1), 0)
+              const kandangLimit = tenant?.kandang_limit ?? 1
+              const currentCount = peternakFarms.reduce((s, f) => s + (f.kandang_count || 1), 0)
               const canAddKandang = currentCount < kandangLimit
-              const limitLabel    = kandangLimit >= 99 ? '∞' : String(kandangLimit)
+              const limitLabel = kandangLimit >= 99 ? '∞' : String(kandangLimit)
               return (
                 <div className="px-3 pt-1 pb-2">
                   <button
                     data-tutorial="peternak-kandang"
                     onClick={() => canAddKandang && navigate(`${peternakBase}/beranda`)}
                     disabled={!canAddKandang}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-[13px] font-semibold border transition-colors ${
-                      canAddKandang
+                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-[13px] font-semibold border transition-colors ${canAddKandang
                         ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer bg-transparent'
                         : 'border-slate-200 dark:border-white/10 text-muted-foreground cursor-not-allowed bg-transparent opacity-60'
-                    }`}
+                      }`}
                     title={!canAddKandang ? `Batas kandang plan kamu ${limitLabel} — upgrade untuk tambah lebih` : 'Tambah kandang baru'}
                   >
                     <span className="flex items-center gap-1.5">
@@ -771,9 +799,9 @@ export default function AppSidebar({ open, onClose }) {
             <SidebarMenu>
               {(isPoultry || isPeternak) && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={location.pathname === '/dashboard/harga-pasar'} 
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === '/dashboard/harga-pasar'}
                     className="rounded-xl mb-0.5 hover:bg-slate-100 dark:hover:bg-white/[0.03]"
                     style={location.pathname === '/dashboard/harga-pasar' ? { background: `${color}18`, border: `1px solid ${color}33`, color: color } : {}}
                   >
@@ -786,9 +814,9 @@ export default function AppSidebar({ open, onClose }) {
               )}
               {!isSembako && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={location.pathname === akunPath} 
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === akunPath}
                     className="rounded-xl mb-0.5 hover:bg-slate-100 dark:hover:bg-white/[0.03]"
                     style={location.pathname === akunPath ? { background: `${color}18`, border: `1px solid ${color}33`, color: color } : {}}
                   >
@@ -801,9 +829,9 @@ export default function AppSidebar({ open, onClose }) {
               )}
               {isSuperadmin && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={location.pathname.startsWith('/admin')} 
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname.startsWith('/admin')}
                     className="rounded-xl mb-0.5 hover:bg-slate-100 dark:hover:bg-white/[0.03]"
                     style={location.pathname.startsWith('/admin') ? { background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', color: '#F59E0B' } : {}}
                   >
@@ -836,24 +864,22 @@ export default function AppSidebar({ open, onClose }) {
 
       <SidebarFooter className="p-2 pb-6">
         <SidebarSeparator className="mb-2" />
-        <div 
+        <div
           onClick={isSuperadmin ? handleGoToAdmin : undefined}
-          className={`select-none mx-1 px-3.5 py-3 rounded-xl border transition-all ${
-            isSuperadmin 
-              ? 'bg-amber-500/5 dark:bg-amber-500/3 border-amber-500/25 dark:border-amber-500/15 hover:bg-amber-500/10 hover:border-amber-500/35 cursor-pointer' 
+          className={`select-none mx-1 px-3.5 py-3 rounded-xl border transition-all ${isSuperadmin
+              ? 'bg-amber-500/5 dark:bg-amber-500/3 border-amber-500/25 dark:border-amber-500/15 hover:bg-amber-500/10 hover:border-amber-500/35 cursor-pointer'
               : 'bg-orange-500/5 dark:bg-orange-500/10 border-orange-500/20'
-          }`}
+            }`}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p className="text-[10px] font-bold text-slate-500 dark:text-[#6B8CAA] uppercase tracking-[0.8px] m-0">
                 {isSuperadmin ? 'Status Akun' : 'Masa Aktif Server'}
               </p>
-              <p className={`font-['Sora'] text-[13px] font-extrabold mt-0.5 flex items-center gap-1 ${
-                isSuperadmin 
-                  ? 'text-amber-650 dark:text-amber-500' 
+              <p className={`font-['Sora'] text-[13px] font-extrabold mt-0.5 flex items-center gap-1 ${isSuperadmin
+                  ? 'text-amber-650 dark:text-amber-500'
                   : 'text-orange-500 dark:text-orange-400'
-              }`}>
+                }`}>
                 {isSuperadmin ? (
                   <><Shield size={14} className="text-amber-550 dark:text-amber-500" /> PLATFORM ADMIN</>
                 ) : (
@@ -863,15 +889,20 @@ export default function AppSidebar({ open, onClose }) {
             </div>
 
             {/* Status badge */}
-            {!isSuperadmin && (
+            {(!isSuperadmin && !isDevUser(profile)) && (
               <span className="text-[10px] font-extrabold rounded-md px-2.5 py-0.5 border uppercase tracking-wider bg-orange-500/15 text-orange-400 border-orange-500/30">
                 {sub.daysLeft ? `${sub.daysLeft} Hari` : 'Aktif'}
               </span>
             )}
+            {(isSuperadmin || isDevUser(profile)) && (
+              <span className="text-[10px] font-extrabold rounded-md px-2.5 py-0.5 border uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+                Dev Unlimited
+              </span>
+            )}
           </div>
 
-          {/* WhatsApp Button Perpanjang Server */}
-          {!isSuperadmin && (
+          {/* WhatsApp Button Perpanjang Server - hanya untuk non-Dev/non-Superadmin */}
+          {(!isSuperadmin && !isDevUser(profile)) && (
             <div className="mt-2.5">
               <a
                 href={`${WA_URL}?text=${encodeURIComponent('Halo Admin, saya ingin memperpanjang masa aktif server Broker Dashboard saya.')}`}
@@ -909,12 +940,11 @@ export default function AppSidebar({ open, onClose }) {
                     <p className="text-[11px] text-slate-500 dark:text-[#4B6478] truncate">{user?.email}</p>
                   </div>
                   {(profile?.role || isSuperadmin) && (
-                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0 ${
-                      isSuperadmin ? 'bg-amber-500/10 text-amber-600 dark:text-amber-500' :
-                      isOwner(profile) ? 'bg-[#10B981]/10 text-[#10B981]' :
-                      isStaff(profile) ? 'bg-blue-500/10 text-blue-500 dark:text-blue-400' :
-                      'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-[#4B6478]'
-                    }`}>
+                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0 ${isSuperadmin ? 'bg-amber-500/10 text-amber-600 dark:text-amber-500' :
+                        isOwner(profile) ? 'bg-[#10B981]/10 text-[#10B981]' :
+                          isStaff(profile) ? 'bg-blue-500/10 text-blue-500 dark:text-blue-400' :
+                            'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-[#4B6478]'
+                      }`}>
                       {isSuperadmin ? 'SUPERADMIN' : profile?.role?.replace('_', ' ')}
                     </span>
                   )}
@@ -923,9 +953,9 @@ export default function AppSidebar({ open, onClose }) {
                 {/* Menu items */}
                 <div className="py-1.5">
                   {[
-                    { icon: User,      label: 'Profil Akun',   onClick: () => { navigate(akunPath); setDropdownOpen(false) } },
+                    { icon: User, label: 'Profil Akun', onClick: () => { navigate(akunPath); setDropdownOpen(false) } },
                     { icon: Building2, label: 'Kelola Bisnis', onClick: () => { navigate('/onboarding?mode=new_business'); setDropdownOpen(false) } },
-                    { icon: Bell,      label: 'Notifikasi',    onClick: () => { navigate(akunPath + '#notif'); setDropdownOpen(false) } },
+                    { icon: Bell, label: 'Notifikasi', onClick: () => { navigate(akunPath + '#notif'); setDropdownOpen(false) } },
                   ].map(({ icon: Icon, label, onClick }) => (
                     <button
                       key={label}

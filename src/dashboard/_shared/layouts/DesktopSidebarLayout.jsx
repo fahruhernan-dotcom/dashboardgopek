@@ -19,7 +19,8 @@ export default function DesktopSidebarLayout({ children }) {
           padding: '24px 32px',
           display: 'flex',
           flexDirection: 'column',
-          background: 'hsl(var(--background))'
+          background: 'hsl(var(--background))',
+          willChange: 'scroll-position'
         }}>
           {children}
         </main>

@@ -175,15 +175,15 @@ export default function SembakoTokoSupplier() {
 
   const summaryItems = sub === 'toko'
     ? [
-        { label: 'Total Piutang',  value: totalPiutang,         isCurrency: true, color: 'amber' },
-        { label: 'Customer Aktif', value: customers.length },
-        { label: 'Punya Tagihan', value: customersWithDebt,     color: 'red' },
-      ]
+      { label: 'Total Piutang', value: totalPiutang, isCurrency: true, color: 'amber' },
+      { label: 'Customer Aktif', value: customers.length },
+      { label: 'Punya Tagihan', value: customersWithDebt, color: 'red' },
+    ]
     : [
-        { label: 'Total Belanja',  value: totalBelanjaSupplier, isCurrency: true, color: 'green' },
-        { label: 'Supplier',       value: suppliers.length },
-        { label: 'Punya Batch',    value: activeSuppliers,      color: 'amber' },
-      ]
+      { label: 'Total Belanja', value: totalBelanjaSupplier, isCurrency: true, color: 'green' },
+      { label: 'Supplier', value: suppliers.length },
+      { label: 'Punya Batch', value: activeSuppliers, color: 'amber' },
+    ]
 
   if (isCustError) return <SembakoErrorState error={custError} onRetry={refetchCust} />
   if (isSuppError) return <SembakoErrorState error={suppError} onRetry={refetchSupp} />

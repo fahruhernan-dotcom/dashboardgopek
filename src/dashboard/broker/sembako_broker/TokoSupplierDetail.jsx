@@ -6,14 +6,15 @@ import {
   ChevronRight, Calculator, CheckCircle2, 
   Calendar, Info, AlertCircle, Trash2, Edit,
   Wallet, Receipt, ChevronDown, Check, Plus, Filter,
-  TrendingDown, TrendingUp, History
+  TrendingDown, TrendingUp, History, MessageCircle, ExternalLink, ShieldCheck, CreditCard, Sparkles
 } from 'lucide-react'
 import { toWaLink } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import {
   useSembakoCustomers, useSembakoSuppliers,
   useSembakoCustomerInvoices, useSembakoCustomerPayments,
   useSembakoSupplierInvoices, useRecordSembakoPayment,
-  useSembakoSupplierPayments, useRecordSembakoSupplierPayment
+  useSembakoSupplierPayments, useRecordSembakoSupplierPayment,
+  useUpdateSembakoCustomer, useUpdateSembakoSupplier
 } from '@/lib/hooks/useSembakoData'
 import { 
   formatIDR, formatDate,
@@ -40,13 +41,6 @@ import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet"
 
-// ── Palette Sembako Premium ───────────────────────────────────────────────────
-const C = {
-  bg: '#06090F', card: '#111C24', accent: '#EA580C', 
-  green: '#021a02', red: '#F87171', amber: '#F59E0B',
-  muted: '#4B6478', text: '#F1F5F9', border: 'rgba(255,255,255,0.06)'
-}
-
 const staggerContainer = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.05 } }
@@ -68,8 +62,8 @@ export default function SembakoTokoSupplierDetail() {
   useAuth()
   
   // Data Queries
-  const { data: allCustomers } = useSembakoCustomers()
-  const { data: allSuppliers } = useSembakoSuppliers()
+  const { data: allCustomers, isLoading: loadingCustomers } = useSembakoCustomers()
+  const { data: allSuppliers, isLoading: loadingSuppliers } = useSembakoSuppliers()
   
   const profileData = useMemo(() => {
     if (isCustomer) return allCustomers?.find(c => c.id === id)
@@ -91,14 +85,14 @@ export default function SembakoTokoSupplierDetail() {
     return Math.max(0, totalCost - totalPaid);
   }, [isCustomer, supplierInvoices, supplierPayments])
 
-  if (!profileData && !loadingCInvoices && !loadingSInvoices) {
+  if (!profileData && !loadingCustomers && !loadingSuppliers && !loadingCInvoices && !loadingSInvoices) {
     return (
-      <div className="bg-[#06090F] min-h-screen flex items-center justify-center p-6">
+      <div className="bg-[#06090F] min-h-screen flex items-center justify-center p-6 text-slate-100">
         <EmptyState 
           icon={AlertCircle} 
           title="Data Tidak Ditemukan" 
           description="Link mungkin sudah kedaluwarsa atau data telah dihapus."
-          action={<Button onClick={() => navigate('../')} className="bg-[#EA580C]">Kembali</Button>}
+          action={<Button onClick={() => navigate('../')} className="bg-[#EA580C] hover:bg-[#D44E0A] rounded-xl font-bold">Kembali</Button>}
         />
       </div>
     )
@@ -110,242 +104,391 @@ export default function SembakoTokoSupplierDetail() {
   return (
     <motion.div 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="bg-[#06090F] min-h-screen pb-24 text-left"
+      className="bg-[#06090F] min-h-screen pb-24 text-slate-100 selection:bg-[#EA580C]/30 selection:text-orange-200"
     >
-      {/* Header Premium */}
-      <header className="px-5 pt-10 pb-4 flex items-center justify-between sticky top-0 bg-[#06090F]/90 backdrop-blur-md z-40 border-b border-white/5">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white active:scale-95 transition-transform">
-            <ArrowLeft size={18} />
-          </button>
-          <div className="space-y-0.5">
-            <h1 className="font-display text-lg font-black text-white tracking-tight leading-none uppercase truncate max-w-[200px]">
-              {profileData?.customer_name || profileData?.supplier_name}
-            </h1>
-            <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-[0.15em] flex items-center gap-1.5">
-              {isCustomer ? <Store size={10} className="text-amber-500" /> : <Package size={10} className="text-emerald-400" />}
-              {isCustomer ? 'Toko / Customer' : 'Supplier / Agen'}
-            </p>
-          </div>
-        </div>
-        <Button variant="ghost" size="icon" onClick={() => setOpenModal('edit')} className="text-slate-400 hover:text-white rounded-xl">
-          <Edit size={18} />
-        </Button>
-      </header>
-
-      <div className="px-5 pt-4 space-y-4 max-w-2xl mx-auto">
-        {/* Profile Card */}
-        <Card className="bg-[#111C24] border-white/5 rounded-[24px] p-5 shadow-xl">
-          <div className="flex gap-4 items-center">
-            <Avatar className="w-16 h-16 rounded-[20px] bg-[#EA580C]/10 border border-[#EA580C]/20 shadow-inner">
-              <AvatarFallback className="bg-transparent text-[#EA580C] font-display font-black text-2xl">
-                {(profileData?.customer_name || profileData?.supplier_name)?.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-1.5">
-              <div className="flex items-center gap-2">
-                <h2 className="font-display font-black text-white text-xl tracking-tight leading-none uppercase">
-                  {profileData?.customer_name || profileData?.supplier_name}
-                </h2>
-                {isCustomer && (
-                  <Badge className="bg-white/5 text-[#94A3B8] border-white/10 text-[9px] uppercase font-black px-2 py-0.5 rounded-md">
-                    {profileData?.customer_type}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <a href={`tel:${profileData?.phone}`} className="flex items-center gap-1.5 text-[11px] font-black text-[#4B6478] hover:text-[#EA580C] transition-colors">
-                  <Phone size={11} /> {profileData?.phone || 'No Phone'}
-                </a>
-                <span className="text-white/5">•</span>
-                <div className="flex items-center gap-1.5 text-[11px] font-black text-[#4B6478]">
-                   <Star size={11} className="fill-amber-400 text-amber-400" />
-                   <span>{profileData?.reliability_score || 5}.0 Reliabilitas</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <Separator className="bg-white/5 my-5" />
-
-          <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-             <DetailInfo label="Alamat" value={profileData?.address || 'N/A'} />
-             <DetailInfo label="Area" value={profileData?.area || 'N/A'} />
-             {isCustomer && <DetailInfo label="Terms" value={profileData?.payment_terms?.toUpperCase() || 'CASH'} />}
-             {isCustomer && <DetailInfo label="Limit Kredit" value={formatIDRShort(profileData?.credit_limit || 0)} />}
-          </div>
-          
-          <div className="mt-6">
-            <Button asChild className="w-full bg-[#EA580C] hover:bg-[#D44E0A] h-12 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-orange-950/20 active:scale-[0.98]">
-              <a href={toWaLink(profileData?.phone) || '#'} target="_blank" rel="noreferrer">
-                Hubungi via WhatsApp
-              </a>
-            </Button>
-          </div>
-        </Card>
-
-        {/* Financial Summary */}
-        {isCustomer ? (
-          <Card className={cn(
-            "rounded-[24px] p-5 flex flex-col gap-4 border-none shadow-2xl relative overflow-hidden",
-            outstanding > 0 ? "bg-red-500/5 ring-1 ring-red-500/20" : "bg-emerald-500/5 ring-1 ring-emerald-500/20"
-          )}>
-            <div className="flex justify-between items-start">
-               <div className="space-y-1">
-                 <p className={cn("text-[10px] font-black uppercase tracking-widest leading-none", outstanding > 0 ? "text-red-400" : "text-emerald-400")}>
-                   Saldo Piutang Aktif
-                 </p>
-                 <p className={cn("font-display text-3xl font-black tracking-tight", outstanding > 0 ? "text-red-500" : "text-emerald-500")}>
-                   {formatIDR(outstanding)}
-                 </p>
-               </div>
-               <div className={cn("p-3 rounded-2xl", outstanding > 0 ? "bg-red-500/10" : "bg-emerald-500/10")}>
-                  {outstanding > 0 ? <TrendingDown size={20} className="text-red-400" /> : <TrendingUp size={20} className="text-emerald-400" />}
-               </div>
-            </div>
-            {outstanding > 0 && <p className="text-[11px] font-black text-red-400/60 uppercase tracking-wider leading-none">{activeCount} Invoice Belum Lunas</p>}
-          </Card>
-        ) : (
-          <Card className="bg-[#111C24] border-white/5 rounded-[24px] p-5 flex flex-col gap-1 border-none shadow-2xl">
-             <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest leading-none mb-1">Total Pembelian Stok</p>
-             <p className="font-display text-3xl font-black text-white tracking-tight">
-               {formatIDR(supplierInvoices?.reduce((acc, b) => acc + (b.total_cost || 0), 0) || 0)}
-             </p>
-              <p className="text-[11px] font-black text-[#4B6478] uppercase tracking-wider leading-none mt-1">{supplierInvoices?.length || 0} Batch Masuk</p>
-              
-              <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
-                 <div className="space-y-1">
-                   <p className="text-[9px] font-black text-[#4B6478] uppercase">Terbayar</p>
-                   <p className="text-sm font-black text-emerald-400">{formatIDR(supplierPayments?.reduce((s, p) => s + (p.amount || 0), 0) || 0)}</p>
-                 </div>
-                 <div className="space-y-1">
-                   <p className="text-[9px] font-black text-[#4B6478] uppercase">Sisa Hutang</p>
-                   <p className="text-sm font-black text-red-500">
-                     {formatIDR(supplierTotalHutang)}
-                   </p>
-                 </div>
-              </div>
-           </Card>
-        )}
-
-        {/* Activity Tabs */}
-        <div className="mt-8">
-          <Tabs defaultValue="log" className="w-full">
-            <div className="flex items-end justify-between px-1 mb-4">
-              <h3 className="font-display font-black text-white text-lg tracking-tight uppercase leading-none">Riwayat Aktivitas</h3>
-              <TabsList className="bg-[#111C24] border border-white/5 h-10 p-1 rounded-xl">
-                <TabsTrigger value="log" className="text-[10px] font-black uppercase px-4 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white">Log</TabsTrigger>
-                <TabsTrigger value="pembayaran" className="text-[10px] font-black uppercase px-4 data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Bayar</TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="log" className="mt-0 space-y-3">
-              {isCustomer ? (
-                <CustomerInvoiceList 
-                  invoices={customerInvoices} 
-                  onPay={(inv) => { setSelectedInvoice(inv); setOpenModal('bayar') }} 
-                />
-              ) : (
-                <SupplierBatchList batches={supplierInvoices} />
-              )}
-            </TabsContent>
-
-            <TabsContent value="pembayaran" className="mt-0 space-y-3">
-               <div className="mb-4">
-                  <Button onClick={() => setOpenModal('bayar')} className={cn("w-full h-11 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg", isCustomer ? "bg-emerald-500" : "bg-red-500")}>
-                    <Plus size={16} /> {isCustomer ? 'Terima Pembayaran' : 'Catat Bayar Supplier'}
-                  </Button>
-               </div>
-               <PaymentHistory payments={isCustomer ? customerPayments : supplierPayments} isCustomer={isCustomer} />
-            </TabsContent>
-          </Tabs>
-        </div>
+      {/* Dynamic Background Glow */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-[#EA580C]/10 rounded-full blur-[120px]" />
+        <div className="absolute top-1/3 -right-40 w-96 h-96 bg-blue-600/10 rounded-full blur-[140px]" />
       </div>
 
-      {/* Modals */}
+      {/* Header Bar */}
+      <header className="px-4 sm:px-8 py-5 flex items-center justify-between sticky top-0 bg-[#06090F] z-40 border-b border-white/5 shadow-lg">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="w-10 h-10 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all active:scale-95 group"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-extrabold text-[#EA580C] tracking-widest uppercase bg-[#EA580C]/10 px-2 py-0.5 rounded-md border border-[#EA580C]/20">
+                {isCustomer ? 'Toko / Customer' : 'Supplier / Agen'}
+              </span>
+            </div>
+            <h1 className="font-display text-xl sm:text-2xl font-black text-white tracking-tight uppercase truncate max-w-[280px] sm:max-w-md">
+              {profileData?.customer_name || profileData?.supplier_name || 'Loading...'}
+            </h1>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setOpenModal('edit')} 
+            className="bg-white/5 hover:bg-white/10 border-white/10 text-slate-200 hover:text-white rounded-xl font-bold text-xs gap-2 px-3.5 h-10 shadow-sm"
+          >
+            <Edit size={14} className="text-[#EA580C]" />
+            <span className="hidden sm:inline">Edit Profil</span>
+          </Button>
+        </div>
+      </header>
+
+      {/* Main Content Layout */}
+      <main className="px-4 sm:px-8 pt-6 max-w-7xl mx-auto relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Column: Profile Card & Actions */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            {/* Main Profile Card */}
+            <Card className="bg-[#0F172A] border border-slate-800 rounded-[28px] p-6 shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#EA580C]/10 to-transparent rounded-bl-full pointer-events-none" />
+              
+              <div className="flex items-start gap-4">
+                <Avatar className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#EA580C] to-amber-600 border border-white/20 shadow-lg shrink-0">
+                  <AvatarFallback className="bg-transparent text-white font-display font-black text-2xl tracking-wider">
+                    {(profileData?.customer_name || profileData?.supplier_name || 'TS')?.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="font-display font-black text-white text-xl sm:text-2xl tracking-tight leading-tight uppercase truncate">
+                      {profileData?.customer_name || profileData?.supplier_name}
+                    </h2>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    {isCustomer && (
+                      <Badge className="bg-white/5 text-orange-400 border border-orange-500/20 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-lg">
+                        {profileData?.customer_type || 'Toko'}
+                      </Badge>
+                    )}
+                    <Badge className="bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg flex items-center gap-1">
+                      <Star size={10} className="fill-amber-400 text-amber-400" />
+                      <span>{profileData?.reliability_score || 5}.0 Rating</span>
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-white/10 my-5" />
+
+              {/* Grid Metadata */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-[#4B6478]">
+                    <Phone size={12} className="text-[#EA580C]" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider">No. HP / WA</span>
+                  </div>
+                  <p className="text-sm font-bold text-white truncate">
+                    {profileData?.phone || '-'}
+                  </p>
+                </div>
+
+                <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-[#4B6478]">
+                    <MapPin size={12} className="text-emerald-400" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider">Area / Wilayah</span>
+                  </div>
+                  <p className="text-sm font-bold text-white truncate">
+                    {profileData?.area || 'Utama'}
+                  </p>
+                </div>
+
+                <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-[#4B6478]">
+                    <ShieldCheck size={12} className="text-blue-400" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider">Termin Bayar</span>
+                  </div>
+                  <p className="text-sm font-extrabold text-blue-300 uppercase">
+                    {profileData?.payment_terms || 'CASH'}
+                  </p>
+                </div>
+
+                <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-[#4B6478]">
+                    <CreditCard size={12} className="text-purple-400" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider">Limit Kredit</span>
+                  </div>
+                  <p className="text-sm font-extrabold text-purple-300">
+                    {profileData?.credit_limit ? formatIDRShort(profileData.credit_limit) : 'Rp 0'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/5 mt-4 space-y-1">
+                <div className="flex items-center gap-1.5 text-[#4B6478]">
+                  <Building2 size={12} className="text-slate-400" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider">Alamat Lengkap</span>
+                </div>
+                <p className="text-xs font-semibold text-slate-300 line-clamp-2 leading-relaxed">
+                  {profileData?.address || 'Belum ada catatan alamat'}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-6 pt-2">
+                <Button 
+                  asChild 
+                  className="w-full bg-gradient-to-r from-[#EA580C] to-orange-600 hover:from-orange-600 hover:to-orange-700 h-13 rounded-2xl font-black text-xs uppercase tracking-widest gap-2.5 shadow-xl shadow-orange-950/40 active:scale-[0.98] transition-all"
+                >
+                  <a href={toWaLink(profileData?.phone) || '#'} target="_blank" rel="noreferrer">
+                    <MessageCircle size={18} className="fill-white/20" />
+                    Hubungi via WhatsApp
+                    <ExternalLink size={14} className="opacity-70 ml-auto" />
+                  </a>
+                </Button>
+              </div>
+            </Card>
+
+          </div>
+
+          {/* Right Column: Financial Summary & Transaction Logs */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Financial Summary Card */}
+            {isCustomer ? (
+              <Card className={cn(
+                "rounded-[28px] p-6 border-none shadow-2xl relative overflow-hidden backdrop-blur-xl transition-all duration-300",
+                outstanding > 0 
+                  ? "bg-gradient-to-br from-rose-950/40 via-[#111C24] to-[#06090F] ring-1 ring-rose-500/30" 
+                  : "bg-gradient-to-br from-emerald-950/40 via-[#111C24] to-[#06090F] ring-1 ring-emerald-500/30"
+              )}>
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "w-2.5 h-2.5 rounded-full animate-pulse",
+                        outstanding > 0 ? "bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)]" : "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]"
+                      )} />
+                      <p className={cn(
+                        "text-xs font-black uppercase tracking-widest leading-none",
+                        outstanding > 0 ? "text-rose-400" : "text-emerald-400"
+                      )}>
+                        Saldo Piutang Toko Aktif
+                      </p>
+                    </div>
+                    <p className={cn(
+                      "font-display text-4xl sm:text-5xl font-black tracking-tight tabular-nums pt-1",
+                      outstanding > 0 ? "text-rose-400" : "text-emerald-400"
+                    )}>
+                      {formatIDR(outstanding)}
+                    </p>
+                  </div>
+
+                  <div className={cn(
+                    "p-4 rounded-2xl border shadow-inner shrink-0",
+                    outstanding > 0 ? "bg-rose-500/10 border-rose-500/20" : "bg-emerald-500/10 border-emerald-500/20"
+                  )}>
+                    {outstanding > 0 
+                      ? <TrendingDown size={28} className="text-rose-400" /> 
+                      : <TrendingUp size={28} className="text-emerald-400" />
+                    }
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-bold text-slate-400">
+                  <span>{activeCount} Nota Belum Lunas</span>
+                  <span className="text-slate-300">
+                    Status: <strong className={outstanding > 0 ? "text-rose-400" : "text-emerald-400"}>
+                      {outstanding > 0 ? 'Ada Piutang' : 'Lunas Bersih'}
+                    </strong>
+                  </span>
+                </div>
+              </Card>
+            ) : (
+              <Card className="bg-[#0F172A] border border-slate-800 rounded-[28px] p-6 shadow-xl relative overflow-hidden">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Total Belanja Stok Supplier</p>
+                <p className="font-display text-4xl sm:text-5xl font-black text-white tracking-tight tabular-nums">
+                  {formatIDR(supplierInvoices?.reduce((acc, b) => acc + (b.total_cost || 0), 0) || 0)}
+                </p>
+
+                <div className="mt-6 pt-5 border-t border-white/10 grid grid-cols-2 gap-4">
+                  <div className="space-y-1 bg-white/[0.02] p-3 rounded-2xl border border-white/5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Terbayar</p>
+                    <p className="text-base font-black text-emerald-400 tabular-nums">
+                      {formatIDR(supplierPayments?.reduce((s, p) => s + (p.amount || 0), 0) || 0)}
+                    </p>
+                  </div>
+                  <div className="space-y-1 bg-white/[0.02] p-3 rounded-2xl border border-white/5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Sisa Hutang</p>
+                    <p className="text-base font-black text-rose-400 tabular-nums">
+                      {formatIDR(supplierTotalHutang)}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Activity Tabs */}
+            <Card className="bg-[#0F172A] border border-slate-800 rounded-[28px] p-6 shadow-xl">
+              <Tabs defaultValue="log" className="w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <h3 className="font-display font-black text-white text-xl tracking-tight uppercase leading-none flex items-center gap-2">
+                      <History size={20} className="text-[#EA580C]" />
+                      Riwayat Aktivitas & Transaksi
+                    </h3>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Daftar invoice, retur, dan catatan pembayaran</p>
+                  </div>
+
+                  <TabsList className="bg-white/5 border border-white/10 h-11 p-1 rounded-2xl self-start sm:self-auto">
+                    <TabsTrigger value="log" className="text-xs font-bold uppercase px-4 h-9 rounded-xl data-[state=active]:bg-[#EA580C] data-[state=active]:text-white transition-all">
+                      Tagihan / Stok
+                    </TabsTrigger>
+                    <TabsTrigger value="pembayaran" className="text-xs font-bold uppercase px-4 h-9 rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all">
+                      Pembayaran
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                <TabsContent value="log" className="mt-0 space-y-4">
+                  {isCustomer ? (
+                    <CustomerInvoiceList 
+                      invoices={customerInvoices} 
+                      onPay={(inv) => { setSelectedInvoice(inv); setOpenModal('bayar') }} 
+                    />
+                  ) : (
+                    <SupplierBatchList batches={supplierInvoices} />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="pembayaran" className="mt-0 space-y-4">
+                  <div className="mb-4">
+                    <Button 
+                      onClick={() => setOpenModal('bayar')} 
+                      className={cn(
+                        "w-full h-12 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg transition-all active:scale-[0.98]",
+                        isCustomer ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-rose-600 hover:bg-rose-500 text-white"
+                      )}
+                    >
+                      <Plus size={16} /> {isCustomer ? 'Terima Pembayaran Piutang' : 'Catat Bayar Hutang Supplier'}
+                    </Button>
+                  </div>
+                  <PaymentHistory payments={isCustomer ? customerPayments : supplierPayments} isCustomer={isCustomer} />
+                </TabsContent>
+              </Tabs>
+            </Card>
+
+          </div>
+
+        </div>
+      </main>
+
+      {/* Sheets / Modals */}
       <Sheet open={openModal === 'bayar'} onOpenChange={(v) => !v && setOpenModal(null)}>
-        <SheetContent side="right" className="bg-[#06090F] border-white/5 text-left p-6 overflow-y-auto">
-           <SheetHeader className="mb-6">
-             <SheetTitle className="font-display font-black text-white uppercase text-xl text-left">Catat Pembayaran</SheetTitle>
-             <SheetDescription className="sr-only">Form untuk mencatat pembayaran sembako.</SheetDescription>
-           </SheetHeader>
-           {selectedInvoice || !isCustomer ? (
-             <PaymentForm 
-               invoice={selectedInvoice} 
-               isCustomer={isCustomer}
-               parentId={id}
-               maxAmount={isCustomer ? selectedInvoice?.remaining_amount : supplierTotalHutang}
-               onClose={() => { setOpenModal(null); queryClient.invalidateQueries() }} 
-             />
-           ) : (
-             <p className="text-center py-10 text-[#4B6478] font-bold text-xs uppercase">Pilih nota di tab Tagihan</p>
-           )}
+        <SheetContent side="right" className="bg-[#06090F] border-white/10 text-left p-6 sm:max-w-md overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="font-display font-black text-white uppercase text-xl text-left flex items-center gap-2">
+              <Wallet size={22} className="text-emerald-400" />
+              Catat Pembayaran
+            </SheetTitle>
+            <SheetDescription className="sr-only">Form untuk mencatat pembayaran sembako.</SheetDescription>
+          </SheetHeader>
+          {selectedInvoice || !isCustomer ? (
+            <PaymentForm 
+              invoice={selectedInvoice} 
+              isCustomer={isCustomer}
+              parentId={id}
+              maxAmount={isCustomer ? selectedInvoice?.remaining_amount : supplierTotalHutang}
+              onClose={() => { setOpenModal(null); queryClient.invalidateQueries() }} 
+            />
+          ) : (
+            <div className="text-center py-12 space-y-3">
+              <Receipt size={40} className="mx-auto text-slate-500 opacity-50" />
+              <p className="text-slate-400 font-bold text-xs uppercase">Pilih nota/invoice di tab Tagihan terlebih dahulu</p>
+            </div>
+          )}
         </SheetContent>
       </Sheet>
 
       <Sheet open={openModal === 'edit'} onOpenChange={(v) => !v && setOpenModal(null)}>
-        <SheetContent side="right" className="bg-[#06090F] border-white/5 text-left p-6">
-           <SheetHeader className="mb-6 text-left">
-             <SheetTitle className="font-display font-black text-white uppercase text-xl text-left">Edit Data</SheetTitle>
-             <SheetDescription className="sr-only">Form untuk memperbarui profil customer atau supplier sembako.</SheetDescription>
-           </SheetHeader>
-           {/* Form Edit reuse common logic */}
+        <SheetContent side="right" className="bg-[#06090F] border-white/10 text-left p-6 sm:max-w-md overflow-y-auto">
+          <SheetHeader className="mb-6 text-left">
+            <SheetTitle className="font-display font-black text-white uppercase text-xl text-left flex items-center gap-2">
+              <Edit size={20} className="text-[#EA580C]" />
+              Edit Profil {isCustomer ? 'Toko' : 'Supplier'}
+            </SheetTitle>
+            <SheetDescription className="sr-only">Form untuk memperbarui profil customer atau supplier sembako.</SheetDescription>
+          </SheetHeader>
+          <EditProfileForm 
+            profile={profileData} 
+            isCustomer={isCustomer} 
+            onClose={() => { setOpenModal(null); queryClient.invalidateQueries() }} 
+          />
         </SheetContent>
       </Sheet>
     </motion.div>
   )
 }
 
-function DetailInfo({ label, value }) {
-  return (
-    <div className="space-y-0.5">
-      <p className="text-[9px] font-black text-[#4B6478] uppercase tracking-widest">{label}</p>
-      <p className="text-[13px] font-bold text-white truncate uppercase tracking-tight">{value}</p>
-    </div>
-  )
-}
-
 function CustomerInvoiceList({ invoices, onPay }) {
-  if (!invoices?.length) return <EmptyState icon={Receipt} title="Belum ada transaksi" description="Transaksi penjualan akan muncul di sini." />
+  if (!invoices?.length) {
+    return (
+      <EmptyState 
+        icon={Receipt} 
+        title="Belum ada transaksi" 
+        description="Transaksi penjualan dengan toko ini akan tercatat otomatis di sini." 
+      />
+    )
+  }
   
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-3">
       {invoices.map(inv => (
         <motion.div key={inv.id} variants={fadeUp}>
-          <Card className="bg-[#111C24] border-white/5 rounded-3xl p-4 flex flex-col gap-3 shadow-md active:bg-white/[0.02] transition-colors">
-             <div className="flex justify-between items-start">
-               <div className="space-y-1">
-                 <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">{formatDate(inv.transaction_date)}</p>
-                 <p className="text-sm font-black text-white uppercase tracking-tight leading-none">{inv.invoice_number}</p>
-               </div>
-               <Badge className={cn(
-                 "border-none rounded-lg text-[9px] font-black uppercase px-2 h-6",
-                 inv.payment_status === 'lunas' ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-500"
-               )}>
-                 {inv.payment_status}
-               </Badge>
-             </div>
+          <Card className="bg-[#111C24]/80 border-white/5 hover:border-white/10 rounded-2xl p-4.5 flex flex-col gap-3 shadow-md hover:shadow-xl transition-all duration-200">
+            <div className="flex justify-between items-start">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatDate(inv.transaction_date)}</p>
+                <p className="text-base font-black text-white uppercase tracking-tight">{inv.invoice_number}</p>
+              </div>
+              <Badge className={cn(
+                "border-none rounded-lg text-[10px] font-black uppercase px-2.5 py-1",
+                inv.payment_status === 'lunas' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+              )}>
+                {inv.payment_status}
+              </Badge>
+            </div>
 
-             <div className="flex justify-between items-end">
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-[#4B6478] uppercase">Total Tagihan</p>
-                  <p className="font-black text-base text-white tabular-nums leading-none">
-                    {formatIDR(inv.total_amount)}
-                  </p>
-                </div>
-                {inv.payment_status !== 'lunas' && (
-                  <Button onClick={() => onPay(inv)} size="sm" className="bg-white/5 hover:bg-white/10 text-[#EA580C] text-[10px] font-black h-8 px-4 rounded-xl border border-white/5">
-                    BAYAR
-                  </Button>
-                )}
-             </div>
+            <div className="flex justify-between items-end pt-1">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Total Tagihan</p>
+                <p className="font-black text-lg text-white tabular-nums leading-none">
+                  {formatIDR(inv.total_amount)}
+                </p>
+              </div>
+              {inv.payment_status !== 'lunas' && (
+                <Button 
+                  onClick={() => onPay(inv)} 
+                  size="sm" 
+                  className="bg-[#EA580C] hover:bg-[#D44E0A] text-white text-xs font-extrabold h-9 px-4 rounded-xl shadow-md active:scale-95 transition-all"
+                >
+                  BAYAR PIUTANG
+                </Button>
+              )}
+            </div>
 
-             {inv.remaining_amount > 0 && inv.remaining_amount !== inv.total_amount && (
-               <div className="pt-2 border-t border-white/5 flex justify-between items-center text-[10px]">
-                 <span className="font-bold text-[#4B6478] uppercase">Sisa Piutang:</span>
-                 <span className="font-black text-red-400 tabular-nums">{formatIDR(inv.remaining_amount)}</span>
-               </div>
-             )}
+            {inv.remaining_amount > 0 && inv.remaining_amount !== inv.total_amount && (
+              <div className="pt-2.5 border-t border-white/5 flex justify-between items-center text-xs">
+                <span className="font-bold text-slate-400 uppercase text-[10px]">Sisa Piutang:</span>
+                <span className="font-black text-rose-400 tabular-nums">{formatIDR(inv.remaining_amount)}</span>
+              </div>
+            )}
           </Card>
         </motion.div>
       ))}
@@ -354,35 +497,44 @@ function CustomerInvoiceList({ invoices, onPay }) {
 }
 
 function SupplierBatchList({ batches }) {
-  if (!batches?.length) return <EmptyState icon={History} title="Belum ada stok masuk" description="Riwayat pembelian dari supplier akan muncul di sini." />
+  if (!batches?.length) {
+    return (
+      <EmptyState 
+        icon={History} 
+        title="Belum ada stok masuk" 
+        description="Riwayat pembelian dari supplier akan muncul di sini." 
+      />
+    )
+  }
   
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-3">
       {batches.map(batch => (
         <motion.div key={batch.id} variants={fadeUp}>
-           <Card className="bg-[#111C24] border-white/5 rounded-3xl p-4 space-y-3 shadow-md">
-              <div className="flex justify-between items-start">
-                 <div className="space-y-1">
-                   <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">{formatDate(batch.purchase_date)}</p>
-                   <p className="text-sm font-black text-white uppercase tracking-tight leading-none">{batch.sembako_products?.product_name}</p>
-                 </div>
-                 <Badge className="bg-white/5 text-[#94A3B8] border-none text-[10px] font-black h-6 px-2 rounded-lg">
-                   {batch.qty_masuk} {batch.sembako_products?.unit}
-                 </Badge>
+          <Card className="bg-[#111C24]/80 border-white/5 hover:border-white/10 rounded-2xl p-4.5 space-y-3 shadow-md hover:shadow-xl transition-all">
+            <div className="flex justify-between items-start">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatDate(batch.purchase_date)}</p>
+                <p className="text-base font-black text-white uppercase tracking-tight">{batch.sembako_products?.product_name || 'Produk'}</p>
               </div>
-              <div className="flex justify-between items-center pt-1">
-                 <div className="space-y-0.5">
-                   <p className="text-[9px] font-bold text-[#4B6478] uppercase">Nilai Transaksi</p>
-                   <p className="font-black text-base text-white tabular-nums leading-none">{formatIDR(batch.total_cost)}</p>
-                 </div>
-                 <div className="text-right">
-                   <p className="text-[9px] font-bold text-[#4B6478] uppercase">Sisa Stok</p>
-                   <p className={cn("font-black text-sm tabular-nums leading-none", batch.qty_sisa > 0 ? "text-emerald-400" : "text-[#4B6478]")}>
-                     {batch.qty_sisa} {batch.sembako_products?.unit}
-                   </p>
-                 </div>
+              <Badge className="bg-white/5 text-slate-300 border border-white/10 text-[10px] font-black px-2.5 py-1 rounded-lg">
+                {batch.qty_masuk} {batch.sembako_products?.unit || 'Unit'}
+              </Badge>
+            </div>
+
+            <div className="flex justify-between items-center pt-1">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Nilai Pembelian</p>
+                <p className="font-black text-base text-white tabular-nums leading-none">{formatIDR(batch.total_cost)}</p>
               </div>
-           </Card>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Sisa Stok Batch</p>
+                <p className={cn("font-black text-sm tabular-nums leading-none", batch.qty_sisa > 0 ? "text-emerald-400" : "text-slate-500")}>
+                  {batch.qty_sisa} {batch.sembako_products?.unit || 'Unit'}
+                </p>
+              </div>
+            </div>
+          </Card>
         </motion.div>
       ))}
     </motion.div>
@@ -390,22 +542,30 @@ function SupplierBatchList({ batches }) {
 }
 
 function PaymentHistory({ payments, isCustomer }) {
-  if (!payments?.length) return <EmptyState icon={Wallet} title="Belum ada riwayat bayar" description="Semua cicilan dan pelunasan akan tercatat di sini." />
+  if (!payments?.length) {
+    return (
+      <EmptyState 
+        icon={Wallet} 
+        title="Belum ada riwayat bayar" 
+        description="Semua cicilan dan pelunasan akan tercatat di sini." 
+      />
+    )
+  }
 
   return (
     <div className="space-y-3">
       {payments.map(p => (
-        <Card key={p.id} className="bg-[#111C24] border-white/5 rounded-3xl p-4 flex justify-between items-center shadow-md">
-           <div className="space-y-1">
-              <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">{formatDate(p.payment_date)}</p>
-              {isCustomer && <p className="text-[11px] font-black text-[#94A3B8] uppercase tracking-tight">Kredit: {p.sembako_sales?.invoice_number}</p>}
-           </div>
-           <div className="text-right">
-              <p className="text-[10px] font-black text-[#4B6478] uppercase mb-0.5">{p.payment_method}</p>
-              <p className={cn("font-black text-base tabular-nums leading-none", isCustomer ? "text-emerald-400" : "text-red-400")}>
-                {isCustomer ? '+' : '-'}{formatIDR(p.amount)}
-              </p>
-           </div>
+        <Card key={p.id} className="bg-[#111C24]/80 border-white/5 rounded-2xl p-4 flex justify-between items-center shadow-md">
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatDate(p.payment_date)}</p>
+            {isCustomer && <p className="text-xs font-bold text-slate-300 uppercase">Nota: {p.sembako_sales?.invoice_number || '-'}</p>}
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black text-slate-400 uppercase mb-0.5">{p.payment_method || 'Cash'}</p>
+            <p className={cn("font-black text-base tabular-nums leading-none", isCustomer ? "text-emerald-400" : "text-rose-400")}>
+              {isCustomer ? '+' : '-'}{formatIDR(p.amount)}
+            </p>
+          </div>
         </Card>
       ))}
     </div>
@@ -416,14 +576,12 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
   const recordCustomerPayment = useRecordSembakoPayment()
   const recordSupplierPayment = useRecordSembakoSupplierPayment()
   
-  // Clamp initial value agar tidak melebihi maxAmount
   const safeMax = maxAmount ?? Infinity
   const [amount, setAmount] = useState(() => Math.min(maxAmount || 0, safeMax))
   const [method, setMethod] = useState('transfer')
   const [refNo, setRefNo] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Real-time overpay detection
   const isOverpay = maxAmount !== undefined && maxAmount !== null && amount > maxAmount
   const isZeroDebt = !isCustomer && (maxAmount === 0 || maxAmount === null || maxAmount === undefined)
 
@@ -432,12 +590,10 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
       toast.error('Nominal tidak valid (harus > Rp 0)')
       return
     }
-    // Guard: tidak ada hutang
     if (isZeroDebt) {
       toast.error('Tidak ada sisa hutang ke supplier ini')
       return
     }
-    // Guard: overpay
     if (isOverpay) {
       toast.error(`Nominal melebihi sisa hutang (${formatIDR(maxAmount)})`)
       return
@@ -464,97 +620,286 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
         })
       }
       onClose()
-    } catch (_err) { // payment errors surfaced via UI state; swallow here
+    } catch (_err) {
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="space-y-8 pt-4">
-        <div className={cn("text-center space-y-1 p-6 rounded-[24px] border", isCustomer ? "bg-red-500/5 border-red-500/10" : "bg-emerald-500/5 border-emerald-500/10")}>
-          <p className={cn("text-[10px] font-black uppercase tracking-widest leading-none mb-1", isCustomer ? "text-red-400" : "text-emerald-400")}>
-            {isCustomer ? 'Sisa Tagihan Nota' : 'Total Sisa Hutang'}
-          </p>
-          <p className={cn("font-display text-4xl font-black tracking-tight tabular-nums", isCustomer ? "text-red-500" : "text-emerald-500")}>
-            {formatIDR(maxAmount || 0)}
-          </p>
-          {/* Peringatan jika hutang sudah lunas */}
-          {isZeroDebt && (
-            <p className="text-[11px] font-black text-emerald-400 mt-1">✅ Tidak ada hutang ke supplier ini</p>
+    <div className="space-y-6 pt-2">
+      <div className={cn(
+        "text-center space-y-1 p-5 rounded-2xl border", 
+        isCustomer ? "bg-rose-500/10 border-rose-500/20 text-rose-300" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+      )}>
+        <p className="text-[10px] font-black uppercase tracking-widest">
+          {isCustomer ? 'Sisa Tagihan Nota' : 'Total Sisa Hutang'}
+        </p>
+        <p className="font-display text-3xl font-black tracking-tight tabular-nums">
+          {formatIDR(maxAmount || 0)}
+        </p>
+        {isZeroDebt && (
+          <p className="text-xs font-black text-emerald-400 mt-1">✅ Tidak ada hutang ke supplier ini</p>
+        )}
+      </div>
+
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Jumlah Pembayaran (Rp)</Label>
+          <InputRupiah 
+            value={amount} 
+            onChange={setAmount}
+            className={cn(
+              "bg-[#111C24] h-14 text-xl font-black text-white rounded-2xl transition-all",
+              isOverpay
+                ? "border-rose-500/50 focus:ring-rose-500/20"
+                : "border-white/10 focus:ring-[#EA580C]/20"
+            )}
+          />
+          {isOverpay && (
+            <p className="text-xs font-bold text-rose-400 ml-1 flex items-center gap-1.5">
+              🚨 Melebihi sisa hutang sebesar {formatIDR(amount - maxAmount)}
+            </p>
           )}
-       </div>
+          {!isOverpay && amount > 0 && maxAmount !== undefined && amount === maxAmount && (
+            <p className="text-xs font-bold text-emerald-400 ml-1 flex items-center gap-1.5">
+              ✅ Pas — hutang akan lunas setelah pembayaran ini
+            </p>
+          )}
+        </div>
 
-       <div className="space-y-6">
-          <div className="space-y-2">
-            <Label className="uppercase text-[10px] font-black tracking-widest text-[#4B6478] ml-2">Jumlah (Rp)</Label>
-            <InputRupiah 
-              value={amount} 
-              onChange={setAmount}
-              className={cn(
-                "bg-[#111C24] h-16 text-2xl font-black text-white rounded-2xl transition-all",
-                isOverpay
-                  ? "border-red-500/50 focus:ring-red-500/20"
-                  : "border-white/10 focus:ring-[#EA580C]/20"
-              )}
-            />
-            {/* Real-time overpay feedback */}
-            {isOverpay && (
-              <p className="text-[11px] font-black text-red-400 ml-2 flex items-center gap-1.5">
-                🚨 Melebihi sisa hutang sebesar {formatIDR(amount - maxAmount)}
-              </p>
+        <div className="space-y-2">
+          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Metode Pembayaran</Label>
+          <div className="flex gap-2">
+            {['transfer', 'cash', 'qris'].map(m => (
+              <button 
+                key={m} 
+                type="button"
+                onClick={() => setMethod(m)}
+                className={cn(
+                  "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95",
+                  method === m 
+                    ? (isCustomer ? "bg-[#EA580C]" : "bg-rose-600") + " text-white shadow-lg" 
+                    : "bg-white/5 text-slate-400 border border-white/5 hover:text-white"
+                )}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">No. Referensi (Opsional)</Label>
+          <input 
+            value={refNo} 
+            onChange={e => setRefNo(e.target.value)}
+            placeholder="Contoh: REF123..."
+            className="w-full bg-[#111C24] border-white/10 h-12 px-4 text-sm font-bold text-white rounded-2xl focus:ring-[#EA580C]/20 border focus:border-[#EA580C]/40 outline-none transition-all"
+          />
+        </div>
+
+        <div className="pt-3">
+          <Button 
+            onClick={handlePay} 
+            disabled={loading || isOverpay || isZeroDebt || amount <= 0}
+            className={cn(
+              "w-full h-14 rounded-2xl text-xs font-black border-none shadow-xl uppercase tracking-widest transition-all active:scale-95 text-white",
+              (isOverpay || isZeroDebt || amount <= 0)
+                ? "bg-white/10 text-white/30 cursor-not-allowed"
+                : isCustomer ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500"
             )}
-            {/* Lunas indicator */}
-            {!isOverpay && amount > 0 && maxAmount !== undefined && amount === maxAmount && (
-              <p className="text-[11px] font-black text-emerald-400 ml-2 flex items-center gap-1.5">
-                ✅ Pas — hutang akan lunas setelah pembayaran ini
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label className="uppercase text-[10px] font-black tracking-widest text-[#4B6478] ml-2">Metode</Label>
-            <div className="flex gap-2">
-              {['transfer', 'cash', 'qris'].map(m => (
-                <button 
-                  key={m} 
-                  type="button"
-                  onClick={() => setMethod(m)}
-                  className={cn(
-                    "flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
-                    method === m ? (isCustomer ? "bg-[#EA580C]" : "bg-red-500") + " text-white shadow-lg shadow-orange-950/40" : "bg-white/5 text-[#4B6478] border border-white/5"
-                  )}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="uppercase text-[10px] font-black tracking-widest text-[#4B6478] ml-2">No. Referensi (Opsional)</Label>
-            <input 
-              value={refNo} 
-              onChange={e => setRefNo(e.target.value)}
-              placeholder="Contoh: REF123..."
-              className="w-full bg-[#111C24] border-white/10 h-14 px-4 text-sm font-bold text-white rounded-2xl focus:ring-[#EA580C]/20 border focus:border-[#EA580C]/40 outline-none transition-all"
-            />
-          </div>
-
-          <div className="pt-4">
-             <Button 
-               onClick={handlePay} 
-               disabled={loading || isOverpay || isZeroDebt || amount <= 0}
-               className={cn(
-                 "w-full h-16 rounded-2xl text-sm font-black border-none shadow-xl uppercase tracking-[0.2em] transition-all active:scale-95 text-white",
-                 (isOverpay || isZeroDebt || amount <= 0)
-                   ? "bg-white/10 text-white/30 cursor-not-allowed"
-                   : isCustomer ? "bg-emerald-500" : "bg-red-500"
-               )}
-             >
-               {loading ? 'Memproses...' : isOverpay ? 'Nominal Terlalu Besar' : isZeroDebt ? 'Hutang Sudah Lunas' : 'Konfirmasi Catat'}
-             </Button>
-          </div>
-       </div>
+          >
+            {loading ? 'Memproses...' : isOverpay ? 'Nominal Terlalu Besar' : isZeroDebt ? 'Hutang Sudah Lunas' : 'Konfirmasi Pembayaran'}
+          </Button>
+        </div>
+      </div>
     </div>
+  )
+}
+
+function EditProfileForm({ profile, isCustomer, onClose }) {
+  const updateCustomer = useUpdateSembakoCustomer()
+  const updateSupplier = useUpdateSembakoSupplier()
+
+  const [form, setForm] = useState({
+    customer_name: profile?.customer_name || '',
+    supplier_name: profile?.supplier_name || '',
+    customer_type: profile?.customer_type || 'warung',
+    phone: profile?.phone || '',
+    area: profile?.area || '',
+    address: profile?.address || '',
+    payment_terms: profile?.payment_terms || 'cash',
+    credit_limit: profile?.credit_limit || 0,
+    reliability_score: profile?.reliability_score || 5,
+    notes: profile?.notes || '',
+  })
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      if (isCustomer) {
+        await updateCustomer.mutateAsync({
+          id: profile.id,
+          customer_name: form.customer_name,
+          customer_type: form.customer_type,
+          phone: form.phone,
+          area: form.area,
+          address: form.address,
+          payment_terms: form.payment_terms,
+          credit_limit: Number(form.credit_limit || 0),
+          reliability_score: Number(form.reliability_score || 5),
+        })
+      } else {
+        await updateSupplier.mutateAsync({
+          id: profile.id,
+          supplier_name: form.supplier_name,
+          phone: form.phone,
+          area: form.area,
+          address: form.address,
+          notes: form.notes,
+        })
+      }
+      onClose()
+    } catch (_err) {
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5 pt-2">
+      <div className="space-y-1.5">
+        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">
+          {isCustomer ? 'Nama Toko / Pelanggan' : 'Nama Supplier / Pemasok'}
+        </Label>
+        <Input 
+          value={isCustomer ? form.customer_name : form.supplier_name}
+          onChange={e => setForm(f => ({ ...f, [isCustomer ? 'customer_name' : 'supplier_name']: e.target.value }))}
+          required
+          className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl focus:border-[#EA580C]"
+        />
+      </div>
+
+      {isCustomer && (
+        <div className="space-y-1.5">
+          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Jenis Toko</Label>
+          <Select 
+            value={form.customer_type} 
+            onValueChange={v => setForm(f => ({ ...f, customer_type: v }))}
+          >
+            <SelectTrigger className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#111C24] border-white/10 text-white">
+              <SelectItem value="warung">Warung Kelontong</SelectItem>
+              <SelectItem value="grosir">Grosir Sembako</SelectItem>
+              <SelectItem value="semi_grosir">Semi Grosir</SelectItem>
+              <SelectItem value="sales_keliling">Sales Keliling</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">No. Handphone / WA</Label>
+          <Input 
+            value={form.phone}
+            onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+            placeholder="0812..."
+            className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Area / Wilayah</Label>
+          <Input 
+            value={form.area}
+            onChange={e => setForm(f => ({ ...f, area: e.target.value }))}
+            placeholder="Contoh: Utamakan"
+            className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl"
+          />
+        </div>
+      </div>
+
+      {isCustomer && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Termin Bayar</Label>
+            <Select 
+              value={form.payment_terms} 
+              onValueChange={v => setForm(f => ({ ...f, payment_terms: v }))}
+            >
+              <SelectTrigger className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#111C24] border-white/10 text-white">
+                <SelectItem value="cash">CASH / TUNAI</SelectItem>
+                <SelectItem value="tempo_7">Tempo 7 Hari</SelectItem>
+                <SelectItem value="tempo_14">Tempo 14 Hari</SelectItem>
+                <SelectItem value="tempo_30">Tempo 30 Hari</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Limit Kredit (Rp)</Label>
+            <InputRupiah 
+              value={form.credit_limit}
+              onChange={v => setForm(f => ({ ...f, credit_limit: v }))}
+              className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl"
+            />
+          </div>
+        </div>
+      )}
+
+      {isCustomer && (
+        <div className="space-y-1.5">
+          <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Rating Keandalan (1-5)</Label>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map(star => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setForm(f => ({ ...f, reliability_score: star }))}
+                className={cn(
+                  "flex-1 h-10 rounded-xl font-black text-xs flex items-center justify-center gap-1 transition-all active:scale-95",
+                  form.reliability_score === star 
+                    ? "bg-amber-500 text-slate-950 font-extrabold shadow-lg" 
+                    : "bg-white/5 text-slate-400 border border-white/5 hover:text-white"
+                )}
+              >
+                <Star size={12} className={form.reliability_score === star ? "fill-slate-950 text-slate-950" : ""} />
+                {star}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Alamat Lengkap</Label>
+        <Textarea 
+          value={form.address}
+          onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+          rows={3}
+          placeholder="Jl. Merdeka No. 45..."
+          className="bg-[#111C24] border-white/10 text-sm font-bold text-white rounded-xl resize-none"
+        />
+      </div>
+
+      <div className="pt-3">
+        <Button 
+          type="submit" 
+          disabled={loading}
+          className="w-full bg-[#EA580C] hover:bg-[#D44E0A] h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl shadow-orange-950/30 transition-all active:scale-95"
+        >
+          {loading ? 'Menyimpan...' : 'Simpan Perubahan Profil'}
+        </Button>
+      </div>
+    </form>
   )
 }

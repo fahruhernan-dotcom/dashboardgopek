@@ -194,50 +194,77 @@ export function EditProfileSheet({ open, onClose, profile, user, onSuccess, acce
   const { t } = useLanguage()
   const [name, setName] = useState(profile?.full_name || '')
   const [phone, setPhone] = useState(profile?.phone || '')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [saving, setSaving] = useState(false)
 
   const originalName = profile?.full_name || ''
   const originalPhone = profile?.phone || ''
-  const isDirty = name.trim() !== originalName || phone.trim() !== originalPhone
-  const isValid = name.trim().length > 0
+  const isNameChanged = name.trim() !== originalName
+  const isPhoneChanged = phone.trim() !== originalPhone
+  const isPasswordChanged = newPassword.trim().length > 0
+  const isDirty = isNameChanged || isPhoneChanged || isPasswordChanged
+  const isValid = name.trim().length > 0 && (!isPasswordChanged || newPassword.length >= 6)
   const canSave = isDirty && isValid && !saving
 
   const handleSave = async () => {
     if (!canSave) return
     setSaving(true)
 
-    const payload = {
-      full_name: name.trim(),
-      phone: phone.trim() || null,
-      updated_at: new Date().toISOString(),
+    if (isPasswordChanged) {
+      if (newPassword !== confirmPassword) {
+        toast.error('Konfirmasi password baru tidak cocok!')
+        setSaving(false)
+        return
+      }
+      try {
+        const { error: passErr } = await supabase.auth.updateUser({ password: newPassword.trim() })
+        if (passErr) {
+          toast.error('Gagal ganti password: ' + passErr.message)
+          setSaving(false)
+          return
+        }
+      } catch (err) {
+        // ignore
+      }
     }
 
-    let query = supabase.from('profiles').update(payload)
+    if (isNameChanged || isPhoneChanged) {
+      const payload = {
+        full_name: name.trim(),
+        phone: phone.trim() || null,
+        updated_at: new Date().toISOString(),
+      }
 
-    if (profile?.profile_id) {
-      query = query.eq('id', profile.profile_id)
-    } else if (profile?.tenant_id && user?.id) {
-      query = query.eq('auth_user_id', user.id).eq('tenant_id', profile.tenant_id)
-    } else if (user?.id) {
-      query = query.eq('auth_user_id', user.id)
+      let query = supabase.from('profiles').update(payload)
+
+      if (profile?.profile_id) {
+        query = query.eq('id', profile.profile_id)
+      } else if (profile?.tenant_id && user?.id) {
+        query = query.eq('auth_user_id', user.id).eq('tenant_id', profile.tenant_id)
+      } else if (user?.id) {
+        query = query.eq('auth_user_id', user.id)
+      }
+
+      const { error } = await query
+
+      if (error) {
+        logSupabaseError(error, {
+          table: 'profiles',
+          operation: 'update',
+          component: 'EditProfileSheet',
+          actionName: 'handleSave',
+        })
+        toast.error(t('index_toast_save_failed') + ': ' + (error.message || t('try_again')))
+        setSaving(false)
+        return
+      }
     }
 
-    const { error } = await query
     setSaving(false)
-
-    if (error) {
-      logSupabaseError(error, {
-        table: 'profiles',
-        operation: 'update',
-        component: 'EditProfileSheet',
-        actionName: 'handleSave',
-      })
-      toast.error(t('index_toast_save_failed') + ': ' + (error.message || t('try_again')))
-    } else {
-      toast.success(t('index_toast_save_success'))
-      onSuccess?.()
-      onClose()
-    }
+    toast.success('Nama tampilan / password berhasil diperbarui!')
+    onSuccess?.()
+    onClose()
   }
 
   if (!open) return null
@@ -280,8 +307,8 @@ export function EditProfileSheet({ open, onClose, profile, user, onSuccess, acce
 
         {/* Header */}
         <div style={{ padding: '16px 20px 12px', borderBottom: `1px solid ${T.hairline}` }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: T.text, letterSpacing: -0.3 }}>{t('ep_title')}</div>
-          <div style={{ fontSize: 12, color: T.textDim, marginTop: 3 }}>{t('ep_subtitle')}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: T.text, letterSpacing: -0.3 }}>Edit Profil & Password</div>
+          <div style={{ fontSize: 12, color: T.textDim, marginTop: 3 }}>Ubah nama tampilan atau perbarui password akun kamu</div>
         </div>
 
         {/* Form */}
@@ -290,12 +317,12 @@ export function EditProfileSheet({ open, onClose, profile, user, onSuccess, acce
           {/* Full Name */}
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.textDim, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8 }}>
-              {t('ep_name_label')} <span style={{ color: T.danger }}>*</span>
+              Nama Tampilan <span style={{ color: T.danger }}>*</span>
             </label>
             <input
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder={t('ep_name_placeholder')}
+              placeholder="Contoh: Budi Santoso"
               style={{
                 width: '100%', padding: '12px 14px',
                 background: T.surfaceAlt, border: `1px solid ${name.trim() ? accent.base + '55' : T.hairline}`,
@@ -305,20 +332,20 @@ export function EditProfileSheet({ open, onClose, profile, user, onSuccess, acce
               }}
             />
             {name.trim().length === 0 && (
-              <div style={{ fontSize: 11, color: T.danger, marginTop: 5 }}>{t('ep_name_empty_error')}</div>
+              <div style={{ fontSize: 11, color: T.danger, marginTop: 5 }}>Nama tidak boleh kosong</div>
             )}
           </div>
 
-          {/* Phone */}
+          {/* New Password */}
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.textDim, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8 }}>
-              {t('ep_phone_label')} <span style={{ fontSize: 10, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{t('ep_phone_optional')}</span>
+              Password Baru <span style={{ fontSize: 10, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(opsional — min. 6 karakter)</span>
             </label>
             <input
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              placeholder={t('ep_phone_placeholder')}
-              type="tel"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="••••••••"
+              type="password"
               style={{
                 width: '100%', padding: '12px 14px',
                 background: T.surfaceAlt, border: `1px solid ${T.hairline}`,
@@ -328,21 +355,45 @@ export function EditProfileSheet({ open, onClose, profile, user, onSuccess, acce
             />
           </div>
 
+          {/* Confirm Password */}
+          {newPassword.trim().length > 0 && (
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.textDim, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8 }}>
+                Konfirmasi Password Baru <span style={{ color: T.danger }}>*</span>
+              </label>
+              <input
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Ulangi password baru"
+                type="password"
+                style={{
+                  width: '100%', padding: '12px 14px',
+                  background: T.surfaceAlt, border: `1px solid ${confirmPassword === newPassword ? accent.base + '55' : T.danger}`,
+                  borderRadius: 12, color: T.text, fontSize: 15, outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {confirmPassword.length > 0 && confirmPassword !== newPassword && (
+                <div style={{ fontSize: 11, color: T.danger, marginTop: 5 }}>Konfirmasi password tidak cocok</div>
+              )}
+            </div>
+          )}
+
           {/* Email — readonly */}
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.textDim, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8 }}>
-              {t('ep_email_label')}
+              Email Akun
             </label>
             <div style={{
               padding: '12px 14px',
               background: T.surfaceAlt + '88', border: `1px solid ${T.hairline}`,
               borderRadius: 12, color: T.textDim, fontSize: 15,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+              display: 'flex', items: 'center', justifyContent: 'space-between', gap: 8,
             }}>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.email || '—'}
               </span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: T.textMute, flexShrink: 0, letterSpacing: 0.3, textTransform: 'uppercase' }}>{t('ep_email_readonly')}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: T.textMute, flexShrink: 0, letterSpacing: 0.3, textTransform: 'uppercase' }}>Read-only</span>
             </div>
           </div>
         </div>

@@ -45,7 +45,7 @@ export function SembakoSummaryStrip({ items = [] }) {
 
             <p style={{
               fontSize: '9px', fontWeight: 900, letterSpacing: '0.12em',
-              textTransform: 'uppercase', color: c.text, opacity: 0.7,
+              textTransform: 'uppercase', color: c.text, opacity: 1,
               marginBottom: '6px', fontFamily: 'DM Sans',
             }}>
               {item.label}
@@ -54,7 +54,7 @@ export function SembakoSummaryStrip({ items = [] }) {
             <p style={{
               fontSize: item.isCurrency ? '15px' : '22px',
               fontWeight: 900, fontFamily: 'Sora, DM Sans',
-              color: c.text, lineHeight: 1,
+              color: '#FFFFFF', lineHeight: 1,
               letterSpacing: item.isCurrency ? '-0.02em' : '0',
             }}>
               {displayValue}
@@ -62,8 +62,8 @@ export function SembakoSummaryStrip({ items = [] }) {
 
             {item.subLabel && (
               <p style={{
-                fontSize: '10px', fontWeight: 600, color: c.text,
-                opacity: 0.45, marginTop: '4px', fontFamily: 'DM Sans',
+                fontSize: '10px', fontWeight: 700, color: c.text,
+                opacity: 0.9, marginTop: '4px', fontFamily: 'DM Sans',
               }}>
                 {item.subLabel}
               </p>

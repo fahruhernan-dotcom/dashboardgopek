@@ -57,42 +57,87 @@ const throttleLastSeenUpdate = async (userId, tenantId) => {
   }
 }
 
-const MOCK_USER = {
-  id: '00000000-0000-0000-0000-000000000001',
-  email: 'broker@dashboard.id',
-  app_metadata: { is_superadmin: false }
-}
-
-const MOCK_PROFILE = {
-  id: '00000000-0000-0000-0000-000000000003',
-  auth_user_id: '00000000-0000-0000-0000-000000000001',
-  tenant_id: '00000000-0000-0000-0000-000000000002',
-  full_name: 'Broker Sembako',
-  role: 'owner',
-  app_role: 'user',
-  user_type: 'broker',
-  business_model_selected: 'sembako_broker',
-  onboarded: true,
-  is_onboarded: true,
-  tenants: {
-    id: '00000000-0000-0000-0000-000000000002',
-    name: 'Broker Dashboard Sembako',
-    sub_type: 'sembako_broker',
-    business_vertical: 'distributor_sembako'
+export const REGISTERED_ROLES = {
+  dev: {
+    user: { id: '00000000-0000-0000-0000-000000000001', email: 'dev@sembako.id' },
+    profile: {
+      id: 'prof-dev-001',
+      auth_user_id: '00000000-0000-0000-0000-000000000001',
+      tenant_id: '00000000-0000-0000-0000-000000000002',
+      full_name: 'Dev Superadmin',
+      role: 'dev',
+      app_role: 'dev',
+      user_type: 'broker',
+      sub_type: 'distributor_sembako',
+      business_name: 'Broker Dashboard Sembako',
+      onboarded: true,
+      is_onboarded: true,
+      tenants: {
+        id: '00000000-0000-0000-0000-000000000002',
+        name: 'Broker Dashboard Sembako',
+        sub_type: 'sembako_broker',
+        business_vertical: 'distributor_sembako'
+      }
+    }
+  },
+  owner: {
+    user: { id: '00000000-0000-0000-0000-000000000002', email: 'owner@sembako.id' },
+    profile: {
+      id: 'prof-owner-001',
+      auth_user_id: '00000000-0000-0000-0000-000000000002',
+      tenant_id: '00000000-0000-0000-0000-000000000002',
+      full_name: 'Pemilik Toko',
+      role: 'owner',
+      app_role: 'owner',
+      user_type: 'broker',
+      sub_type: 'distributor_sembako',
+      business_name: 'Broker Dashboard Sembako',
+      onboarded: true,
+      is_onboarded: true,
+      tenants: {
+        id: '00000000-0000-0000-0000-000000000002',
+        name: 'Broker Dashboard Sembako',
+        sub_type: 'sembako_broker',
+        business_vertical: 'distributor_sembako'
+      }
+    }
+  },
+  admin: {
+    user: { id: '00000000-0000-0000-0000-000000000003', email: 'admin@sembako.id' },
+    profile: {
+      id: 'prof-admin-001',
+      auth_user_id: '00000000-0000-0000-0000-000000000003',
+      tenant_id: '00000000-0000-0000-0000-000000000002',
+      full_name: 'Kasir / Admin',
+      role: 'admin',
+      app_role: 'admin',
+      user_type: 'broker',
+      sub_type: 'distributor_sembako',
+      business_name: 'Broker Dashboard Sembako',
+      onboarded: true,
+      is_onboarded: true,
+      tenants: {
+        id: '00000000-0000-0000-0000-000000000002',
+        name: 'Broker Dashboard Sembako',
+        sub_type: 'sembako_broker',
+        business_vertical: 'distributor_sembako'
+      }
+    }
   }
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(MOCK_USER)
-  const [profile, setProfile] = useState(MOCK_PROFILE)
-  const [profiles, setProfiles] = useState([MOCK_PROFILE])
-  const [ownerTenant, setOwnerTenant] = useState(MOCK_PROFILE.tenants)
-  const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [profiles, setProfiles] = useState([])
+  const [ownerTenant, setOwnerTenant] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   const getPersistedTenantId = () => localStorage.getItem('ternakos_active_tenant_id')
   const setPersistedTenantId = (id) => localStorage.setItem('ternakos_active_tenant_id', id)
 
   async function fetchAuthData(userId) {
+    setLoading(true)
     setLoggerContext({ userId, tenantId: null, vertical: null, role: null })
 
     const { data: legacyProfiles, error: profilesError } = await supabase
@@ -101,7 +146,6 @@ export function AuthProvider({ children }) {
       .eq('auth_user_id', userId)
 
     if (profilesError) {
-      console.error('Error fetching profiles:', profilesError)
       logSupabaseError(profilesError, {
         table: 'profiles',
         operation: 'select',
@@ -116,7 +160,6 @@ export function AuthProvider({ children }) {
       .eq('auth_user_id', userId)
 
     if (memberError) {
-      console.error('Error fetching memberships:', memberError)
       logSupabaseError(memberError, {
         table: 'tenant_memberships',
         operation: 'select',
@@ -152,7 +195,11 @@ export function AuthProvider({ children }) {
     })
 
     if (combined.length === 0) {
-      combined = [MOCK_PROFILE]
+      setProfiles([])
+      setProfile(null)
+      setUser(null)
+      setLoading(false)
+      return
     }
 
     setProfiles(combined)
@@ -171,10 +218,8 @@ export function AuthProvider({ children }) {
       if (active.tenant_id) setPersistedTenantId(active.tenant_id)
     }
 
-    if (!active) active = MOCK_PROFILE
-
     const ownedMembership = combined.find(m => m.role === 'owner')
-    setOwnerTenant(ownedMembership?.tenants || MOCK_PROFILE.tenants)
+    setOwnerTenant(ownedMembership?.tenants || active?.tenants)
 
     setProfile(active)
     setLoading(false)
@@ -191,17 +236,34 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const loadLocalRoleSession = () => {
+    const savedRole = localStorage.getItem('sembako_active_role')
+    if (savedRole && REGISTERED_ROLES[savedRole]) {
+      const config = REGISTERED_ROLES[savedRole]
+      setUser(config.user)
+      setProfile(config.profile)
+      setProfiles([config.profile])
+      setOwnerTenant(config.profile.tenants)
+      setLoading(false)
+      return true
+    }
+    return false
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
         fetchAuthData(session.user.id)
       } else {
-        setUser(MOCK_USER)
-        setProfile(MOCK_PROFILE)
-        setProfiles([MOCK_PROFILE])
-        setOwnerTenant(MOCK_PROFILE.tenants)
-        setLoading(false)
+        const loadedLocal = loadLocalRoleSession()
+        if (!loadedLocal) {
+          setUser(null)
+          setProfile(null)
+          setProfiles([])
+          setOwnerTenant(null)
+          setLoading(false)
+        }
       }
     })
 
@@ -211,11 +273,14 @@ export function AuthProvider({ children }) {
           setUser(session.user)
           fetchAuthData(session.user.id)
         } else {
-          setUser(MOCK_USER)
-          setProfile(MOCK_PROFILE)
-          setProfiles([MOCK_PROFILE])
-          setOwnerTenant(MOCK_PROFILE.tenants)
-          setLoading(false)
+          const loadedLocal = loadLocalRoleSession()
+          if (!loadedLocal) {
+            setUser(null)
+            setProfile(null)
+            setProfiles([])
+            setOwnerTenant(null)
+            setLoading(false)
+          }
         }
       }
     )
@@ -246,6 +311,31 @@ export function AuthProvider({ children }) {
     profile?.role === 'superadmin' ||
     profiles.some(p => p.app_role === 'superadmin' || p.role === 'superadmin')
 
+  const loginAsRole = (roleKey) => {
+    if (REGISTERED_ROLES[roleKey]) {
+      const config = REGISTERED_ROLES[roleKey]
+      localStorage.setItem('sembako_active_role', roleKey)
+      setUser(config.user)
+      setProfile(config.profile)
+      setProfiles([config.profile])
+      setOwnerTenant(config.profile.tenants)
+      setLoading(false)
+      return true
+    }
+    return false
+  }
+
+  const logout = async () => {
+    localStorage.removeItem('sembako_active_role')
+    localStorage.removeItem('ternakos_active_tenant_id')
+    try { await supabase.auth.signOut() } catch { /* ok */ }
+    setUser(null)
+    setProfile(null)
+    setProfiles([])
+    setOwnerTenant(null)
+    setLoading(false)
+  }
+
   const value = {
     user,
     profile,
@@ -255,6 +345,8 @@ export function AuthProvider({ children }) {
     isSuperadmin,
     loading,
     switchTenant,
+    loginAsRole,
+    logout,
     refetchProfile: () => user && fetchAuthData(user.id),
   }
 

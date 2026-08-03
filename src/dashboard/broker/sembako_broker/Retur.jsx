@@ -4,9 +4,9 @@ import { RotateCcw, Plus, Search, Filter, AlertCircle, CheckCircle2, Clock, Pack
 import { toast } from 'sonner'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
 import { C } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
-import { 
-  useSembakoProducts, 
-  useSembakoCustomers, 
+import {
+  useSembakoProducts,
+  useSembakoCustomers,
   useSembakoSuppliers,
   useSembakoReturns,
   useCreateSembakoReturn,
@@ -26,7 +26,7 @@ export default function SembakoRetur() {
   const { data: products = [] } = useSembakoProducts()
   const { data: customers = [] } = useSembakoCustomers()
   const { data: suppliers = [] } = useSembakoSuppliers()
-  
+
   const { data: returnsList = [], isLoading: returnsLoading } = useSembakoReturns()
   const createReturnMut = useCreateSembakoReturn()
   const updateStatusMut = useUpdateSembakoReturnStatus()
@@ -107,8 +107,8 @@ export default function SembakoRetur() {
   const filteredReturns = useMemo(() => {
     return returnsList.filter(r => {
       const matchSearch = r.party_name.toLowerCase().includes(search.toLowerCase()) ||
-                          r.product_name.toLowerCase().includes(search.toLowerCase()) ||
-                          r.id.toLowerCase().includes(search.toLowerCase())
+        r.product_name.toLowerCase().includes(search.toLowerCase()) ||
+        r.id.toLowerCase().includes(search.toLowerCase())
       const matchType = filterType === 'all' ? true : r.type === filterType
       return matchSearch && matchType
     })
@@ -232,20 +232,18 @@ export default function SembakoRetur() {
               >
                 <div className="flex items-start justify-between gap-3 mb-2.5">
                   <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
-                      r.type === 'sale_return' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                    }`}>
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${r.type === 'sale_return' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      }`}>
                       {r.type === 'sale_return' ? 'Retur dari Toko' : 'Retur ke Pabrik'}
                     </span>
                     <span className="text-xs font-mono font-bold text-slate-500">{r.id}</span>
                   </div>
                   <button
                     onClick={() => handleToggleStatus(r.id, r.status)}
-                    className={`text-[10px] font-bold px-3 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
-                      r.status === 'completed'
+                    className={`text-[10px] font-bold px-3 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${r.status === 'completed'
                         ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
                         : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
-                    }`}
+                      }`}
                   >
                     {r.status === 'completed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
                     {r.status === 'completed' ? 'Selesai' : 'Diproses'}
@@ -312,9 +310,8 @@ export default function SembakoRetur() {
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, type: 'sale_return' })}
-                      className={`p-3 rounded-xl border font-bold text-left transition-all ${
-                        form.type === 'sale_return' ? 'bg-orange-600/15 border-orange-500 text-orange-400' : 'bg-[#121824] border-slate-800 text-slate-400'
-                      }`}
+                      className={`p-3 rounded-xl border font-bold text-left transition-all ${form.type === 'sale_return' ? 'bg-orange-600/15 border-orange-500 text-orange-400' : 'bg-[#121824] border-slate-800 text-slate-400'
+                        }`}
                     >
                       <ArrowDownLeft size={16} className="mb-1" />
                       Retur dari Toko / Buyer
@@ -322,9 +319,8 @@ export default function SembakoRetur() {
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, type: 'purchase_return' })}
-                      className={`p-3 rounded-xl border font-bold text-left transition-all ${
-                        form.type === 'purchase_return' ? 'bg-blue-600/15 border-blue-500 text-blue-400' : 'bg-[#121824] border-slate-800 text-slate-400'
-                      }`}
+                      className={`p-3 rounded-xl border font-bold text-left transition-all ${form.type === 'purchase_return' ? 'bg-blue-600/15 border-blue-500 text-blue-400' : 'bg-[#121824] border-slate-800 text-slate-400'
+                        }`}
                     >
                       <ArrowUpRight size={16} className="mb-1" />
                       Retur ke Pabrik / Supplier
@@ -508,11 +504,10 @@ function CustomSelect({ value, onChange, options, placeholder }) {
                   key={opt.value}
                   type="button"
                   onClick={() => { onChange(opt.value); setOpen(false) }}
-                  className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                    value === opt.value
+                  className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center justify-between transition-colors cursor-pointer ${value === opt.value
                       ? 'bg-orange-600/15 text-orange-400 font-bold'
                       : 'text-slate-300 hover:bg-slate-800/60 hover:text-white font-medium'
-                  }`}
+                    }`}
                 >
                   <span className="truncate">{opt.label}</span>
                   {value === opt.value && <Check size={14} className="text-orange-500 flex-shrink-0 ml-2" />}

@@ -657,8 +657,8 @@ export default function BottomNav() {
 
       <nav
         className={useFloatingDock 
-          ? "fixed bottom-[calc(16px+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 w-fit max-w-[calc(100vw-32px)] h-auto bg-white/90 dark:bg-[#0A0F16]/92 backdrop-blur-3xl border border-slate-200 dark:border-white/12 rounded-[22px] shadow-md dark:shadow-[0_8px_32px_rgba(0,0,0,0.60)] flex flex-row items-center gap-0.5 z-[3500] p-1.5 overflow-visible"
-          : "fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] h-[64px] bg-white/95 dark:bg-[#0A0F16]/96 backdrop-blur-3xl border-t border-slate-200 dark:border-white/5 flex items-stretch z-[3500] pb-[env(safe-area-inset-bottom,0px)] overflow-visible"
+          ? "fixed bottom-[calc(16px+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 w-fit max-w-[calc(100vw-32px)] h-auto bg-white dark:bg-[#0A0F16] border border-slate-200 dark:border-white/15 rounded-[22px] shadow-xl flex flex-row items-center gap-0.5 z-[3500] p-1.5 overflow-visible"
+          : "fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] h-[64px] bg-white dark:bg-[#0A0F16] border-t border-slate-200 dark:border-white/10 flex items-stretch z-[3500] pb-[env(safe-area-inset-bottom,0px)] overflow-visible"
         }
       >
         {useFloatingDock ? (

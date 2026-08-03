@@ -252,19 +252,21 @@ CREATE TABLE IF NOT EXISTS sembako_expenses (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 17. SEMBAKO PAYMENTS (RIWAYAT PEMBAYARAN CICILAN/PIUTANG)
-CREATE TABLE IF NOT EXISTS sembako_payments (
+-- 18. SEMBAKO AUDIT LOGS (LOG PERUBAHAN STOK & SENSITIF)
+CREATE TABLE IF NOT EXISTS sembako_audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    sale_id UUID REFERENCES sembako_sales(id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES sembako_customers(id) ON DELETE CASCADE,
-    amount NUMERIC(15,2) DEFAULT 0,
-    payment_date TIMESTAMPTZ DEFAULT NOW(),
-    payment_method TEXT DEFAULT 'cash',
+    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    user_name TEXT DEFAULT 'Sistem',
+    role TEXT DEFAULT 'staff',
+    action_type TEXT NOT NULL,
+    product_name TEXT,
+    old_qty NUMERIC(15,2),
+    new_qty NUMERIC(15,2),
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 18. INDEXES FOR HIGH PERFORMANCE
+-- 19. INDEXES FOR HIGH PERFORMANCE
 CREATE INDEX IF NOT EXISTS idx_profiles_auth_user ON profiles(auth_user_id);
 CREATE INDEX IF NOT EXISTS idx_tenant_memberships_auth ON tenant_memberships(auth_user_id);
 CREATE INDEX IF NOT EXISTS idx_sembako_products_tenant ON sembako_products(tenant_id);
@@ -273,8 +275,9 @@ CREATE INDEX IF NOT EXISTS idx_sembako_sales_tenant ON sembako_sales(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_sembako_sales_customer ON sembako_sales(customer_id);
 CREATE INDEX IF NOT EXISTS idx_sembako_sale_items_sale ON sembako_sale_items(sale_id);
 CREATE INDEX IF NOT EXISTS idx_sembako_deliveries_sale ON sembako_deliveries(sale_id);
+CREATE INDEX IF NOT EXISTS idx_sembako_audit_tenant ON sembako_audit_logs(tenant_id);
 
--- 19. DISABLE RLS OR ALLOW FULL AUTHENTICATED ACCESS FOR EASY INITIALIZATION
+-- 20. DISABLE RLS OR ALLOW FULL ACCESS FOR Easy INITIALIZATION
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenant_memberships ENABLE ROW LEVEL SECURITY;
@@ -290,6 +293,7 @@ ALTER TABLE sembako_employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sembako_payroll ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sembako_expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sembako_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sembako_audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Permissive policies for logged in users
 CREATE POLICY "Public Read/Write for Tenants" ON tenants FOR ALL USING (true) WITH CHECK (true);
@@ -307,5 +311,160 @@ CREATE POLICY "Public Read/Write for Employees" ON sembako_employees FOR ALL USI
 CREATE POLICY "Public Read/Write for Payroll" ON sembako_payroll FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public Read/Write for Expenses" ON sembako_expenses FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public Read/Write for Payments" ON sembako_payments FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Read/Write for Audit Logs" ON sembako_audit_logs FOR ALL USING (true) WITH CHECK (true);
+
+-- 21. SEED DEFAULT TENANT, AUTH USERS & PROFILES FOR 3 ROLES
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+INSERT INTO tenants (id, business_name, business_vertical, user_type, sub_type, plan)
+VALUES (
+    '00000000-0000-0000-0000-000000000002',
+    'Broker Dashboard Sembako',
+    'distributor_sembako',
+    'broker',
+    'distributor_sembako',
+    'pro'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Seed Supabase Auth Users Table (auth.users)
+INSERT INTO auth.users (
+    id,
+    instance_id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at
+)
+VALUES
+(
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'dev@sembako.id',
+    crypt('dev123', gen_salt('bf')),
+    NOW(),
+    '{"provider":"email","providers":["email"],"is_superadmin":true}',
+    '{"full_name":"Developer Superadmin"}',
+    NOW(),
+    NOW()
+),
+(
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'owner@sembako.id',
+    crypt('owner123', gen_salt('bf')),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"Pemilik Toko"}',
+    NOW(),
+    NOW()
+),
+(
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'admin@sembako.id',
+    crypt('admin123', gen_salt('bf')),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"Kasir / Admin"}',
+    NOW(),
+    NOW()
+) ON CONFLICT (id) DO NOTHING;
+
+-- Seed Supabase Auth Identities Table (auth.identities)
+INSERT INTO auth.identities (
+    id,
+    provider_id,
+    user_id,
+    identity_data,
+    provider,
+    last_sign_in_at,
+    created_at,
+    updated_at
+)
+VALUES
+(
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    '{"sub":"00000000-0000-0000-0000-000000000001","email":"dev@sembako.id"}',
+    'email',
+    NOW(),
+    NOW(),
+    NOW()
+),
+(
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    '{"sub":"00000000-0000-0000-0000-000000000002","email":"owner@sembako.id"}',
+    'email',
+    NOW(),
+    NOW(),
+    NOW()
+),
+(
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000003',
+    '{"sub":"00000000-0000-0000-0000-000000000003","email":"admin@sembako.id"}',
+    'email',
+    NOW(),
+    NOW(),
+    NOW()
+) ON CONFLICT (id) DO NOTHING;
+
+-- Seed Profiles Table (public.profiles)
+INSERT INTO profiles (id, auth_user_id, tenant_id, full_name, email, role, app_role, user_type, sub_type, business_name, onboarded)
+VALUES 
+(
+    '00000000-0000-0000-0000-000000000010',
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    'Developer Superadmin',
+    'dev@sembako.id',
+    'dev',
+    'dev',
+    'broker',
+    'distributor_sembako',
+    'Broker Dashboard Sembako',
+    true
+),
+(
+    '00000000-0000-0000-0000-000000000020',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    'Pemilik Toko',
+    'owner@sembako.id',
+    'owner',
+    'owner',
+    'broker',
+    'distributor_sembako',
+    'Broker Dashboard Sembako',
+    true
+),
+(
+    '00000000-0000-0000-0000-000000000030',
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000002',
+    'Kasir / Admin',
+    'admin@sembako.id',
+    'admin',
+    'admin',
+    'broker',
+    'distributor_sembako',
+    'Broker Dashboard Sembako',
+    true
+) ON CONFLICT (id) DO NOTHING;
 
 -- Done!

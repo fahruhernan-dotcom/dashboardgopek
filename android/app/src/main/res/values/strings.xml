@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TernakOS</string>
+    <string name="title_activity_main">TernakOS</string>
+    <string name="package_name">com.ternakos.gopek</string>
+    <string name="custom_url_scheme">com.ternakos.gopek</string>
+</resources>

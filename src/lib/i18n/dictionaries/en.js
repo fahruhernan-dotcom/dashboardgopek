@@ -143,8 +143,8 @@ const en = {
   // ── BillingCard ───────────────────────────────────────────────
   billing_section:         'Plan & Billing',
   billing_no_sub:          'No active subscription',
-  billing_no_sub_title:    'Start using TernakOS',
-  billing_no_sub_desc:     'Access full features: daily tasks, reports, multi-user, and more.',
+  billing_no_sub_title:    'Start Using Sembako OS',
+  billing_no_sub_desc:     'Access full features: POS sales, revenue reports, warehouse stock, multi-user, and transaction management.',
   billing_start_btn:       'Start Plan',
   billing_active:          'Active plan',
   billing_status_active:   'Active',

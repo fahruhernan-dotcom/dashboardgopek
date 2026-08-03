@@ -9,18 +9,20 @@ export const VERTICAL_ACCENTS = {
 }
 
 export const ROLE_LABELS = {
-  owner:        { label: 'Pemilik',       bg: 'oklch(0.78 0.16 80 / 0.18)',  fg: 'oklch(0.82 0.16 80)'  },
-  admin:        { label: 'Admin',         bg: 'oklch(0.7  0.18 240 / 0.18)', fg: 'oklch(0.78 0.16 240)' },
-  superadmin:   { label: 'Super Admin',   bg: 'oklch(0.65 0.20 290 / 0.18)', fg: 'oklch(0.78 0.16 290)' },
-  manajer:      { label: 'Manajer',       bg: 'oklch(0.65 0.18 280 / 0.18)', fg: 'oklch(0.78 0.16 280)' },
-  staff:        { label: 'Staff Kandang', bg: 'oklch(0.65 0.16 200 / 0.18)', fg: 'oklch(0.78 0.14 210)' },
-  anak_kandang: { label: 'Anak Kandang',  bg: 'oklch(0.62 0.18 155 / 0.18)', fg: 'oklch(0.78 0.16 155)' },
-  view_only:    { label: 'Lihat Saja',    bg: 'oklch(0.6  0.02 250 / 0.2)',  fg: 'oklch(0.78 0.02 250)' },
+  dev:          { label: 'Developer',        bg: 'oklch(0.65 0.20 290 / 0.18)', fg: 'oklch(0.78 0.16 290)' },
+  owner:        { label: 'Pemilik (Owner)',  bg: 'oklch(0.78 0.16 80 / 0.18)',  fg: 'oklch(0.82 0.16 80)'  },
+  admin:        { label: 'Admin (Operator)', bg: 'oklch(0.7  0.18 240 / 0.18)', fg: 'oklch(0.78 0.16 240)' },
+  superadmin:   { label: 'Developer',        bg: 'oklch(0.65 0.20 290 / 0.18)', fg: 'oklch(0.78 0.16 290)' },
+  manajer:      { label: 'Manajer',          bg: 'oklch(0.65 0.18 280 / 0.18)', fg: 'oklch(0.78 0.16 280)' },
+  staff:        { label: 'Staff Gudang',     bg: 'oklch(0.65 0.16 200 / 0.18)', fg: 'oklch(0.78 0.14 210)' },
+  anak_kandang: { label: 'Anak Kandang',     bg: 'oklch(0.62 0.18 155 / 0.18)', fg: 'oklch(0.78 0.16 155)' },
+  view_only:    { label: 'Lihat Saja',       bg: 'oklch(0.6  0.02 250 / 0.2)',  fg: 'oklch(0.78 0.02 250)' },
 }
 
 export const PERMISSION_MATRIX = {
+  dev:          { input: true,  edit: true,  reports: true,  team: true,  billing: true  },
   owner:        { input: true,  edit: true,  reports: true,  team: true,  billing: true  },
-  admin:        { input: true,  edit: true,  reports: true,  team: true,  billing: true  },
+  admin:        { input: true,  edit: false, reports: false, team: false, billing: false },
   superadmin:   { input: true,  edit: true,  reports: true,  team: true,  billing: true  },
   manajer:      { input: true,  edit: true,  reports: true,  team: true,  billing: false },
   staff:        { input: true,  edit: false, reports: false, team: false, billing: false },
@@ -28,7 +30,7 @@ export const PERMISSION_MATRIX = {
   view_only:    { input: false, edit: false, reports: true,  team: false, billing: false },
 }
 
-export const BILLING_ROLES = ['owner', 'admin', 'superadmin', 'manajer']
+export const BILLING_ROLES = ['owner', 'dev', 'superadmin']
 
 export const PLAN_INFO = {
   none:     { label: 'Belum aktif',  price: null,           users: 1,   batches: 1,   history: '30 hari'   },
@@ -78,7 +80,7 @@ export function getUserRole(profile) {
     profile.user_type ||
     'view_only'
   ).toLowerCase()
-  // normalize manager → manajer, owner_b2b → owner
+  if (raw === 'dev' || raw === 'superadmin') return 'dev'
   if (raw === 'manager') return 'manajer'
   if (raw === 'owner_b2b') return 'owner'
   return PERMISSION_MATRIX[raw] ? raw : 'view_only'

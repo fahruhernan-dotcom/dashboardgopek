@@ -25,9 +25,9 @@ const CATEGORY_LABEL = {
   perawatan: 'Perawatan', packaging: 'Packaging', administrasi: 'Administrasi', lainnya: 'Lainnya',
 }
 const STATUS_STYLE = {
-  lunas:       { bg: 'rgba(2, 26, 2,0.12)', color: C.green, label: 'Lunas' },
-  sebagian:    { bg: 'rgba(245,158,11,0.12)', color: C.amber, label: 'Sebagian' },
-  belum_lunas: { bg: 'rgba(239,68,68,0.12)',  color: C.red,   label: 'Belum Lunas' },
+  lunas: { bg: 'rgba(2, 26, 2,0.12)', color: C.green, label: 'Lunas' },
+  sebagian: { bg: 'rgba(245,158,11,0.12)', color: C.amber, label: 'Sebagian' },
+  belum_lunas: { bg: 'rgba(239,68,68,0.12)', color: C.red, label: 'Belum Lunas' },
 }
 
 // ── MAIN ────────────────────────────────────────────────────────────────────
@@ -41,10 +41,10 @@ export default function SembakoLaporan() {
   // Compute before useState so initial values are stable regardless of isStarter.
   // Rules of Hooks: all hooks must be called unconditionally before any early return.
   const now = new Date()
-  
+
   // Default ke bulan berjalan agar first load cepat dan relevan
   const bulanStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
-  const bulanEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+  const bulanEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
 
   const [startDate, setStartDate] = useState(bulanStart)
   const [endDate, setEndDate] = useState(bulanEnd)
@@ -184,38 +184,38 @@ export default function SembakoLaporan() {
               </div>
             )}
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-          <>
-            {/* SECTION A — KPI Summary */}
-            <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4,1fr)' : 'repeat(2,1fr)', gap: '12px', marginBottom: '24px' }}>
-              <KPICard icon={DollarSign} label="Revenue" value={formatIDR(s.totalRevenue)} color={C.accent} />
-              <KPICard icon={TrendingUp} label="Gross Profit"
-                value={formatIDR(s.grossProfit)}
-                badge={`${s.grossMarginPct}%`}
-                color={s.grossProfit >= 0 ? C.green : C.red} />
-              <KPICard icon={s.netProfit >= 0 ? TrendingUp : TrendingDown} label="Net Profit"
-                value={formatIDR(s.netProfit)}
-                badge={`${s.netMarginPct}%`}
-                color={s.netProfit >= 0 ? C.green : C.red} />
-              <KPICard icon={Receipt} label="Total Pengeluaran"
-                value={formatIDR(s.totalExpenses + s.totalPayroll)}
-                color={C.red} />
-            </div>
+            <>
+              {/* SECTION A — KPI Summary */}
+              <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4,1fr)' : 'repeat(2,1fr)', gap: '12px', marginBottom: '24px' }}>
+                <KPICard icon={DollarSign} label="Revenue" value={formatIDR(s.totalRevenue)} color={C.accent} />
+                <KPICard icon={TrendingUp} label="Gross Profit"
+                  value={formatIDR(s.grossProfit)}
+                  badge={`${s.grossMarginPct}%`}
+                  color={s.grossProfit >= 0 ? C.green : C.red} />
+                <KPICard icon={s.netProfit >= 0 ? TrendingUp : TrendingDown} label="Net Profit"
+                  value={formatIDR(s.netProfit)}
+                  badge={`${s.netMarginPct}%`}
+                  color={s.netProfit >= 0 ? C.green : C.red} />
+                <KPICard icon={Receipt} label="Total Pengeluaran"
+                  value={formatIDR(s.totalExpenses + s.totalPayroll)}
+                  color={C.red} />
+              </div>
 
-            {/* SECTION B — P&L Waterfall */}
-            <WaterfallPL summary={s} />
+              {/* SECTION B — P&L Waterfall */}
+              <WaterfallPL summary={s} />
 
-            {/* SECTION C — 2 columns */}
-            <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '3fr 2fr' : '1fr', gap: '16px', marginTop: '24px' }}>
-              <ProductMarginTable byProduct={data.byProduct} />
-              <TopCustomers byCustomer={data.byCustomer} />
-            </div>
+              {/* SECTION C — 2 columns */}
+              <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '3fr 2fr' : '1fr', gap: '16px', marginTop: '24px' }}>
+                <ProductMarginTable byProduct={data.byProduct} />
+                <TopCustomers byCustomer={data.byCustomer} />
+              </div>
 
-            {/* SECTION D — Expense Pie */}
-            <ExpensePie expenseByCategory={data.expenseByCategory} summary={s} isDesktop={isDesktop} />
+              {/* SECTION D — Expense Pie */}
+              <ExpensePie expenseByCategory={data.expenseByCategory} summary={s} isDesktop={isDesktop} />
 
-            {/* SECTION E — Invoice Table (Collapsible) */}
-            <InvoiceCollapsible sales={data.sales} />
-          </>
+              {/* SECTION E — Invoice Table (Collapsible) */}
+              <InvoiceCollapsible sales={data.sales} />
+            </>
           </div>
         )}
       </div>
@@ -255,14 +255,14 @@ function KPICard({ icon: Icon, label, value, badge, color }) {
 function WaterfallPL({ summary: s }) {
   const maxVal = Math.max(s.totalRevenue, 1)
   const rows = [
-    { label: 'Revenue',          value: s.totalRevenue,      type: 'positive' },
-    { label: 'HPP (COGS)',       value: -s.totalCOGS,        type: 'negative' },
-    { label: 'Gross Profit',     value: s.grossProfit,       type: 'subtotal' },
-    { label: 'Biaya Kirim',      value: -s.totalDeliveryCost,type: 'negative' },
-    { label: 'Biaya Lain',       value: -s.totalOtherCost,   type: 'negative' },
-    { label: 'Operasional',      value: -s.totalExpenses,    type: 'negative' },
-    { label: 'Gaji Pegawai',     value: -s.totalPayroll,     type: 'negative' },
-    { label: 'NET PROFIT',       value: s.netProfit,         type: 'total' },
+    { label: 'Revenue', value: s.totalRevenue, type: 'positive' },
+    { label: 'HPP (COGS)', value: -s.totalCOGS, type: 'negative' },
+    { label: 'Gross Profit', value: s.grossProfit, type: 'subtotal' },
+    { label: 'Biaya Kirim', value: -s.totalDeliveryCost, type: 'negative' },
+    { label: 'Biaya Lain', value: -s.totalOtherCost, type: 'negative' },
+    { label: 'Operasional', value: -s.totalExpenses, type: 'negative' },
+    { label: 'Gaji Pegawai', value: -s.totalPayroll, type: 'negative' },
+    { label: 'NET PROFIT', value: s.netProfit, type: 'total' },
   ]
 
   return (
@@ -382,7 +382,7 @@ function TopCustomers({ byCustomer }) {
   const customers = useMemo(() =>
     Object.entries(byCustomer).map(([name, d]) => ({ name, ...d }))
       .sort((a, b) => b.revenue - a.revenue).slice(0, 10)
-  , [byCustomer])
+    , [byCustomer])
 
   return (
     <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}` }}>
@@ -548,7 +548,7 @@ function LoadingSkeleton() {
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px', marginBottom: '20px' }}>
-        {[1,2,3,4].map(i => <div key={i} style={{ background: C.card, borderRadius: '14px', height: '100px', border: `1px solid ${C.border}`, opacity: 0.5 }} />)}
+        {[1, 2, 3, 4].map(i => <div key={i} style={{ background: C.card, borderRadius: '14px', height: '100px', border: `1px solid ${C.border}`, opacity: 0.5 }} />)}
       </div>
       <div style={{ background: C.card, borderRadius: '16px', height: '250px', border: `1px solid ${C.border}`, opacity: 0.4 }} />
     </div>

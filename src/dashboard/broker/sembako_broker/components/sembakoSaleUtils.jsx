@@ -8,8 +8,8 @@ import { formatIDR } from '@/lib/format'
 export const C = {
   bg: '#06090F', card: '#1C1208', input: '#231A0E',
   accent: '#EA580C', amber: '#F59E0B', green: '#10B981', red: '#EF4444',
-  text: '#FEF3C7', muted: '#92400E',
-  border: 'rgba(234,88,12,0.15)', borderAm: 'rgba(245,158,11,0.25)',
+  text: '#FEF3C7', muted: '#FCD34D',
+  border: 'rgba(234,88,12,0.25)', borderAm: 'rgba(245,158,11,0.3)',
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────

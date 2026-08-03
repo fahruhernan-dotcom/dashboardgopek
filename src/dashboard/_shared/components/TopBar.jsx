@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { resolveBusinessVertical, BUSINESS_MODELS } from '@/lib/businessModel'
 import NotificationBell from './NotificationBell'
 import { usePageTitle } from '@/lib/hooks/usePageTitle'
+import { SyncStatusBadge } from '@/components/SyncStatusBadge'
 
 export default function TopBar({ title, subtitle, showBack = false, rightAction, showBell = true, onMenuClick }) {
   const navigate = useNavigate()
@@ -24,7 +25,7 @@ export default function TopBar({ title, subtitle, showBack = false, rightAction,
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="hidden md:flex px-5 lg:px-6 pt-10 lg:pt-4 pb-4 lg:pb-5 items-center justify-between sticky top-0 bg-white/80 dark:bg-[#06090F]/80 backdrop-blur-md z-50 border-b border-slate-200 dark:border-white/5 min-h-[60px] lg:min-h-[64px]"
+      className="hidden md:flex px-5 lg:px-6 pt-10 lg:pt-4 pb-4 lg:pb-5 items-center justify-between sticky top-0 bg-white dark:bg-[#06090F] z-50 border-b border-slate-200 dark:border-white/5 min-h-[60px] lg:min-h-[64px]"
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
         {!showBack && onMenuClick && (
@@ -59,6 +60,7 @@ export default function TopBar({ title, subtitle, showBack = false, rightAction,
       </div>
       
       <div className="flex items-center gap-3">
+        <SyncStatusBadge />
         {rightAction}
         {showBell && <NotificationBell />}
         {!rightAction && !showBell && (

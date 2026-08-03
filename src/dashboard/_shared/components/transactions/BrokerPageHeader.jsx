@@ -21,7 +21,7 @@ export function BrokerPageHeader({
   isViewOnly 
 }) {
   return (
-    <header className="px-4 pt-6 pb-3 md:px-5 md:pt-8 md:pb-4 sticky top-0 z-30 space-y-3 md:space-y-4 bg-white/90 dark:bg-[#06090F]/90 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.04]">
+    <header className="px-4 pt-6 pb-3 md:px-5 md:pt-8 md:pb-4 sticky top-0 z-30 space-y-3 md:space-y-4 bg-white dark:bg-[#06090F] border-b border-slate-200 dark:border-white/[0.04]">
       <div className="flex flex-wrap items-center gap-2 md:gap-4 md:flex-nowrap md:justify-between">
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-none truncate">{title}</h1>

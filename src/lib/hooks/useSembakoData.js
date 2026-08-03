@@ -10,6 +10,42 @@ import { logError } from '@/lib/logger/errorLogger'
 
 const STALE_5M = 5 * 60 * 1000
 
+// ── SCHEMAS & WHITELIST SANITIZERS (PONETAIL SAFE DB TRIGGER) ──────────────────
+// Menjamin 0% Error PGRST204 akibat field UI tambahan yang tidak ada di Supabase
+export const ALLOWED_COLUMNS = {
+  sembako_customers: [
+    'tenant_id', 'customer_name', 'customer_type', 'phone', 'address', 'area',
+    'payment_terms', 'credit_limit', 'reliability_score', 'is_deleted'
+  ],
+  sembako_suppliers: [
+    'tenant_id', 'supplier_name', 'phone', 'address', 'notes', 'is_deleted'
+  ],
+  sembako_products: [
+    'tenant_id', 'product_name', 'category', 'unit', 'current_stock',
+    'avg_buy_price', 'sell_price', 'min_stock_alert', 'is_active', 'is_deleted'
+  ],
+  sembako_stock_batches: [
+    'tenant_id', 'product_id', 'supplier_id', 'batch_code', 'qty_masuk',
+    'qty_sisa', 'buy_price', 'purchase_date', 'expiry_date', 'notes', 'is_deleted'
+  ],
+  sembako_employees: [
+    'tenant_id', 'full_name', 'phone', 'role', 'status', 'base_salary', 'is_deleted'
+  ]
+}
+
+export function sanitizeDBPayload(payload, allowedKey) {
+  if (!payload || typeof payload !== 'object') return {}
+  const allowed = ALLOWED_COLUMNS[allowedKey]
+  if (!allowed) return payload
+  const clean = {}
+  for (const key of allowed) {
+    if (key in payload && payload[key] !== undefined) {
+      clean[key] = payload[key]
+    }
+  }
+  return clean
+}
+
 async function getTenantId() {
   const activeTenantId = localStorage.getItem('ternakos_active_tenant_id')
   if (activeTenantId) return activeTenantId
@@ -23,7 +59,7 @@ async function getTenantId() {
         .eq('auth_user_id', user.id)
         .limit(1)
 
-      if (profiles && profiles.length > 0 && profiles[0].tenant_id) {
+      if (profiles && profiles.length > 0 && profiles[0]?.tenant_id) {
         return profiles[0].tenant_id
       }
     }
@@ -33,14 +69,25 @@ async function getTenantId() {
 
   try {
     const { data: tenants } = await supabase.from('tenants').select('id').limit(1)
-    if (tenants && tenants.length > 0 && tenants[0].id) {
+    if (tenants && tenants.length > 0 && tenants[0]?.id) {
       return tenants[0].id
     }
   } catch (e) {
     // ignore
   }
 
-  return '00000000-0000-0000-0000-000000000002'
+  const fallbackId = '00000000-0000-0000-0000-000000000002'
+  try {
+    await supabase.from('tenants').upsert({
+      id: fallbackId,
+      business_name: 'Broker Dashboard Sembako',
+      business_vertical: 'distributor_sembako'
+    }, { onConflict: 'id' })
+  } catch (e) {
+    // ignore
+  }
+
+  return fallbackId
 }
 
 export const useSembakoProducts = () => {
@@ -307,8 +354,9 @@ export const useCreateSembakoCustomer = () => {
   return useMutation({
     mutationFn: async (payload) => {
       const tenant_id = await getTenantId()
+      const cleanPayload = sanitizeDBPayload({ ...payload, tenant_id }, 'sembako_customers')
       const { data, error } = await supabase.from('sembako_customers')
-        .insert({ ...payload, tenant_id })
+        .insert(cleanPayload)
         .select().single()
       if (error) {
         logSupabaseError(error, { table: 'sembako_customers', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.customer.create' })
@@ -328,8 +376,9 @@ export const useUpdateSembakoCustomer = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...updates }) => {
+      const cleanUpdates = sanitizeDBPayload(updates, 'sembako_customers')
       const { error } = await supabase.from('sembako_customers')
-        .update(updates).eq('id', id)
+        .update(cleanUpdates).eq('id', id)
       if (error) {
         logSupabaseError(error, { table: 'sembako_customers', operation: 'update', component: 'useSembakoData', actionName: 'sembako.customer.update' })
         throw error
@@ -367,8 +416,9 @@ export const useUpdateSembakoSupplier = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...updates }) => {
+      const cleanUpdates = sanitizeDBPayload(updates, 'sembako_suppliers')
       const { error } = await supabase.from('sembako_suppliers')
-        .update(updates).eq('id', id)
+        .update(cleanUpdates).eq('id', id)
       if (error) {
         logSupabaseError(error, { table: 'sembako_suppliers', operation: 'update', component: 'useSembakoData', actionName: 'sembako.supplier.update' })
         throw error
@@ -1210,8 +1260,9 @@ export const useCreateSembakoProduct = () => {
   return useMutation({
     mutationFn: async (payload) => {
       const tenant_id = await getTenantId()
+      const cleanPayload = sanitizeDBPayload({ ...payload, tenant_id }, 'sembako_products')
       const { error } = await supabase.from('sembako_products')
-        .insert({ ...payload, tenant_id })
+        .insert(cleanPayload)
       if (error) {
         logSupabaseError(error, { table: 'sembako_products', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.product.create' })
         throw error
@@ -1430,7 +1481,8 @@ export const useCreateSembakoEmployee = () => {
   return useMutation({
     mutationFn: async (payload) => {
       const tenant_id = await getTenantId()
-      const { error } = await supabase.from('sembako_employees').insert({ ...payload, tenant_id })
+      const cleanPayload = sanitizeDBPayload({ ...payload, tenant_id }, 'sembako_employees')
+      const { error } = await supabase.from('sembako_employees').insert(cleanPayload)
       if (error) {
         logSupabaseError(error, { table: 'sembako_employees', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.employee.create' })
         throw error
@@ -1472,7 +1524,8 @@ export const useUpdateSembakoProduct = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...updates }) => {
-      const { error } = await supabase.from('sembako_products').update(updates).eq('id', id)
+      const cleanUpdates = sanitizeDBPayload(updates, 'sembako_products')
+      const { error } = await supabase.from('sembako_products').update(cleanUpdates).eq('id', id)
       if (error) {
         logSupabaseError(error, { table: 'sembako_products', operation: 'update', component: 'useSembakoData', actionName: 'sembako.product.update' })
         throw error
@@ -1521,9 +1574,10 @@ export const useSoftDeleteSembakoProduct = () => {
 export const useCreateSembakoSupplier = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ supplier_name, phone, address, notes }) => {
+    mutationFn: async (payload) => {
       const tenant_id = await getTenantId()
-      const { data, error } = await supabase.from('sembako_suppliers').insert({ tenant_id, supplier_name, phone, address, notes }).select().single()
+      const cleanPayload = sanitizeDBPayload({ ...payload, tenant_id }, 'sembako_suppliers')
+      const { data, error } = await supabase.from('sembako_suppliers').insert(cleanPayload).select().single()
       if (error) {
         logSupabaseError(error, { table: 'sembako_suppliers', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.supplier.create' })
         throw error

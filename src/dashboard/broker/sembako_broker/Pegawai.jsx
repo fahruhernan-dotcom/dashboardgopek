@@ -210,7 +210,7 @@ function TabPegawai({ isDesktop }) {
           </SheetHeader>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', paddingBottom: '100px' }}>
             <div><p style={sLabel}>NAMA LENGKAP *</p><input id="emp-name" name="full_name" style={sInput} value={form.full_name || ''} onChange={e => setForm({ ...form, full_name: e.target.value })} /></div>
-            
+
             <div>
               <p style={sLabel}>LINK KE AKUN TIM</p>
               <CustomSelect

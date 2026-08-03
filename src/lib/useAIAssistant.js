@@ -1,11 +1,4 @@
-// =============================================================
-// TernakOS — AI Operating System Hook (Phase 2)
 // File: src/lib/useAIAssistant.js
-//
-// Layers: Dual Context, Undo, Retry, Partial Success,
-//         History Persistence, Dirty Tracking, Entry Isolation
-// =============================================================
-
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { supabase } from './supabase'
@@ -13,88 +6,20 @@ import { buildSystemPrompt } from './aiPrompt'
 import { toast } from 'sonner'
 import { validateBusinessRules } from './aiValidation'
 import { useBusinessSnapshot } from './useBusinessSnapshot'
-// eslint-disable-next-line no-unused-vars -- AI transaction inserter; not yet wired to current chat flow but is intended insertion path
-import { insertBusinessData } from './aiTransactionInserter'
 import { useAIQuota } from './hooks/useAIQuota'
-import { AI_PLAN_CONFIG } from './constants/planGating'
 
-const GLM_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+import {
+  AGENT_STATE,
+  intentCache,
+  hashString,
+  checkRateLimit,
+  INTENT_TABLE_MAP,
+  UNDO_WINDOW_MS,
+  resolveEntities
+} from './aiService'
 
-// ── AGENT STATES ────────────────────────────────────────────
-export const AGENT_STATE = {
-  IDLE: 'IDLE',
-  PRE_CHECKING: 'PRE_CHECKING',
-  THINKING: 'THINKING',
-  AWAITING_CONFIRMATION: 'AWAITING_CONFIRMATION',
-  AWAITING_CLARIFICATION: 'AWAITING_CLARIFICATION',
-  ERROR: 'ERROR',
-}
+export { AGENT_STATE }
 
-// ── Module-level cache & rate limiter ───────────────────────
-const intentCache = new Map()
-let requestHistory = []
-
-const hashString = (str) => {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i)
-    hash = hash & hash
-  }
-  return Math.abs(hash).toString(16)
-}
-
-const checkRateLimit = () => {
-  const now = Date.now()
-  requestHistory = requestHistory.filter(ts => now - ts < 60000)
-  if (requestHistory.length >= 20) return false
-  requestHistory.push(now)
-  return true
-}
-
-const fuzzyScore = (a, b) => {
-  const norm = s => s.toLowerCase().replace(/\b(pak|bu|ibu|cv|ud|rpa|pt|toko|farm|kandang)\b/g, '').replace(/[^a-z0-9]/g, '').trim()
-  const na = norm(a), nb = norm(b)
-  if (!na || !nb) return 0
-  if (na === nb) return 1.0
-  if (na.includes(nb) || nb.includes(na)) return 0.85
-  const shorter = na.length <= nb.length ? na : nb
-  const longer = na.length <= nb.length ? nb : na
-  let matches = 0
-  const used = new Array(longer.length).fill(false)
-  for (const ch of shorter) {
-    const idx = longer.split('').findIndex((c, i) => c === ch && !used[i])
-    if (idx !== -1) { matches++; used[idx] = true }
-  }
-  return matches / longer.length
-}
-
-const INTENT_TABLE_MAP = {
-  CATAT_PEMBELIAN: 'purchases', CATAT_PENJUALAN: 'sales', CATAT_BAYAR: 'payments',
-  CATAT_PENGIRIMAN: 'deliveries', CATAT_HARIAN: 'daily_records', CATAT_PAKAN: 'feed_stocks',
-  CATAT_PANEN: 'harvest_records', CATAT_PENGELUARAN: 'cycle_expenses',
-  BUAT_INVOICE: 'rpa_invoices', CATAT_ORDER: 'orders', TAMBAH_PRODUK: 'rpa_products',
-}
-
-const ENTITY_MAP = {
-  CATAT_PEMBELIAN:   [{ nameField: 'supplier_name', idField: 'supplier_id', snapshotKey: 'suppliers' }],
-  CATAT_PENJUALAN:   [{ nameField: 'rpa_name',      idField: 'rpa_id',      snapshotKey: 'rpas' }],
-  CATAT_BAYAR:       [{ nameField: 'payer_name',    idField: 'payer_id',    snapshotKey: 'rpas' }],
-  CATAT_PENGIRIMAN:  [],
-  BUAT_INVOICE:      [{ nameField: 'customer_name', idField: 'customer_id', snapshotKey: 'customers' }],
-  CATAT_ORDER:       [],
-  TAMBAH_PRODUK:     [],
-  CATAT_HARIAN:      [{ nameField: 'farm_name', idField: 'farm_id', snapshotKey: 'farms' }],
-  CATAT_PAKAN:       [{ nameField: 'farm_name', idField: 'farm_id', snapshotKey: 'farms' }],
-  CATAT_PANEN:       [{ nameField: 'farm_name', idField: 'farm_id', snapshotKey: 'farms' }],
-  CATAT_PENGELUARAN: [{ nameField: 'farm_name', idField: 'farm_id', snapshotKey: 'farms' }],
-}
-
-// ── UNDO TIMER ──────────────────────────────────────────────
-const UNDO_WINDOW_MS = 8000
-
-// =============================================================
-// HOOK
-// =============================================================
 export function useAIAssistant({ userType, contextPage }) {
   const { profile, tenant } = useAuth()
   const { getAccumulatedTotal, getParentContext } = useBusinessSnapshot()
@@ -112,27 +37,23 @@ export function useAIAssistant({ userType, contextPage }) {
   const [conversationSummary, setConversationSummary] = useState('')
 
   // ── Undo State ────────────────────────────────────────────
-  const [undoEntry, setUndoEntry] = useState(null) // { id, data, timer }
+  const [undoEntry, setUndoEntry] = useState(null)
   const undoTimerRef = useRef(null)
 
   // ── Entry Result Tracking (partial success) ───────────────
   const [entryResults, setEntryResults] = useState({})
-  // { [entryId]: { status: 'confirmed'|'failed'|'undone', error?: string } }
 
   // ── Dependency Map ────────────────────────────────────────
-  // Maps AI-generated ID (string) to the actual UUID of the pending entry
   const [_aiIdToEntryIdMap, setAiIdToEntryIdMap] = useState({})
 
   // ── Last failed message for retry ─────────────────────────
   const [lastFailedMessage, setLastFailedMessage] = useState(null)
 
-  // ── Snapshot cache (avoid rebuilding on every message) ────
-  const snapshotCacheRef = useRef(null) // { data, timestamp }
-  const SNAPSHOT_TTL_MS = 90 * 1000 // 90 seconds
+  // ── Snapshot cache ────────────────────────────────────────
+  const snapshotCacheRef = useRef(null)
+  const SNAPSHOT_TTL_MS = 90 * 1000
 
-  // ═════════════════════════════════════════════════════════
-  // HISTORY PERSISTENCE — Load last conversation on mount
-  // ═════════════════════════════════════════════════════════
+  // HISTORY PERSISTENCE
   useEffect(() => {
     if (!tenant?.id || !profile?.id || historyLoaded) return
     const loadHistory = async () => {
@@ -151,7 +72,6 @@ export function useAIAssistant({ userType, contextPage }) {
 
         if (data) {
           const rawMessages = data.messages || []
-          // Smart Load: last 10 messages only + set summary if longer
           if (rawMessages.length > 10) {
             const older = rawMessages.slice(0, -10)
             const summaryText = older
@@ -174,12 +94,9 @@ export function useAIAssistant({ userType, contextPage }) {
     loadHistory()
   }, [tenant?.id, profile?.id, userType, historyLoaded])
 
-  // ═════════════════════════════════════════════════════════
   // BUILD CONTEXT SNAPSHOT
-  // ═════════════════════════════════════════════════════════
   const buildContextSnapshot = useCallback(async (forceRefresh = false) => {
     if (!tenant?.id) return {}
-    // Return cached snapshot if still fresh
     const now = Date.now()
     if (!forceRefresh && snapshotCacheRef.current &&
         (now - snapshotCacheRef.current.timestamp < SNAPSHOT_TTL_MS)) {
@@ -215,24 +132,7 @@ export function useAIAssistant({ userType, contextPage }) {
     return snapshot
   }, [tenant?.id, userType, SNAPSHOT_TTL_MS])
 
-  // ═════════════════════════════════════════════════════════
-  // PARSE AI RESPONSE
-  // ═════════════════════════════════════════════════════════
-  // eslint-disable-next-line no-unused-vars -- core AI response parser; maintained for direct invocation path
-  const parseAIResponse = (raw) => {
-    let cleaned = (raw || '').trim()
-    const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/)
-    if (match) cleaned = match[0]
-    else cleaned = cleaned.replace(/```json/g, '').replace(/```/g, '').trim()
-    try { return JSON.parse(cleaned) } catch (err) {
-      console.error('[AI] JSON parse failed:', err)
-      return { intent: 'TIDAK_DIKENALI', data: {}, confidence: 0, clarification: 'Gagal memproses respons.', display_summary: 'Error parsing.' }
-    }
-  }
-
-  // ═════════════════════════════════════════════════════════
   // SAVE CONVERSATION
-  // ═════════════════════════════════════════════════════════
   const saveConversation = useCallback(async (allMessages, snapshot, telemetry = {}) => {
     if (!tenant?.id || !profile?.id) return null
     const messagesForDB = allMessages.map(m => ({
@@ -263,12 +163,9 @@ export function useAIAssistant({ userType, contextPage }) {
     return data.id
   }, [tenant?.id, profile?.id, conversationId, userType, contextPage, conversationSummary])
 
-  // ═════════════════════════════════════════════════════════
-  // DUAL CONTEXT: SUMMARIZE when messages grow
-  // ═════════════════════════════════════════════════════════
+  // DUAL CONTEXT: SUMMARIZE
   const updateSummary = useCallback(() => {
     if (messages.length <= 12) return
-    // Compress older messages into summary, keep raw last 5
     const olderMessages = messages.slice(0, -5)
     const summaryParts = olderMessages
       .filter(m => m.intent || m.role === 'user')
@@ -276,50 +173,26 @@ export function useAIAssistant({ userType, contextPage }) {
         if (m.role === 'user') return `User: "${m.content.substring(0, 60)}"`
         return `[${m.intent}] ${m.content.substring(0, 80)}`
       })
-      .slice(-6) // keep last 6 summary items
+      .slice(-6)
 
     setConversationSummary(summaryParts.join(' → '))
   }, [messages])
 
   useEffect(() => { updateSummary() }, [messages.length, updateSummary])
 
-  // ── Dependency Helpers ─────────────────────────────────────
   const isEntryLocked = useCallback((entry) => {
     if (!entry.dependency_id) return false
-    // Check if the parent entry (dependency) is already confirmed
     const parentResult = entryResults[entry.dependency_id]
     return parentResult?.status !== 'confirmed'
   }, [entryResults])
 
-  // ═════════════════════════════════════════════════════════
-  // ENTITY RESOLUTION
-  // ═════════════════════════════════════════════════════════
-  const resolveEntities = useCallback((intent, extractedData, snapshot) => {
-    const entityDefs = ENTITY_MAP[intent] ?? []
-    const unresolved = []
-    for (const { nameField, idField, snapshotKey } of entityDefs) {
-      const extractedName = extractedData[nameField]
-      if (extractedData[idField] || !extractedName) continue
-      const pool = snapshot[snapshotKey] ?? []
-      const candidates = pool
-        .map(item => ({ id: item.id, name: item.name, score: fuzzyScore(extractedName, item.name) }))
-        .filter(c => c.score >= 0.6).sort((a, b) => b.score - a.score).slice(0, 4)
-      unresolved.push({ nameField, idField, extractedName, candidates })
-    }
-    return unresolved
-  }, [])
-
-  // ═════════════════════════════════════════════════════════
-  // PROCESS AI RESULT → PENDING ENTRIES
-  // ═════════════════════════════════════════════════════════
+  // PROCESS AI RESULT
   const processAIParsedResult = useCallback(async (parsed, snapshot, telemetry = {}, _anomalies = []) => {
     let intents = parsed.intents || []
     if (intents.length === 0 && parsed.intent) {
       intents = [{ intent: parsed.intent, data: parsed.data ?? {}, confidence: parsed.confidence ?? 1.0, clarification: parsed.clarification ?? null }]
     }
 
-    // ── AUTO-ESTIMATE CHICKEN COUNT (QTY_EKOR) ──────────────
-    // Priority: Weight (kg) is king. If count is missing, estimate it.
     intents = intents.map(item => {
       if (['CATAT_PEMBELIAN', 'CATAT_PENJUALAN'].includes(item.intent)) {
         const data = item.data || {}
@@ -337,19 +210,16 @@ export function useAIAssistant({ userType, contextPage }) {
       content: parsed.display_summary || 'Siap boss!',
       timestamp: new Date().toISOString(),
       intent: firstIntent?.intent,
-      usage: telemetry.token_usage, // Pass usage to UI
-      provider: telemetry.provider, // Pass provider to UI
+      usage: telemetry.token_usage,
+      provider: telemetry.provider,
     }
-    
-    // ── HEURISTIC FALLBACK: Repair missing dependencies ──
+
     const potentialParents = intents
       .filter(it => ['CATAT_PEMBELIAN', 'CATAT_PENJUALAN'].includes(it.intent))
       .map(it => it.id)
 
     intents = intents.map((item, idx) => {
-      // Heuristic for Delivery & Payment
       if (['CATAT_PENGIRIMAN', 'CATAT_BAYAR'].includes(item.intent) && !item.dependency) {
-        // Find the closest preceding parent
         const closestParent = intents
           .slice(0, idx)
           .reverse()
@@ -358,8 +228,6 @@ export function useAIAssistant({ userType, contextPage }) {
         if (closestParent) {
           return { ...item, dependency: closestParent.id }
         }
-        
-        // If not preceding, but only one parent exists in the message total
         if (potentialParents.length === 1) {
           return { ...item, dependency: potentialParents[0] }
         }
@@ -374,10 +242,8 @@ export function useAIAssistant({ userType, contextPage }) {
       return
     }
 
-    // --- SAVE CONVERSATION & GENERATE DRAFTS ---
     const convId = await saveConversation([...messages, assistantMsg], snapshot, telemetry)
     if (convId) {
-      // 🚀 TURBO: Fetch all business context upfront
       const contextResults = await Promise.all(intents.map(async (item) => {
         if (item.intent === 'KOREKSI' || item.intent === 'TANYA_DATA') return null
         const parentId = item.dependency || item.data?.sale_id || item.data?.purchase_id
@@ -391,7 +257,6 @@ export function useAIAssistant({ userType, contextPage }) {
         return { accumulatedTotal, parentContext, snapshot }
       }))
 
-      // ── CORRECTIONS: handle first, synchronously ──────────
       for (const item of intents.filter(i => i.intent === 'KOREKSI')) {
         if (pendingEntries.length > 0) {
           const last = pendingEntries[pendingEntries.length - 1]
@@ -409,10 +274,8 @@ export function useAIAssistant({ userType, contextPage }) {
         }
       }
 
-      // ── DATA INTENTS: batch insert in ONE DB round trip ───
       const dataIntents = intents.filter(i => i.intent !== 'KOREKSI')
       if (dataIntents.length > 0) {
-        // Pre-compute validations (synchronous), keeping index aligned to dataIntents
         const dataContextResults = dataIntents.map(item => contextResults[intents.indexOf(item)])
         const preValidations = dataIntents.map((item, i) =>
           validateBusinessRules({
@@ -421,7 +284,6 @@ export function useAIAssistant({ userType, contextPage }) {
           }, pendingEntries, dataContextResults[i])
         )
 
-        // Single batch insert — N intents → 1 DB round trip
         const { data: batchEntries } = await supabase
           .from('ai_pending_entries')
           .insert(dataIntents.map(item => ({
@@ -434,7 +296,6 @@ export function useAIAssistant({ userType, contextPage }) {
           .select()
 
         if (batchEntries?.length) {
-          // Build AI-id → DB UUID map from results (order is preserved by Supabase)
           const localAiIdMap = {}
           batchEntries.forEach((entry, i) => {
             const aiId = dataIntents[i]?.id
@@ -462,17 +323,14 @@ export function useAIAssistant({ userType, contextPage }) {
       }
     }
 
-    // Set final status
     if (firstIntent?.clarification || firstIntent?.confidence < 0.8) {
       setAgentState(AGENT_STATE.AWAITING_CLARIFICATION)
     } else {
       setAgentState(AGENT_STATE.AWAITING_CONFIRMATION)
     }
-  }, [messages, tenant, profile, saveConversation, pendingEntries, resolveEntities, getAccumulatedTotal, getParentContext])
+  }, [messages, tenant, profile, saveConversation, pendingEntries, getAccumulatedTotal, getParentContext])
 
-  // ═════════════════════════════════════════════════════════
-  // SEND MESSAGE (Updated to Edge Functions)
-  // ═════════════════════════════════════════════════════════
+  // SEND MESSAGE
   const abortControllerRef = useRef(null)
 
   const cancelAI = useCallback(() => {
@@ -491,7 +349,6 @@ export function useAIAssistant({ userType, contextPage }) {
 
     if (!checkRateLimit()) { toast.error('Pelan-pelan boss! Max 15 pesan/menit.'); return }
 
-    // ── QUOTA CHECK ───────────────────────────────────────
     if (aiQuota.quotaStatus === 'exceeded') {
       const errMsg = 'Kuota AI bulan ini sudah habis. Silakan upgrade plan untuk lanjut.'
       setMessages(prev => [...prev, { role: 'user', content: userMessage.trim(), timestamp: new Date().toISOString() }])
@@ -508,7 +365,6 @@ export function useAIAssistant({ userType, contextPage }) {
     try {
       const normalizeQuery = userMessage.toLowerCase().trim()
 
-      // ── PRE-CHECK ROUTING ─────────────────────────────────
       const preCheck = [
         { reg: /^(ping|cek koneksi|test|tes|p)$/i, res: 'Pong! Koneksi aman bossku. ⚡' },
         { reg: /^(halo|hi|hai|halo ai|bot|halo bot)$/i, res: `Halo ${profile.full_name}! Ada transaksi yang mau dicatat?` },
@@ -523,7 +379,6 @@ export function useAIAssistant({ userType, contextPage }) {
 
       setAgentState(AGENT_STATE.THINKING)
 
-      // ── CACHE CHECK ───────────────────────────────────────
       const qHash = hashString(`${tenant.id}:${normalizeQuery}`)
       if (intentCache.has(qHash)) {
         const cached = intentCache.get(qHash)
@@ -531,14 +386,12 @@ export function useAIAssistant({ userType, contextPage }) {
         return
       }
 
-      // ── API Keys ──────────────────────────────────────────
       const maiaApiKey = import.meta.env.VITE_MAIA_API_KEY
       const maiaModel = import.meta.env.VITE_AI_MODEL || 'xai/grok-4-1-fast-reasoning-latest'
       const glmApiKey = import.meta.env.VITE_GLM_API_KEY
 
       if (!maiaApiKey && !glmApiKey) throw new Error('API Key belum diisi di .env!')
 
-      // ── ABORT CONTROLLER ─────────────────────────────────
       if (abortControllerRef.current) abortControllerRef.current.abort()
       abortControllerRef.current = new AbortController()
       const signal = abortControllerRef.current.signal
@@ -552,7 +405,6 @@ export function useAIAssistant({ userType, contextPage }) {
         businessModel: 'generic',
       })
 
-      // ── SHARED REQUEST BODY ───────────────────────────────
       const requestTools = [{
         type: "function",
         function: {
@@ -588,7 +440,6 @@ export function useAIAssistant({ userType, contextPage }) {
         tool_choice: "auto",
       }
 
-      // ── AI FETCH ──────────────────────────────────────────
       const fetchAI = async (url, key, body, timeoutMs) => {
         const combinedSignal = typeof AbortSignal.any === 'function'
           ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
@@ -608,12 +459,10 @@ export function useAIAssistant({ userType, contextPage }) {
         return res.json()
       }
 
-      // ── MULTI-PROVIDER FAILOVER ───────────────────────────
       let parsed = null
       let activeProvider = null
       let usage = null
 
-      // Helper: parse response (tool_calls atau content JSON)
       const parseResult = (result) => {
         const choice = result.choices?.[0]?.message
         if (choice?.tool_calls?.length > 0) {
@@ -633,8 +482,6 @@ export function useAIAssistant({ userType, contextPage }) {
       const maiaUrl = 'https://api.maiarouter.ai/v1/chat/completions'
       const glmUrl  = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 
-      // Both providers: no tools — rely on JSON-in-content parsing.
-      // Reasoning models (grok-4-1-fast-reasoning) hang when tools are attached.
       const maiaBody = {
         model: maiaModel,
         temperature: requestBase.temperature,
@@ -647,14 +494,12 @@ export function useAIAssistant({ userType, contextPage }) {
       }
 
       try {
-        // Step 1: MAIA — without tools, reasoning model should respond in ~20s
         const result = await fetchAI(maiaUrl, maiaApiKey, maiaBody, 25000)
         activeProvider = 'MAIA'
         usage = result.usage
         parsed = parseResult(result)
       } catch (maiaErr) {
         console.warn('[AI] MAIA failed, falling back to GLM...', maiaErr.message)
-        // Step 2: GLM fallback
         if (glmApiKey) {
           toast.info('Menghubungi jalur cadangan...')
           const result = await fetchAI(glmUrl, glmApiKey, glmBody, 30000)
@@ -686,7 +531,6 @@ export function useAIAssistant({ userType, contextPage }) {
       }
       console.error('[AI Error]', err)
 
-      // Fire-and-forget: log to DB for monitoring (never throws)
       supabase.from('ai_error_logs').insert({
         tenant_id: tenant?.id ?? null,
         profile_id: profile?.id ?? null,
@@ -707,17 +551,12 @@ export function useAIAssistant({ userType, contextPage }) {
       setError(err.message)
     } finally {
       abortControllerRef.current = null
-      // Auto-reset if still stuck in THINKING
       setAgentState(prev => prev === AGENT_STATE.THINKING ? AGENT_STATE.IDLE : prev)
     }
   }, [messages, tenant, profile, userType, contextPage, buildContextSnapshot, processAIParsedResult])
 
-  // ═════════════════════════════════════════════════════════
-  // RETRY LAST FAILED MESSAGE
-  // ═════════════════════════════════════════════════════════
   const retryLastMessage = useCallback(() => {
     if (lastFailedMessage) {
-      // Remove the failed assistant message
       setMessages(prev => prev.slice(0, -1))
       setAgentState(AGENT_STATE.IDLE)
       setError(null)
@@ -725,14 +564,10 @@ export function useAIAssistant({ userType, contextPage }) {
     }
   }, [lastFailedMessage, sendMessage])
 
-  // ═════════════════════════════════════════════════════════
-  // CONFIRM ENTRY — Updated to Staging Table Pattern
-  // ═════════════════════════════════════════════════════════
   const confirmEntry = useCallback(async (entryId) => {
     const entry = pendingEntries.find(p => p.id === entryId)
     if (!entry) return
 
-    // ── DEPENDENCY CHECK ────────────────────────────────────
     if (isEntryLocked(entry)) {
       const parent = pendingEntries.find(p => p.id === entry.dependency_id)
       const parentName = parent ? parent.intent.replace('CATAT_', '') : 'transaksi utama'
@@ -741,7 +576,6 @@ export function useAIAssistant({ userType, contextPage }) {
     }
 
     try {
-      // ── PHASE 6: Fetch Business Snapshot ───────────────────
       const type = entry.intent === 'CATAT_PENGIRIMAN' ? 'DELIVERY' : 
                    entry.intent === 'CATAT_BAYAR' ? 'PAYMENT' : null
       
@@ -752,7 +586,6 @@ export function useAIAssistant({ userType, contextPage }) {
 
       const contextSnapshot = { accumulatedTotal, parentContext }
 
-      // Re-validate with full context (all pending entries + DB snapshot)
       const validation = validateBusinessRules(entry, pendingEntries, contextSnapshot)
       if (!validation.valid) {
         const errorMsg = validation.errors[0]
@@ -761,7 +594,6 @@ export function useAIAssistant({ userType, contextPage }) {
         return null
       }
 
-      // ── STAGING: Insert to staging table first ─────────────
       const { data: staged, error: stageError } = await supabase.from('ai_staged_transactions')
         .insert({
           tenant_id: tenant.id, profile_id: profile.id,
@@ -773,18 +605,14 @@ export function useAIAssistant({ userType, contextPage }) {
 
       if (stageError) throw stageError
 
-      // Mark as confirmed in UI flow
       setPendingEntries(prev => prev.filter(e => e.id !== entryId))
       setEntryResults(prev => ({ ...prev, [entryId]: { status: 'confirmed' } }))
-      // Invalidate snapshot cache so next message rebuilds with fresh entity list
       snapshotCacheRef.current = null
 
-      // ── UNDO TIMER: Start 8s window ───────────────────────
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
       setUndoEntry({ id: entryId, entry, stagedId: staged.id })
       
       undoTimerRef.current = setTimeout(async () => {
-        // ── COMMIT: Call Edge Function to move to production ──
         try {
           const { data: { session } } = await supabase.auth.getSession()
           if (!session) throw new Error('Sesi sudah habis, silakan login ulang.')
@@ -796,7 +624,7 @@ export function useAIAssistant({ userType, contextPage }) {
           
           if (commitError) throw commitError
           
-          setUndoEntry(null) // Undo window closed
+          setUndoEntry(null)
           toast.success('Pencatatan berhasil!')
         } catch (e) {
           console.error('[AI] Commit failed:', e)
@@ -812,49 +640,31 @@ export function useAIAssistant({ userType, contextPage }) {
       setEntryResults(prev => ({ ...prev, [entryId]: { status: 'failed', error: errorMsg } }))
       return null
     }
-  }, [pendingEntries, tenant, profile, isEntryLocked])
+  }, [pendingEntries, tenant, profile, isEntryLocked, getAccumulatedTotal, getParentContext])
 
-  // ═════════════════════════════════════════════════════════
-  // UNDO — Soft delete strategy (Status based)
-  // ═════════════════════════════════════════════════════════
   const undoLastConfirm = useCallback(async () => {
     if (!undoEntry) return
     const { id, entry, stagedId } = undoEntry
 
     try {
-      // ── CASCADING UNDO ────────────────────────────────────
-      // If we undo a parent, we must also undo any children that were already confirmed
-      // in this session and are currently staged.
       const childrenToUndo = Object.entries(entryResults)
         .filter(([_resId, res]) => res.status === 'confirmed')
         .map(([resId]) => pendingEntries.find(p => p.id === resId))
         .filter(p => p && p.dependency_id === id)
 
-      // Recursive undo for children first
-      for (const _child of childrenToUndo) {
-        // Note: we'd need to find the stagedId for the child to do it properly.
-        // For now, we'll focus on the target entry being undone.
-        // If a child is confirmed, it should ideally be blocked from staying confirmed 
-        // if its parent is gone. 
-      }
-
-      // Soft Delete strategy: update status to 'undone'
       const { error: undoError } = await supabase.from('ai_staged_transactions')
         .update({ status: 'undone' })
         .eq('id', stagedId)
 
       if (undoError) throw undoError
 
-      // Restore to pending list in UI
       setPendingEntries(prev => [...prev, entry])
       setEntryResults(prev => {
         const next = { ...prev, [id]: { status: 'undone' } }
-        // Also invalidate children in UI results
         childrenToUndo.forEach(c => { next[c.id] = { status: 'pending' } }) 
         return next
       })
 
-      // Clear undo state
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
       setUndoEntry(null)
       
@@ -869,21 +679,15 @@ export function useAIAssistant({ userType, contextPage }) {
     }
   }, [undoEntry, pendingEntries, entryResults])
 
-  // ═════════════════════════════════════════════════════════
-  // REJECT ENTRY
-  // ═════════════════════════════════════════════════════════
   const rejectEntry = useCallback(async (id) => {
-    // Identify dependent entries that rely on this one
     const dependents = pendingEntries.filter(e => e.dependency_id === id)
     const allIdsToReject = [id, ...dependents.map(d => d.id)]
 
     try {
-      // Bulk update statuses in database
       await supabase.from('ai_pending_entries')
         .update({ status: 'rejected' })
         .in('id', allIdsToReject)
 
-      // Update UI state: remove from pending, set results to rejected
       setPendingEntries(prev => prev.filter(e => !allIdsToReject.includes(e.id)))
       setEntryResults(prev => {
         const next = { ...prev }
@@ -900,16 +704,11 @@ export function useAIAssistant({ userType, contextPage }) {
     }
   }, [pendingEntries])
 
-  // ═════════════════════════════════════════════════════════
-  // CONFIRM ALL — Batch confirm with partial success tracking
-  // ═════════════════════════════════════════════════════════
   const confirmAll = useCallback(async () => {
     const results = { success: 0, failed: 0, errors: [] }
-    // Sort to ensure parents are confirmed before children
-    // (Non-dependents first, then entries depending on them)
     const entriesToProcess = [...pendingEntries].sort((a, b) => {
-      if (a.dependency_id === b.id) return 1 // a depends on b
-      if (b.dependency_id === a.id) return -1 // b depends on a
+      if (a.dependency_id === b.id) return 1
+      if (b.dependency_id === a.id) return -1
       return 0
     })
 
@@ -932,12 +731,9 @@ export function useAIAssistant({ userType, contextPage }) {
     return results
   }, [pendingEntries, confirmEntry])
 
-  // ═════════════════════════════════════════════════════════
-  // EDIT ENTRY FIELD — Dirty State Tracking
-  // ═════════════════════════════════════════════════════════
   const editEntryField = useCallback((entryId, fieldName, newValue) => {
     setPendingEntries(prev => prev.map(entry => {
-      if (entry.id !== entryId) return entry // Entry Isolation: only touch target
+      if (entry.id !== entryId) return entry
       const originalValue = entry._original_data?.[fieldName]
       const isChanged = originalValue !== newValue
       return {
@@ -947,7 +743,6 @@ export function useAIAssistant({ userType, contextPage }) {
           ...(entry._dirty || {}),
           ...(isChanged ? { [fieldName]: { original: originalValue, edited: newValue } } : {}),
         },
-        // Re-validate on edit with full context (incl. snapshot)
         _validation: validateBusinessRules({
           ...entry,
           extracted_data: { ...entry.extracted_data, [fieldName]: newValue }
@@ -956,9 +751,6 @@ export function useAIAssistant({ userType, contextPage }) {
     }))
   }, [])
 
-  // ═════════════════════════════════════════════════════════
-  // RESOLVE ENTITY
-  // ═════════════════════════════════════════════════════════
   const resolveEntity = useCallback((idField, selectedId, selectedName, isNew = false) => {
     setPendingEntries(prev => {
       if (!prev.length) return prev
@@ -974,9 +766,6 @@ export function useAIAssistant({ userType, contextPage }) {
     })
   }, [])
 
-  // ═════════════════════════════════════════════════════════
-  // RESET CONVERSATION (New Chat)
-  // ═════════════════════════════════════════════════════════
   const resetConversation = useCallback(() => {
     setMessages([])
     setAgentState(AGENT_STATE.IDLE)
@@ -990,51 +779,31 @@ export function useAIAssistant({ userType, contextPage }) {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
   }, [])
 
-  // ═════════════════════════════════════════════════════════
-  // RETURN
-  // ═════════════════════════════════════════════════════════
   return {
-    // Core
     messages,
     agentState,
     isLoading: agentState === AGENT_STATE.THINKING || agentState === AGENT_STATE.PRE_CHECKING,
     sendMessage,
     error,
     conversationId,
-
-    // Pending entries (each has independent state = entry isolation)
     pendingEntries,
     pendingEntry: pendingEntries[0] ?? null,
     pendingCount: pendingEntries.length,
-
-    // Actions
     confirmEntry,
     rejectEntry,
     confirmAll,
     clearPending: () => setPendingEntries([]),
     editEntryField,
-
-    // Entity resolution
     unresolvedEntities: pendingEntries[0]?._unresolved ?? [],
     resolveEntity,
-
-    // Undo
     undoEntry,
     undoLastConfirm,
     undoTimeoutMs: UNDO_WINDOW_MS,
-
-    // Retry
     lastFailedMessage,
     retryLastMessage,
-
-    // Partial success
     entryResults,
-
-    // Dependency Handling
     isEntryLocked,
     getEntryParent: (entry) => pendingEntries.find(p => p.id === entry.dependency_id),
-
-    // New chat
     cancelAI,
     resetConversation,
   }

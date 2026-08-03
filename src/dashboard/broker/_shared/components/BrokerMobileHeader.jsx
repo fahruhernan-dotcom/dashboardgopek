@@ -84,7 +84,7 @@ export function BrokerMobileHeader({
   }
 
   return (
-    <header className="px-5 pt-8 pb-4 flex items-center justify-between sticky top-0 bg-[#06090F]/80 backdrop-blur-md z-50 border-b border-white/5 min-h-[64px] lg:hidden">
+    <header className="px-5 pt-8 pb-4 flex items-center justify-between sticky top-0 bg-[#06090F] z-50 border-b border-white/5 min-h-[64px] lg:hidden">
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <button
           onClick={handleMenuClick}

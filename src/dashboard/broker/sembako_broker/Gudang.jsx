@@ -15,6 +15,9 @@ import { DatePicker } from '@/components/ui/DatePicker'
 import { C, fmtDate, CustomSelect, InputRupiah } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
 import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/SembakoUiPrimitives'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { canViewAuditLogs } from '@/lib/auth/business-roles'
+import { useSembakoAuditLogs, recordAuditLog } from '@/lib/hooks/useSembakoAudit'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { SembakoTambahStokSheet } from './components/SembakoTambahStokSheet'
 
@@ -36,7 +39,7 @@ const inputSt = {
 
 function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
   const [expanded, setExpanded] = useState(null)
-  const [search,   setSearch]   = useState('')
+  const [search, setSearch] = useState('')
 
   const { data: allBatches = [], isError: batchesIsError, error: batchesError, refetch: batchesRefetch } = useSembakoAllBatches()
 
@@ -83,9 +86,9 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
       )}
 
       {filtered.map(product => {
-        const batches  = batchesForProduct(product.id)
-        const isOpen   = expanded === product.id
-        const isLow    = product.min_stock_alert > 0 && product.current_stock <= product.min_stock_alert
+        const batches = batchesForProduct(product.id)
+        const isOpen = expanded === product.id
+        const isLow = product.min_stock_alert > 0 && product.current_stock <= product.min_stock_alert
 
         return (
           <div key={product.id} style={{ marginBottom: 8, background: C.card, border: `1px solid ${isLow ? 'rgba(248,113,113,0.3)' : C.border}`, borderRadius: 14, overflow: 'hidden' }}>
@@ -143,16 +146,16 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
                             )}
                           </div>
                           <div className="flex items-center gap-4">
-                             <div style={{ textAlign: 'right' }}>
-                               <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>{fmt(batch.qty_sisa)} {product.unit}</div>
-                               <div style={{ fontSize: 11, color: TEXT_SEC, fontFamily: 'DM Sans' }}>@ Rp {fmt(batch.buy_price)}</div>
-                             </div>
-                             <button
-                               onClick={(e) => { e.stopPropagation(); onAdjust(batch, product) }}
-                               className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 hover:bg-orange-500 hover:text-white transition-all"
-                             >
-                                <ArrowRightLeft size={14} />
-                             </button>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>{fmt(batch.qty_sisa)} {product.unit}</div>
+                              <div style={{ fontSize: 11, color: TEXT_SEC, fontFamily: 'DM Sans' }}>@ Rp {fmt(batch.buy_price)}</div>
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onAdjust(batch, product) }}
+                              className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 hover:bg-orange-500 hover:text-white transition-all"
+                            >
+                              <ArrowRightLeft size={14} />
+                            </button>
                           </div>
                         </div>
                       ))
@@ -261,6 +264,46 @@ function RiwayatKeluar() {
   )
 }
 
+function AuditLogTab() {
+  const { data: auditLogs = [], isLoading } = useSembakoAuditLogs()
+
+  if (isLoading) return <LoadingRow />
+  if (auditLogs.length === 0) return <EmptyState label="Belum ada catatan log perubahan" sub="Setiap perubahan stok & transaksi terekam di sini" />
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {auditLogs.map(log => (
+        <div key={log.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', background: 'rgba(234,88,12,0.15)', color: C.accent, padding: '2px 6px', borderRadius: 4 }}>
+                {log.action_type || 'STOK'}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: C.text }}>
+                {log.user_name} ({log.user_role?.toUpperCase()})
+              </span>
+            </div>
+            <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>
+              {log.product_name}
+            </div>
+            {log.notes && (
+              <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2, fontFamily: 'DM Sans' }}>
+                {log.notes}
+              </div>
+            )}
+            <div style={{ fontSize: 10, color: '#6B7280', marginTop: 4, fontFamily: 'DM Sans' }}>
+              {fmtDate(log.timestamp)}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.muted }}>Stok: {log.old_value} → {log.new_value}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function SkeletonBox({ w = '100%', h = 16, r = 8, mb = 0, opacity = 1 }) {
@@ -279,7 +322,7 @@ function LoadingRow() {
   return (
     <div>
       <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
-      {[1,2,3].map(i => (
+      {[1, 2, 3].map(i => (
         <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '14px', marginBottom: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ flex: 1 }}>
@@ -298,7 +341,7 @@ function ProductSkeleton() {
   return (
     <div>
       <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
-      {[1,2,3,4].map(i => (
+      {[1, 2, 3, 4].map(i => (
         <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '14px 14px', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ flex: 1 }}>
@@ -337,31 +380,32 @@ function Chip({ label, value, color }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-const TABS = ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar']
-
 export default function Gudang() {
+  const { profile } = useAuth()
+  const showAudit = canViewAuditLogs(profile)
+  const tabsList = useMemo(() => showAudit ? ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar', '📜 Log Perubahan'] : ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar'], [showAudit])
   const [searchParams] = useSearchParams()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
-  const preProductId   = searchParams.get('product') || null
+  const preProductId = searchParams.get('product') || null
 
-  const { data: products  = [], isLoading: productsLoading, isError: productsIsError, error: productsError, refetch: productsRefetch } = useSembakoProducts()
+  const { data: products = [], isLoading: productsLoading, isError: productsIsError, error: productsError, refetch: productsRefetch } = useSembakoProducts()
   const { data: suppliers = [], isError: supErr, error: supError, refetch: supRefetch } = useSembakoSuppliers()
 
-  const [activeTab,        setActiveTab]        = useState(0)
-  const [showTambahSheet,  setShowTambahSheet]  = useState(!!preProductId || searchParams.get('action') === 'add-stock')
-  const [tambahProductId,  setTambahProductId]  = useState(preProductId)
+  const [activeTab, setActiveTab] = useState(0)
+  const [showTambahSheet, setShowTambahSheet] = useState(!!preProductId || searchParams.get('action') === 'add-stock')
+  const [tambahProductId, setTambahProductId] = useState(preProductId)
 
   React.useEffect(() => {
     if (searchParams.get('action') === 'add-stock') {
       setShowTambahSheet(true)
     }
   }, [searchParams])
-  
+
   const [showAdjustSheet, setShowAdjustSheet] = useState(false)
   const [selectedBatch, setSelectedBatch] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
-  
+
   const [showHistorySheet, setShowHistorySheet] = useState(false)
   const [historyProduct, setHistoryProduct] = useState(null)
 
@@ -389,7 +433,7 @@ export default function Gudang() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
       {!isDesktop && <BrokerMobileHeader title="Gudang" onMenuClick={() => setSidebarOpen(true)} />}
-      
+
       <div style={{ padding: '20px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: isDesktop ? 'block' : 'none' }}>
           <h1 style={{ fontFamily: 'Sora', fontSize: 20, fontWeight: 800, color: C.text, margin: 0 }}>Gudang</h1>
@@ -399,10 +443,10 @@ export default function Gudang() {
         </div>
         <button
           onClick={() => openTambah()}
-          style={{ 
-            display: 'flex', alignItems: 'center', gap: 6, background: C.accent, border: 'none', 
-            borderRadius: 12, padding: '10px 16px', color: 'white', fontFamily: 'Sora', 
-            fontSize: 14, fontWeight: 700, cursor: 'pointer', 
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: C.accent, border: 'none',
+            borderRadius: 12, padding: '10px 16px', color: 'white', fontFamily: 'Sora',
+            fontSize: 14, fontWeight: 700, cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(234,88,12,0.35)',
             marginLeft: isDesktop ? 0 : 'auto'
           }}
@@ -419,7 +463,7 @@ export default function Gudang() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', padding: '16px 16px 0', gap: 0, borderBottom: `1px solid ${C.border}`, marginTop: 8 }}>
-        {TABS.map((tab, i) => (
+        {tabsList.map((tab, i) => (
           <button
             key={tab}
             onClick={() => setActiveTab(i)}
@@ -445,14 +489,15 @@ export default function Gudang() {
             : productsIsError || supErr
               ? <SembakoErrorState error={productsError || supError} onRetry={() => { productsRefetch(); supRefetch(); }} />
               : <StokSaatIni
-                  products={products}
-                  onTambah={openTambah}
-                  onAdjust={openAdjust}
-                  onShowHistory={p => { setHistoryProduct(p); setShowHistorySheet(true) }}
-                />
+                products={products}
+                onTambah={openTambah}
+                onAdjust={openAdjust}
+                onShowHistory={p => { setHistoryProduct(p); setShowHistorySheet(true) }}
+              />
         )}
         {activeTab === 1 && <RiwayatMasuk />}
         {activeTab === 2 && <RiwayatKeluar />}
+        {activeTab === 3 && <AuditLogTab />}
       </div>
 
       {/* Sheet Stok Masuk */}
@@ -502,9 +547,9 @@ function KartuStokSheet({ product, onClose }) {
 
   const movements = useMemo(() => {
     if (!product) return []
-    
+
     const logs = []
-    
+
     // 1. Stock In (Batches)
     batches.filter(b => b.product_id === product.id).forEach(b => {
       logs.push({
@@ -517,7 +562,7 @@ function KartuStokSheet({ product, onClose }) {
         color: 'text-emerald-500'
       })
     })
-    
+
     // 2. Stock Out (Sales & Adjustments)
     stockOuts.filter(s => s.product_id === product.id).forEach(s => {
       logs.push({
@@ -546,50 +591,50 @@ function KartuStokSheet({ product, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
-           <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, margin: '0 auto' }} />
+          <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, margin: '0 auto' }} />
         </div>
-        
+
         <div style={{ padding: '4px 20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-           <div className="flex items-center gap-3">
-              <div>
-                <h2 className="font-display font-black text-white uppercase text-lg leading-none">Kartu Stok</h2>
-                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mt-1">{product?.product_name}</p>
-              </div>
-           </div>
-           <button onClick={onClose} className="p-2 rounded-lg bg-white/5 text-[#4B6478]">
-              <X size={20} />
-           </button>
+          <div className="flex items-center gap-3">
+            <div>
+              <h2 className="font-display font-black text-white uppercase text-lg leading-none">Kartu Stok</h2>
+              <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mt-1">{product?.product_name}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 text-[#4B6478]">
+            <X size={20} />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 space-y-3 pb-20">
-           {isError ? (
-             <div className="py-10"><SembakoErrorState error={error} onRetry={refetch} /></div>
-           ) : isLoading ? (
-             <p className="text-center py-20 text-[#4B6478] font-bold text-xs uppercase">Memuat data...</p>
-           ) : movements.length === 0 ? (
-             <p className="text-center py-20 text-[#4B6478] font-bold text-xs uppercase">Belum ada riwayat pergerakan</p>
-           ) : (
-             movements.map(m => (
-               <div key={m.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex justify-between items-center">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                       <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full bg-white/10 uppercase tracking-widest", m.color)}>
-                         {m.type}
-                       </span>
-                       <span className="text-[10px] font-bold text-[#4B6478] uppercase">{fmtDate(m.date)}</span>
-                    </div>
-                    <p className="text-sm font-black text-white leading-tight uppercase">{m.ref}</p>
-                    <p className="text-[11px] font-bold text-[#4B6478] uppercase truncate max-w-[200px]">{m.notes}</p>
+          {isError ? (
+            <div className="py-10"><SembakoErrorState error={error} onRetry={refetch} /></div>
+          ) : isLoading ? (
+            <p className="text-center py-20 text-[#4B6478] font-bold text-xs uppercase">Memuat data...</p>
+          ) : movements.length === 0 ? (
+            <p className="text-center py-20 text-[#4B6478] font-bold text-xs uppercase">Belum ada riwayat pergerakan</p>
+          ) : (
+            movements.map(m => (
+              <div key={m.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex justify-between items-center">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full bg-white/10 uppercase tracking-widest", m.color)}>
+                      {m.type}
+                    </span>
+                    <span className="text-[10px] font-bold text-[#4B6478] uppercase">{fmtDate(m.date)}</span>
                   </div>
-                  <div className="text-right">
-                    <p className={cn("font-display text-lg font-black tabular-nums", m.color)}>
-                       {m.qty > 0 ? '+' : ''}{m.qty}
-                    </p>
-                    <p className="text-[10px] font-black text-[#4B6478] uppercase">{product?.unit}</p>
-                  </div>
-               </div>
-             ))
-           )}
+                  <p className="text-sm font-black text-white leading-tight uppercase">{m.ref}</p>
+                  <p className="text-[11px] font-bold text-[#4B6478] uppercase truncate max-w-[200px]">{m.notes}</p>
+                </div>
+                <div className="text-right">
+                  <p className={cn("font-display text-lg font-black tabular-nums", m.color)}>
+                    {m.qty > 0 ? '+' : ''}{m.qty}
+                  </p>
+                  <p className="text-[10px] font-black text-[#4B6478] uppercase">{product?.unit}</p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -597,6 +642,7 @@ function KartuStokSheet({ product, onClose }) {
 }
 
 function AdjustStokSheet({ batch, product, onClose }) {
+  const { profile } = useAuth()
   const adjustMut = useAdjustBatchStock()
   const [qtyChange, setQtyChange] = useState('')
   const [reason, setReason] = useState('broken') // 'broken' | 'lost' | 'found' | 'other'
@@ -606,7 +652,7 @@ function AdjustStokSheet({ batch, product, onClose }) {
     e.preventDefault()
     const change = Number(qtyChange)
     if (isNaN(change) || change === 0) return toast.error('Jumlah perubahan tidak boleh 0')
-    
+
     // Logic: If 'broken' or 'lost', we expect a negative number or we auto-negate it
     const finalChange = (reason === 'broken' || reason === 'lost') ? -Math.abs(change) : change
 
@@ -616,6 +662,16 @@ function AdjustStokSheet({ batch, product, onClose }) {
       reason,
       notes
     })
+
+    recordAuditLog({
+      action_type: 'STOK_ADJ',
+      product_name: product?.product_name || 'Produk Gudang',
+      old_value: batch?.qty_sisa || 0,
+      new_value: (batch?.qty_sisa || 0) + finalChange,
+      notes: `Penyesuaian (${reason}): ${notes || 'Tidak ada catatan'}`,
+      profile,
+    })
+
     onClose()
   }
 
@@ -633,82 +689,82 @@ function AdjustStokSheet({ batch, product, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
-           <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, margin: '0 auto' }} />
+          <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, margin: '0 auto' }} />
         </div>
-        
+
         <div style={{ padding: '4px 20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-           <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
-                <ArrowRightLeft size={20} />
-              </div>
-              <div>
-                <h2 className="font-display font-black text-white uppercase text-lg leading-none">Otoritas Penyesuaian</h2>
-                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mt-1">Hanya untuk Owner</p>
-              </div>
-           </div>
-           <button onClick={onClose} className="p-2 rounded-lg bg-white/5 text-[#4B6478] hover:bg-white/10">
-              <X size={20} />
-           </button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+              <ArrowRightLeft size={20} />
+            </div>
+            <div>
+              <h2 className="font-display font-black text-white uppercase text-lg leading-none">Otoritas Penyesuaian</h2>
+              <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mt-1">Hanya untuk Owner</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 text-[#4B6478] hover:bg-white/10">
+            <X size={20} />
+          </button>
         </div>
 
         <form onSubmit={handleAdjust} style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-              <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">{product.product_name}</p>
-              <p className="text-sm font-black text-white uppercase tracking-tight">Batch: {batch.batch_code}</p>
-              <p className="text-xs font-bold text-orange-400">Stok Digital Saat Ini: {batch.qty_sisa} {product.unit}</p>
-           </div>
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+            <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">{product.product_name}</p>
+            <p className="text-sm font-black text-white uppercase tracking-tight">Batch: {batch.batch_code}</p>
+            <p className="text-xs font-bold text-orange-400">Stok Digital Saat Ini: {batch.qty_sisa} {product.unit}</p>
+          </div>
 
-           <SField label="Aksi">
-              <div className="grid grid-cols-2 gap-2">
-                 {[
-                   { id: 'broken', label: 'RUSAK (-)', color: 'text-red-400', bg: 'bg-red-500/10' },
-                   { id: 'lost', label: 'HILANG (-)', color: 'text-red-400', bg: 'bg-red-500/10' },
-                   { id: 'found', label: 'TEMUAN (+)', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                   { id: 'other', label: 'LAINNYA', color: 'text-blue-400', bg: 'bg-blue-500/10' }
-                 ].map(opt => (
-                   <button
-                     key={opt.id} type="button"
-                     onClick={() => setReason(opt.id)}
-                     className={cn(
-                       "h-12 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
-                       reason === opt.id ? "border-orange-500 bg-orange-500/20 text-white shadow-lg" : "border-white/5 bg-white/5 text-[#4B6478]"
-                     )}
-                   >
-                     {opt.label}
-                   </button>
-                 ))}
-              </div>
-           </SField>
+          <SField label="Aksi">
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'broken', label: 'RUSAK (-)', color: 'text-red-400', bg: 'bg-red-500/10' },
+                { id: 'lost', label: 'HILANG (-)', color: 'text-red-400', bg: 'bg-red-500/10' },
+                { id: 'found', label: 'TEMUAN (+)', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                { id: 'other', label: 'LAINNYA', color: 'text-blue-400', bg: 'bg-blue-500/10' }
+              ].map(opt => (
+                <button
+                  key={opt.id} type="button"
+                  onClick={() => setReason(opt.id)}
+                  className={cn(
+                    "h-12 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                    reason === opt.id ? "border-orange-500 bg-orange-500/20 text-white shadow-lg" : "border-white/5 bg-white/5 text-[#4B6478]"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </SField>
 
-           <SField label={`Jumlah Fisik yang di-Adjust (${product.unit})`}>
-              <input
-                type="number" step="0.01"
-                value={qtyChange}
-                onChange={e => setQtyChange(e.target.value)}
-                placeholder="0"
-                style={inputSt}
-                autoFocus
-              />
-           </SField>
+          <SField label={`Jumlah Fisik yang di-Adjust (${product.unit})`}>
+            <input
+              type="number" step="0.01"
+              value={qtyChange}
+              onChange={e => setQtyChange(e.target.value)}
+              placeholder="0"
+              style={inputSt}
+              autoFocus
+            />
+          </SField>
 
-           <SField label="Keterangan / Alasan">
-              <textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Contoh: Pecah saat pemindahan atau salah hitung awal"
-                style={{ ...inputSt, minHeight: 80, fontSize: 13, padding: 12 }}
-              />
-           </SField>
+          <SField label="Keterangan / Alasan">
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Contoh: Pecah saat pemindahan atau salah hitung awal"
+              style={{ ...inputSt, minHeight: 80, fontSize: 13, padding: 12 }}
+            />
+          </SField>
 
-           <div className="pt-4">
-              <button
-                type="submit"
-                disabled={isLoading || !qtyChange}
-                className="w-full h-14 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-orange-950/40 transition-all active:scale-95 disabled:opacity-50"
-              >
-                {isLoading ? 'MEMPROSES...' : 'SIMPAN PENYESUAIAN'}
-              </button>
-           </div>
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={isLoading || !qtyChange}
+              className="w-full h-14 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-orange-950/40 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isLoading ? 'MEMPROSES...' : 'SIMPAN PENYESUAIAN'}
+            </button>
+          </div>
         </form>
       </motion.div>
     </motion.div>

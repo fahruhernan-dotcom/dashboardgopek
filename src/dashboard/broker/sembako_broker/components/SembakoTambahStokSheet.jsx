@@ -11,6 +11,8 @@ import {
 } from '@/lib/hooks/useSembakoData'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { C, CustomSelect, InputRupiah } from './sembakoSaleUtils'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { recordAuditLog } from '@/lib/hooks/useSembakoAudit'
 
 const TEXT_SEC = '#A8764A'
 
@@ -104,9 +106,10 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
     } catch { /* ignore */ }
   }
 
+  const { profile } = useAuth()
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.product_id) return toast.error('Pilih produk terlebih dahulu')
+    if (!form.product_id) return toast.error('Pilih produk dulu')
     if (!form.qty_masuk || Number(form.qty_masuk) <= 0) return toast.error('Jumlah harus > 0')
     
     const finalBuyPrice = Number(String(form.buy_price).replace(/\D/g, ''))
@@ -130,6 +133,15 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
         sell_price: finalSellPrice
       })
     }
+
+    recordAuditLog({
+      action_type: 'STOK_MASUK',
+      product_name: selectedProduct?.product_name || 'Stok Masuk',
+      old_value: selectedProduct?.current_stock || 0,
+      new_value: (selectedProduct?.current_stock || 0) + Number(form.qty_masuk),
+      notes: `Stok Masuk (+${form.qty_masuk} ${selectedProduct?.unit || ''})`,
+      profile,
+    })
 
     onClose()
   }
