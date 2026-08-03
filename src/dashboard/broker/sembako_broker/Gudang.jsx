@@ -24,9 +24,6 @@ const TEXT_SEC = '#A8764A'
 
 const fmt = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
 
-
-
-
 // ── Tab: Stok Saat Ini ────────────────────────────────────────────────────────
 
 function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
