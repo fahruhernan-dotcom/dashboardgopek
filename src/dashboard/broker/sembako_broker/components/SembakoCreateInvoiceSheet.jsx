@@ -1131,22 +1131,22 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     <div
                       className="rounded-2xl p-4 space-y-3"
                       style={{
-                        background: grossProfit >= 0 ? 'rgba(2, 26, 2,0.05)' : 'rgba(239,68,68,0.05)',
-                        border: `1px solid ${grossProfit >= 0 ? 'rgba(2, 26, 2,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                        background: grossProfit >= 0 ? 'rgba(16, 185, 129,0.08)' : 'rgba(239,68,68,0.05)',
+                        border: `1px solid ${grossProfit >= 0 ? 'rgba(16, 185, 129,0.25)' : 'rgba(239,68,68,0.2)'}`,
                       }}
                     >
                       <div className="flex items-end justify-between">
                         <div>
-                          <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: grossProfit >= 0 ? '#021a02' : '#EF4444' }}>
+                          <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: grossProfit >= 0 ? '#10B981' : '#EF4444' }}>
                             Estimasi Net Profit
                           </p>
-                          <p className="text-2xl font-black" style={{ color: grossProfit >= 0 ? '#021a02' : '#EF4444', fontFamily: 'Sora' }}>
+                          <p className="text-2xl font-black" style={{ color: grossProfit >= 0 ? '#10B981' : '#EF4444', fontFamily: 'Sora' }}>
                             {formatIDR(netProfit)}
                           </p>
                         </div>
                         <div
                           className="px-3 py-1.5 rounded-full text-xs font-black"
-                          style={{ background: grossProfit >= 0 ? 'rgba(2, 26, 2,0.15)' : 'rgba(239,68,68,0.15)', color: grossProfit >= 0 ? '#021a02' : '#EF4444' }}
+                          style={{ background: grossProfit >= 0 ? 'rgba(16, 185, 129,0.15)' : 'rgba(239,68,68,0.15)', color: grossProfit >= 0 ? '#10B981' : '#EF4444' }}
                         >
                           Margin {marginPct}%
                         </div>
@@ -1154,7 +1154,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                       <div className="grid grid-cols-2 gap-2 text-[11px]">
                         <div>
                           <span style={{ color: MUTED }}>Gross Profit</span>
-                          <p className="font-black mt-0.5" style={{ color: grossProfit >= 0 ? '#021a02' : '#EF4444' }}>{formatIDR(grossProfit)}</p>
+                          <p className="font-black mt-0.5" style={{ color: grossProfit >= 0 ? '#10B981' : '#EF4444' }}>{formatIDR(grossProfit)}</p>
                         </div>
                         {(deliveryCost > 0 || otherCost > 0) && (
                           <div>
@@ -1226,9 +1226,9 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     {/* Payment section */}
                     <div
                       className="rounded-2xl p-4 space-y-3"
-                      style={{ background: 'rgba(2, 26, 2,0.04)', border: '1px solid rgba(2, 26, 2,0.15)' }}
+                      style={{ background: 'rgba(16, 185, 129,0.04)', border: '1px solid rgba(16, 185, 129,0.15)' }}
                     >
-                      <label className={labelCn + ' text-[#021a02]'}>Pembayaran Awal (Opsional)</label>
+                      <label className={labelCn + ' text-[#10B981]'}>Pembayaran Awal (Opsional)</label>
                       <InputRupiah value={payAmount} onChange={setPayAmount} placeholder="Jumlah bayar..." />
                       <AnimatePresence>
                         {payAmount > 0 && (
@@ -1247,7 +1247,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                       {payAmount > 0 && (
                         <div className="flex justify-between text-[11px]">
                           <span style={{ color: MUTED }}>Sisa Piutang</span>
-                          <span className="font-black" style={{ color: totalAmount - payAmount > 0 ? '#EF4444' : '#021a02' }}>
+                          <span className="font-black" style={{ color: totalAmount - payAmount > 0 ? '#EF4444' : '#10B981' }}>
                             {formatIDR(Math.max(0, totalAmount - payAmount))}
                           </span>
                         </div>

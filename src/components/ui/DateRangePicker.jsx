@@ -28,7 +28,7 @@ export function DateRangePicker({
               !value?.from && "text-[#4B6478]"
             )}
           >
-            <CalendarIcon size={18} className={cn("transition-colors", value?.from ? "text-[#021a02]" : "text-[#4B6478]")} />
+            <CalendarIcon size={18} className={cn("transition-colors", value?.from ? "text-[#EA580C]" : "text-[#4B6478]")} />
             {value?.from ? (
               value.to ? (
                 <>

@@ -53,7 +53,7 @@ export function DatePicker({ id, value, onChange, placeholder, className, allowC
               className
             )}
           >
-            <CalendarIcon size={18} className={cn("transition-colors", value ? "text-[#021a02]" : "text-[#4B6478]")} />
+            <CalendarIcon size={18} className={cn("transition-colors", value ? "text-[#EA580C]" : "text-[#4B6478]")} />
             <span className="flex-1 text-left">
               {dateValue && !isNaN(dateValue.getTime())
                 ? format(dateValue, 'dd MMM yyyy', { locale: idLocale })
