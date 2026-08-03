@@ -31,6 +31,15 @@ async function getTenantId() {
     // ignore
   }
 
+  try {
+    const { data: tenants } = await supabase.from('tenants').select('id').limit(1)
+    if (tenants && tenants.length > 0 && tenants[0].id) {
+      return tenants[0].id
+    }
+  } catch (e) {
+    // ignore
+  }
+
   return '00000000-0000-0000-0000-000000000002'
 }
 
