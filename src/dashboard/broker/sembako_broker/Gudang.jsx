@@ -24,13 +24,7 @@ const TEXT_SEC = '#A8764A'
 
 const fmt = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
 
-const inputSt = {
-  width: '100%', height: '40px', background: C.input,
-  border: `1px solid ${C.border}`, borderRadius: '10px',
-  padding: '0 12px', color: C.text, fontSize: '13px',
-  fontFamily: 'DM Sans', fontWeight: 600, outline: 'none',
-  boxSizing: 'border-box',
-}
+
 
 
 // ── Tab: Stok Saat Ini ────────────────────────────────────────────────────────

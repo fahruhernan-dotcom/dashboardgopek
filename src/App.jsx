@@ -25,7 +25,7 @@ import SembakoTokoSupplierDetail from './dashboard/broker/sembako_broker/TokoSup
 import SembakoRetur from './dashboard/broker/sembako_broker/Retur'
 import SembakoLaporan from './dashboard/broker/sembako_broker/Laporan'
 import SembakoTimManajemenPage from './dashboard/broker/sembako_broker/TimManajemenPage'
-import SembakoAkun from './dashboard/broker/sembako_broker/Akun'
+import SembakoAkun from './dashboard/_shared/pages/Akun'
 import SembakoTutorial from './dashboard/broker/sembako_broker/SembakoTutorial'
 
 import Login from './pages/Login'
