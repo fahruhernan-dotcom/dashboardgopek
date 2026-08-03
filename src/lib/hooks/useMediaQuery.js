@@ -19,3 +19,7 @@ export function useMediaQuery(query) {
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
+
+export function useIsMobile() {
+  return useMediaQuery('(max-width: 767px)')
+}

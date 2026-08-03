@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useIsMobile } from '@/lib/hooks/useMediaQuery'
 import { MobileWheelDatePicker } from '@/components/ui/MobileWheelDatePicker'
 
 export function DatePicker({ id, value, onChange, placeholder, className, allowClear = true }) {
