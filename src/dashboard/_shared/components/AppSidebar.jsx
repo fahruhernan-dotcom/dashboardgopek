@@ -78,6 +78,7 @@ import { getSubscriptionStatus } from '@/lib/subscriptionUtils'
 import { supabase } from '@/lib/supabase'
 import { isSuperadmin as checkIsSuperadmin, isOwner, isStaff } from '@/lib/auth'
 import { checkQuotaUsage } from '@/lib/quotaUtils'
+import { useSembakoReturns } from '@/lib/hooks/useSembakoData'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { logError } from '@/lib/logger/errorLogger'
@@ -197,6 +198,9 @@ export default function AppSidebar({ open, onClose }) {
 
   // Peternak permission matrix (null for non-peternak users)
   const pp = isPeternak ? peternakPermissions(profile?.role) : null
+
+  const { data: sembakoReturnsList = [] } = isSembako ? useSembakoReturns() : { data: [] }
+  const pendingRetursCount = isSembako ? sembakoReturnsList.filter(r => r.status === 'pending').length : 0
 
   const brokerBase = getBrokerBasePath(tenant)
   const peternakBase = getXBasePath(tenant, profile)
@@ -338,7 +342,7 @@ export default function AppSidebar({ open, onClose }) {
           { title: 'Penjualan',       url: `${brokerBase}/penjualan`,     icon: ArrowLeftRight, dataTutorial: 'sembako-penjualan' },
           { title: 'Toko & Supplier', url: `${brokerBase}/toko-supplier`, icon: Store, dataTutorial: 'sembako-toko' },
           { title: 'Gudang',          url: `${brokerBase}/gudang`,        icon: Warehouse, dataTutorial: 'sembako-gudang' },
-          { title: 'Retur Produk',    url: `${brokerBase}/retur`,         icon: RotateCcw },
+          { title: 'Retur Produk',    url: `${brokerBase}/retur`,         icon: RotateCcw, badge: pendingRetursCount > 0 ? String(pendingRetursCount) : null },
           { title: 'Inventori & HPP', url: `${brokerBase}/produk`,        icon: Package,        roles: ['owner', 'staff'] },
         ] : []),
       ]

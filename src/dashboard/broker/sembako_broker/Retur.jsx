@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RotateCcw, Plus, Search, Filter, AlertCircle, CheckCircle2, Clock, PackageX, User, Store, ArrowUpRight, ArrowDownLeft, X, ChevronDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
@@ -34,6 +34,17 @@ export default function SembakoRetur() {
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('all') // 'all', 'sale_return', 'purchase_return'
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  // Close modal on Esc key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && sheetOpen) {
+        setSheetOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [sheetOpen])
 
   // Form State for new Return
   const [form, setForm] = useState({
