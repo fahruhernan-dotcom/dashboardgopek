@@ -32,6 +32,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { InputRupiah } from '@/components/ui/InputRupiah'
 import { DatePicker } from '@/components/ui/DatePicker'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select'
 
 const SALARY_TYPES = [
   { value: 'harian',   label: 'Harian' },
@@ -322,21 +325,32 @@ export default function BrokerKaryawanPage({ hideMobileHeader = false, accentCol
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">Jabatan *</Label>
-                <select required value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-                  className="w-full h-11 rounded-lg bg-[#111C24] border border-white/5 text-white text-sm px-3 font-medium">
-                  <option value="">Pilih jabatan</option>
-                  {roles.map(r => <option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
-                  <option value="lainnya">Lainnya</option>
-                </select>
+                <Select value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))}>
+                  <SelectTrigger className="w-full h-11 rounded-xl bg-[#111C24] border-white/5 text-white text-sm font-medium">
+                    <SelectValue placeholder="Pilih jabatan" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#111C24] border-white/10 text-white">
+                    {roles.map(r => (
+                      <SelectItem key={r} value={r} className="capitalize cursor-pointer">
+                        {r.charAt(0).toUpperCase() + r.slice(1)}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="lainnya" className="cursor-pointer">Lainnya</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">Status</Label>
-                <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                  className="w-full h-11 rounded-lg bg-[#111C24] border border-white/5 text-white text-sm px-3 font-medium">
-                  <option value="aktif">Aktif</option>
-                  <option value="nonaktif">Non-aktif</option>
-                  <option value="cuti">Cuti</option>
-                </select>
+                <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger className="w-full h-11 rounded-xl bg-[#111C24] border-white/5 text-white text-sm font-medium">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#111C24] border-white/10 text-white">
+                    <SelectItem value="aktif" className="cursor-pointer">Aktif</SelectItem>
+                    <SelectItem value="nonaktif" className="cursor-pointer">Non-aktif</SelectItem>
+                    <SelectItem value="cuti" className="cursor-pointer">Cuti</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -349,10 +363,18 @@ export default function BrokerKaryawanPage({ hideMobileHeader = false, accentCol
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">Tipe Gaji</Label>
-                <select value={form.salary_type} onChange={e => setForm(f => ({ ...f, salary_type: e.target.value }))}
-                  className="w-full h-11 rounded-lg bg-[#111C24] border border-white/5 text-white text-sm px-3 font-medium">
-                  {SALARY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
+                <Select value={form.salary_type} onValueChange={v => setForm(f => ({ ...f, salary_type: v }))}>
+                  <SelectTrigger className="w-full h-11 rounded-xl bg-[#111C24] border-white/5 text-white text-sm font-medium">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#111C24] border-white/10 text-white">
+                    {SALARY_TYPES.map(t => (
+                      <SelectItem key={t.value} value={t.value} className="cursor-pointer">
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">Nominal Gaji</Label>

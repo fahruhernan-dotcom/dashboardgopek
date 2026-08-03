@@ -170,15 +170,14 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                       style={{ ...inputSt, flex: 1 }}
                       autoFocus
                     />
-                    <select
-                      value={newProdUnit}
-                      onChange={e => setNewProdUnit(e.target.value)}
-                      style={{ ...inputSt, width: 80, padding: '0 8px' }}
-                    >
-                      {['kg', 'liter', 'pcs', 'karung', 'karton', 'sak'].map(u => (
-                        <option key={u} value={u}>{u}</option>
-                      ))}
-                    </select>
+                    <div style={{ width: 110 }}>
+                      <CustomSelect
+                        value={newProdUnit}
+                        onChange={val => setNewProdUnit(val)}
+                        options={['kg', 'liter', 'pcs', 'karung', 'karton', 'sak', 'slop', 'pack'].map(u => ({ value: u, label: u }))}
+                        placeholder="Satuan"
+                      />
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button type="button" onClick={handleAddProduct} disabled={createProd.isPending || !newProdName.trim()}
