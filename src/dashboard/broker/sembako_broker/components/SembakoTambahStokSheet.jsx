@@ -68,7 +68,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showAddProd, setShowAddProd] = useState(false)
   const [newProdName, setNewProdName] = useState('')
-  const [newProdUnit, setNewProdUnit] = useState('kg')
+  const [newProdUnit, setNewProdUnit] = useState('slop')
   const updateProduct = useUpdateSembakoProduct()
 
   const handleAddProduct = async () => {
@@ -174,7 +174,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                       <CustomSelect
                         value={newProdUnit}
                         onChange={val => setNewProdUnit(val)}
-                        options={['kg', 'liter', 'pcs', 'karung', 'karton', 'sak', 'slop', 'pack'].map(u => ({ value: u, label: u }))}
+                        options={['slop', 'pack', 'karton', 'pres', 'bal', 'kg', 'liter', 'pcs', 'karung', 'sak'].map(u => ({ value: u, label: u }))}
                         placeholder="Satuan"
                       />
                     </div>
@@ -278,7 +278,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
             )}
           </SField>
 
-          <SField label={`Jumlah${selectedProduct ? ` (${selectedProduct.unit})` : ''} *`}>
+          <SField label={`Jumlah${selectedProduct ? ` (${selectedProduct.unit})` : ''}`}>
             <input
               id="stok-qty" name="qty_masuk" type="number" min="0.01" step="0.01"
               value={form.qty_masuk}
@@ -289,7 +289,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
           </SField>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <SField label="Harga Beli / satuan *">
+            <SField label="Harga Beli / satuan">
               <InputRupiah
                 value={form.buy_price}
                 onChange={val => set('buy_price', val)}
@@ -316,7 +316,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
             </div>
           )}
 
-          <SField label="Tanggal Masuk *">
+          <SField label="Tanggal Masuk">
             <DatePicker
               value={form.purchase_date}
               onChange={val => set('purchase_date', val)}

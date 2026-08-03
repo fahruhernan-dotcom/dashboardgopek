@@ -335,7 +335,7 @@ export default function SembakoRetur() {
                 {/* Pilih Toko / Supplier (Custom Select) */}
                 <div>
                   <label className="block text-slate-400 font-bold mb-1.5">
-                    {form.type === 'sale_return' ? 'Pilih Toko / Pelanggan *' : 'Pilih Pabrik / Supplier *'}
+                    {form.type === 'sale_return' ? 'Pilih Toko / Pelanggan' : 'Pilih Pabrik / Supplier'}
                   </label>
                   <CustomSelect
                     value={form.party_name}
@@ -364,7 +364,7 @@ export default function SembakoRetur() {
 
                 {/* Pilih Produk */}
                 <div>
-                  <label className="block text-slate-400 font-bold mb-1.5">Produk Rokok *</label>
+                  <label className="block text-slate-400 font-bold mb-1.5">Produk Rokok</label>
                   <CustomSelect
                     value={form.product_id}
                     onChange={val => setForm({ ...form, product_id: val })}
