@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Security meta tags should be handled via HTTP headers -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#16a34a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Broker Dashboard" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Theme init: baca localStorage sebelum render untuk cegah FOUC -->
+    <script>
+      (function() {
+        var saved = localStorage.getItem('ternakos_theme_mode');
+        // Default: dark (supaya landing page tetap dark untuk user baru)
+        if (saved === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <title>Broker Dashboard - Manajemen Sembako</title>
+    <meta name="description" content="Kelola stok, transaksi penjualan, toko supplier, dan laporan bisnis sembako dalam satu Broker Dashboard.">
+    <link rel="canonical" href="https://ternakos.my.id/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ternakos.my.id/" />
+    <meta property="og:title" content="Broker Dashboard - Manajemen Sembako" />
+    <meta property="og:description" content="Kelola stok, transaksi penjualan, toko supplier, dan laporan bisnis sembako dalam satu Broker Dashboard." />
+    <meta property="og:image" content="https://ternakos.my.id/og-image.jpg" />
+    <meta property="og:image:secure_url" content="https://ternakos.my.id/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Broker Dashboard" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://ternakos.my.id/" />
+    <meta name="twitter:title" content="Broker Dashboard - Manajemen Sembako" />
+    <meta name="twitter:description" content="Kelola stok, transaksi penjualan, toko supplier, dan laporan bisnis sembako dalam satu Broker Dashboard." />
+    <meta name="twitter:image" content="https://ternakos.my.id/og-image.jpg" />
+
+    <!-- Schema.org for Sitelinks Search Box / Nested Sitelinks -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": [
+        {
+          "@type": "SiteNavigationElement",
+          "position": 1,
+          "name": "Fitur",
+          "description": "Fitur lengkap platform TernakOS",
+          "url": "https://ternakos.my.id/fitur"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 2,
+          "name": "Harga",
+          "description": "Paket langganan TernakOS",
+          "url": "https://ternakos.my.id/harga"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 3,
+          "name": "Harga Pasar",
+          "description": "Informasi harga komoditas terkini",
+          "url": "https://ternakos.my.id/harga-pasar"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 4,
+          "name": "Tentang Kami",
+          "description": "Profil dan misi TernakOS",
+          "url": "https://ternakos.my.id/tentang-kami"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 5,
+          "name": "Kebijakan Privasi",
+          "description": "Komitmen perlindungan data",
+          "url": "https://ternakos.my.id/privacy"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 6,
+          "name": "Syarat & Ketentuan",
+          "description": "Ketentuan penggunaan layanan",
+          "url": "https://ternakos.my.id/terms"
+        }
+      ]
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"><!--app-html--></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
