@@ -1,10 +1,11 @@
-import { format, parseISO, isValid } from 'date-fns'
+import { format, parseISO, isValid, formatDistanceToNow } from 'date-fns'
 import { id } from 'date-fns/locale'
 
-export const safeNumber = (val, fallback = 0) => {
-  const num = Number(val)
-  return isNaN(num) || val === null || val === undefined ? fallback : num
+export const safeNum = (v, fallback = 0) => {
+  const num = Number(v)
+  return isNaN(num) || v === null || v === undefined ? fallback : num
 }
+export const safeNumber = safeNum
 
 export const toTitleCase = (str) => {
   if (!str) return ''
@@ -21,8 +22,6 @@ export const safePercent = (num, den, fallback = 0) => {
   const d = Number(den)
   return d === 0 || isNaN(n) || isNaN(d) ? fallback : (n / d) * 100
 }
-
-export const safeNum = (v) => Number(v) || 0
 
 export const formatIDR = (n) => {
   const num = safeNum(n)
@@ -81,28 +80,17 @@ export const formatRelative = (dateValue, fallback = '-') => {
   if (!dateValue) return fallback
   
   try {
-    const date = dateValue instanceof Date
-      ? dateValue
-      : parseISO(dateValue)
-    
+    const date = dateValue instanceof Date ? dateValue : parseISO(dateValue)
     if (!isValid(date)) return fallback
-    
-    const now = new Date()
-    const diffMs = now - date
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-    
-    if (diffMins < 1) return 'Baru saja'
-    if (diffMins < 60) return `${diffMins} menit lalu`
-    if (diffHours < 24) return `${diffHours} jam lalu`
-    if (diffDays < 7) return `${diffDays} hari lalu`
-    
-    return format(date, 'd MMM yyyy', { locale: id })
+    const diffMs = Date.now() - date.getTime()
+    if (diffMs < 60000) return 'Baru saja'
+    if (diffMs > 7 * 86400000) return format(date, 'd MMM yyyy', { locale: id })
+    return formatDistanceToNow(date, { addSuffix: true, locale: id })
   } catch {
     return fallback
   }
 }
+
 
 export const formatWeight = (kg) => {
   const num = safeNum(kg)

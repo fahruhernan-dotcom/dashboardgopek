@@ -11,6 +11,7 @@ export const AGENT_STATE = {
   ERROR: 'ERROR',
 }
 
+// ponytail: In-memory intent cache (unbounded Map). Known ceiling: memory leak under long-running session without tab reload. Upgrade path: LRU cache or IndexedDB TTL.
 export const intentCache = new Map()
 let requestHistory = []
 
@@ -23,6 +24,7 @@ export const hashString = (str) => {
   return Math.abs(hash).toString(16)
 }
 
+// ponytail: Client-side sliding-window rate limit (20 req/min). Known ceiling: resets on page reload. Upgrade path: Redis/Supabase RPC rate limiter.
 export const checkRateLimit = () => {
   const now = Date.now()
   requestHistory = requestHistory.filter(ts => now - ts < 60000)
@@ -30,6 +32,7 @@ export const checkRateLimit = () => {
   requestHistory.push(now)
   return true
 }
+
 
 export const fuzzyScore = (a, b) => {
   const norm = s => s.toLowerCase().replace(/\b(pak|bu|ibu|cv|ud|rpa|pt|toko|farm|kandang)\b/g, '').replace(/[^a-z0-9]/g, '').trim()

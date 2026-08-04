@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
 import { X, QrCode } from 'lucide-react'
 import { toast } from 'sonner'
 import { logError } from '@/lib/logger/errorLogger'
@@ -64,11 +63,30 @@ export default function QRScannerModal({ onClose, onScanSuccess }) {
   const qrCodeRef = useRef(null)
 
   useEffect(() => {
-    const html5Qrcode = new Html5Qrcode('qr-reader-container')
-    qrCodeRef.current = html5Qrcode
+    let html5Qrcode = null
 
     const startScanner = async () => {
       try {
+        let Html5QrcodeClass = window.Html5Qrcode
+        if (!Html5QrcodeClass) {
+          try {
+            const dynamicImport = new Function('specifier', 'return import(specifier)')
+            const mod = await dynamicImport('html5-qrcode')
+            Html5QrcodeClass = mod?.Html5Qrcode || mod?.default
+          } catch {
+            /* html5-qrcode is optional */
+          }
+        }
+
+
+        if (!Html5QrcodeClass) {
+          setErrorMsg('Modul pemindai QR belum terpasang.')
+          return
+        }
+
+        html5Qrcode = new Html5QrcodeClass('qr-reader-container')
+        qrCodeRef.current = html5Qrcode
+
         const config = {
           fps: 10,
           qrbox: (width, height) => {
@@ -101,7 +119,6 @@ export default function QRScannerModal({ onClose, onScanSuccess }) {
         const errMsg = err?.message || String(err)
         setErrorMsg('Izin kamera dibutuhkan untuk scan QR.')
         toast.error('Izin kamera dibutuhkan untuk scan QR.')
-        // Log camera error — raw QR content is never logged here
         logError({
           level: 'warn',
           source: 'frontend',
@@ -114,6 +131,7 @@ export default function QRScannerModal({ onClose, onScanSuccess }) {
     }
 
     startScanner()
+
 
     return () => {
       if (qrCodeRef.current) {

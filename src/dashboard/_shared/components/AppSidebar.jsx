@@ -200,11 +200,11 @@ export default function AppSidebar({ open, onClose }) {
   const isRPA = vertical === 'rumah_potong_rpa' || model?.category === 'rumah_potong'
   const isSembako = ['distributor_sembako', 'sembako_broker'].includes(vertical)
 
-  // Peternak permission matrix (null for non-peternak users)
-  const pp = isPeternak ? peternakPermissions(profile?.role) : null
-
-  const { data: sembakoReturnsList = [] } = isSembako ? useSembakoReturns() : { data: [] }
+  // Sembako returs
+  const { data: sembakoReturnsList = [] } = useSembakoReturns()
   const pendingRetursCount = isSembako ? sembakoReturnsList.filter(r => r.status === 'pending').length : 0
+  const pp = null
+
 
   const brokerBase = getBrokerBasePath(tenant)
   const peternakBase = getXBasePath(tenant, profile)

@@ -12,9 +12,13 @@ const FALLBACK_STARTER_LIMIT = FALLBACK_TRANSACTION_QUOTA
  * Only enforced for Starter plan (non-trial).
  *
  * @param {object} tenant
+ * @param {object|string} [options] - Options object or string tableName ('sales' | 'sembako_sales')
  * @returns {{ used, limit, remaining, isAtLimit, isStarter, isLoading }}
  */
-export function useTransactionQuota(tenant) {
+export function useTransactionQuota(tenant, options = {}) {
+  const tableName = typeof options === 'string' ? options : (options.tableName || 'sales')
+  const queryKeyPrefix = typeof options === 'object' && options.queryKeyPrefix ? options.queryKeyPrefix : `${tableName}-quota`
+
   const sub = getSubscriptionStatus(tenant)
   const isStarter = sub.status !== 'active' && sub.status !== 'trial'
 
@@ -25,10 +29,10 @@ export function useTransactionQuota(tenant) {
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
   const { data: used = 0, isLoading } = useQuery({
-    queryKey: ['transaction-quota', tenant?.id, now.getFullYear(), now.getMonth()],
+    queryKey: [queryKeyPrefix, tenant?.id, now.getFullYear(), now.getMonth()],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from('sales')
+        .from(tableName)
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenant.id)
         .eq('is_deleted', false)
@@ -54,3 +58,4 @@ export function useTransactionQuota(tenant) {
     isLoading,
   }
 }
+

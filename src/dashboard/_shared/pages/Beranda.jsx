@@ -404,8 +404,9 @@ export default function Beranda() {
                       {tx.type === 'sale' ? '+' : '-'}{formatIDRShort(safeNumber(tx.type === 'sale' ? tx.total_revenue : tx.total_modal))}
                     </p>
                     <p style={{ fontSize: '10px', color: '#4B6478', marginTop: '2px' }}>
-                      {new Date(tx?.created_at ?? Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      {tx?.created_at ? new Date(tx.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
                     </p>
+
                   </div>
                 </div>
               ))

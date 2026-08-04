@@ -25,30 +25,40 @@ export default function MobileRegister({
   const { t } = useLanguage()
 
   useEffect(() => {
-    import('animejs').then(({ animate, createTimeline, stagger }) => {
-      if (!containerRef.current) return
+    if (!containerRef.current) return
+    const mrStagger = containerRef.current.querySelectorAll('.mr-stagger')
+    const mrLogoWrap = containerRef.current.querySelector('.mr-logo-wrap')
 
-      const mrStagger = containerRef.current.querySelectorAll('.mr-stagger')
-      const mrLogoWrap = containerRef.current.querySelector('.mr-logo-wrap')
-
-      if (mrStagger.length > 0) {
-        createTimeline({ defaults: { ease: 'outElastic(1, 0.6)', duration: 750 } })
-          .add(mrStagger, {
-            opacity: [0, 1],
-            translateY: [32, 0],
-          }, stagger(80))
-      }
-
-      if (mrLogoWrap) {
-        animate(mrLogoWrap, {
-          scale: [0.5, 1],
-          opacity: [0, 1],
-          ease: 'outElastic(1, 0.5)',
-          duration: 900,
-        })
-      }
+    mrStagger.forEach((el, index) => {
+      el.animate(
+        [
+          { opacity: 0, transform: 'translateY(32px)' },
+          { opacity: 1, transform: 'translateY(0)' }
+        ],
+        {
+          duration: 750,
+          delay: index * 80,
+          easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          fill: 'forwards'
+        }
+      )
     })
+
+    if (mrLogoWrap) {
+      mrLogoWrap.animate(
+        [
+          { opacity: 0, transform: 'scale(0.5)' },
+          { opacity: 1, transform: 'scale(1)' }
+        ],
+        {
+          duration: 900,
+          easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          fill: 'forwards'
+        }
+      )
+    }
   }, [])
+
 
   return (
     <div ref={containerRef} style={{ minHeight: '100vh', background: 'transparent', display: 'flex', justifyContent: 'center', position: 'relative' }}>

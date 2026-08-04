@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import anime from '../../lib/animation';
 import { useInView } from 'framer-motion';
 
 const AnimatedCheckmark = ({ className = "" }) => {
@@ -16,15 +15,21 @@ const AnimatedCheckmark = ({ className = "" }) => {
       pathRef.current.setAttribute('stroke-dasharray', pathLength);
       pathRef.current.setAttribute('stroke-dashoffset', pathLength);
 
-      anime({
-        targets: pathRef.current,
-        strokeDashoffset: [pathLength, 0],
-        duration: 600,
-        easing: 'easeOutQuart',
-        delay: 200
-      });
+      pathRef.current.animate(
+        [
+          { strokeDashoffset: pathLength },
+          { strokeDashoffset: 0 }
+        ],
+        {
+          duration: 600,
+          delay: 200,
+          easing: 'cubic-bezier(0.165, 0.84, 0.44, 1)',
+          fill: 'forwards'
+        }
+      );
     }
   }, [isInView]);
+
 
   return (
     <svg 

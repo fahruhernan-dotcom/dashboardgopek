@@ -17,7 +17,7 @@ import { SembakoSaleDetailSheet } from '@/dashboard/broker/sembako_broker/compon
 import { SembakoCreateInvoiceSheet } from '@/dashboard/broker/sembako_broker/components/SembakoCreateInvoiceSheet'
 import { C, INVOICE_FILTERS, LoadingSkeleton, EmptyBox } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { useSembakoTransactionQuota } from '@/lib/hooks/useSembakoTransactionQuota'
+import { useTransactionQuota } from '@/lib/hooks/useTransactionQuota'
 
 export default function SembakoPenjualan() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
@@ -56,7 +56,8 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { tenant } = useAuth()
-  const quota = useSembakoTransactionQuota(tenant)
+  const quota = useTransactionQuota(tenant, { tableName: 'sembako_sales', queryKeyPrefix: 'sembako-transaction-quota' })
+
   const { data: sales = [], isLoading, isError, error, refetch } = useSembakoSales()
   const [search, setSearch] = useState('')
   const [invoiceFilter, setInvoiceFilter] = useState('all')

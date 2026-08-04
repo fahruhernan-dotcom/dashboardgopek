@@ -52,21 +52,24 @@ export function getOAuthRedirectUrl() {
 export async function openBrowserUrl(url, preferExternal = false) {
   if (isCapacitor()) {
     try {
-      const { Browser } = await import('@capacitor/browser');
-      await Browser.open({
-        url,
-        windowName: '_blank',
-        presentationStyle: 'popover', // Use Custom Tab on Android
-        toolbarColor: '#06090F',
-      });
+      const NativeBrowser = window.Capacitor?.Plugins?.Browser
+      if (NativeBrowser?.open) {
+        await NativeBrowser.open({
+          url,
+          windowName: '_blank',
+          presentationStyle: 'popover', // Use Custom Tab on Android
+          toolbarColor: '#06090F',
+        })
+        return
+      }
     } catch (err) {
-      // Fallback: if @capacitor/browser fails, open with window.open
-      console.warn('[Capacitor] Browser.open failed, falling back to window.open:', err);
-      window.open(url, '_blank', 'noopener,noreferrer');
+      console.warn('[Capacitor] Browser.open failed, falling back to window.open:', err)
     }
+    window.open(url, '_blank', 'noopener,noreferrer')
   } else if (preferExternal) {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(url, '_blank', 'noopener,noreferrer')
   } else {
-    window.location.assign(url);
+    window.location.assign(url)
   }
 }
+

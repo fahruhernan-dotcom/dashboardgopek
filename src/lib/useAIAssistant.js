@@ -50,8 +50,10 @@ export function useAIAssistant({ userType, contextPage }) {
   const [lastFailedMessage, setLastFailedMessage] = useState(null)
 
   // ── Snapshot cache ────────────────────────────────────────
+  // ponytail: In-memory snapshot cache (TTL 90s, limit 25 records per entity). Known ceiling: stale entity list during rapid additions. Upgrade path: React Query / Supabase subscription.
   const snapshotCacheRef = useRef(null)
   const SNAPSHOT_TTL_MS = 90 * 1000
+
 
   // HISTORY PERSISTENCE
   useEffect(() => {
