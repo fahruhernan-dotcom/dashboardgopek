@@ -196,6 +196,8 @@ function AppContentLayout() {
   )
 }
 
+import DevicePreviewShell from './components/dev/DevicePreviewShell'
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -203,8 +205,11 @@ export default function App() {
         <AuthProvider>
           <TooltipProvider>
             <ScrollToTop />
-            <AppContentLayout />
+            <DevicePreviewShell>
+              <AppContentLayout />
+            </DevicePreviewShell>
           </TooltipProvider>
+
           <Toaster
             theme="dark"
             position="top-center"

@@ -1,5 +1,7 @@
 import React, { Suspense, useState } from 'react'
-import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer'
+import { PDFDownloadLink, PDFViewer } from '@/lib/pdfFallback'
+
+
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog'

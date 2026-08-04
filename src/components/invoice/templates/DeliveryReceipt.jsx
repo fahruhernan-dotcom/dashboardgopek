@@ -1,5 +1,6 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet } from '@/lib/pdfFallback'
+
 import { formatRupiahPDF, formatDatePDF } from '@/lib/invoice/invoiceUtils'
 
 // Blue accent — beda dari SaleInvoice (emerald) agar mudah dibedakan
