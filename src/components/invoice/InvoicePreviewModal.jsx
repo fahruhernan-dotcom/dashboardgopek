@@ -1,5 +1,7 @@
 import React, { Suspense, useState } from 'react'
-import { PDFDownloadLink, PDFViewer } from '@/lib/pdfFallback'
+import { PDFDownloadLink, PDFViewer } from '@/lib/pdfFallback.jsx'
+
+
 
 
 import {

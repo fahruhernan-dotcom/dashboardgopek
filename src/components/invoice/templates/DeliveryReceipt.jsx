@@ -1,5 +1,6 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet } from '@/lib/pdfFallback'
+import { Document, Page, Text, View, StyleSheet } from '@/lib/pdfFallback.jsx'
+
 
 import { formatRupiahPDF, formatDatePDF } from '@/lib/invoice/invoiceUtils'
 
