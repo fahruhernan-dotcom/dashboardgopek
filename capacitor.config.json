@@ -1,6 +1,7 @@
 {
   "appId": "com.ternakos.gopek",
-  "appName": "TernakOS",
+  "appName": "GPK",
+
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
