@@ -8,7 +8,8 @@ import {
   X, 
   ChevronUp, 
   ChevronDown,
-  Sparkles
+  Sparkles,
+  Type
 } from 'lucide-react'
 import { DevicePreviewContext } from '@/lib/context/DevicePreviewContext'
 
@@ -19,7 +20,7 @@ const DEVICE_PRESETS = {
     width: '100%',
     height: '100%',
     icon: Monitor,
-    subtext: 'Biasa (100% Full Width)',
+    defaultFontScale: 100,
   },
   tablet: {
     id: 'tablet',
@@ -27,7 +28,7 @@ const DEVICE_PRESETS = {
     width: 768,
     height: 1024,
     icon: Tablet,
-    subtext: '768px × 1024px',
+    defaultFontScale: 95,
   },
   mobile: {
     id: 'mobile',
@@ -35,7 +36,7 @@ const DEVICE_PRESETS = {
     width: 375,
     height: 812,
     icon: Smartphone,
-    subtext: '375px × 812px',
+    defaultFontScale: 90,
   },
 }
 
@@ -43,12 +44,19 @@ export default function DevicePreviewShell({ children }) {
   const [mode, setMode] = useState('desktop')
   const [isLandscape, setIsLandscape] = useState(false)
   const [scale, setScale] = useState(1)
+  const [fontScale, setFontScale] = useState(100)
   const [autoScale, setAutoScale] = useState(true)
   const [isOpen, setIsOpen] = useState(true)
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const activePreset = DEVICE_PRESETS[mode]
   const isFrameActive = mode !== 'desktop'
+
+  // Update font scale automatically when mode changes
+  const handleModeChange = (newMode) => {
+    setMode(newMode)
+    setFontScale(DEVICE_PRESETS[newMode].defaultFontScale)
+  }
 
   // Calculate dimensions based on orientation
   const width = isFrameActive 
@@ -111,7 +119,10 @@ export default function DevicePreviewShell({ children }) {
               </div>
 
               {/* Simulated App Viewport Scroll Container */}
-              <div className="w-full h-full pt-6 overflow-y-auto overflow-x-hidden bg-background">
+              <div 
+                className="w-full h-full pt-6 overflow-y-auto overflow-x-hidden bg-background transition-all"
+                style={{ fontSize: `${fontScale}%` }}
+              >
                 {children}
               </div>
 
@@ -153,7 +164,7 @@ export default function DevicePreviewShell({ children }) {
                     </button>
                     <button
                       onClick={() => {
-                        setMode('desktop')
+                        handleModeChange('desktop')
                         setIsOpen(false)
                       }}
                       className="p-1 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-slate-400 transition-colors"
@@ -174,7 +185,7 @@ export default function DevicePreviewShell({ children }) {
                         return (
                           <button
                             key={preset.id}
-                            onClick={() => setMode(preset.id)}
+                            onClick={() => handleModeChange(preset.id)}
                             className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs transition-all select-none cursor-pointer ${
                               isActive
                                 ? 'bg-amber-500/15 border-amber-500/40 text-amber-400 font-bold shadow-sm'
@@ -189,25 +200,64 @@ export default function DevicePreviewShell({ children }) {
                       })}
                     </div>
 
-                    {/* Frame Controls (only if non-desktop) */}
+                    {/* Frame Controls & Font Scaling */}
                     {isFrameActive && (
-                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-xs">
-                        {/* Orientation Rotate Toggle */}
-                        <button
-                          onClick={() => setIsLandscape(v => !v)}
-                          className={`flex-1 py-1.5 px-2.5 rounded-lg border flex items-center justify-center gap-1.5 text-[11px] font-medium transition-all ${
-                            isLandscape
-                              ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                              : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800'
-                          }`}
-                        >
-                          <RotateCw size={12} className={isLandscape ? 'rotate-90 transition-transform' : ''} />
-                          <span>{isLandscape ? 'Landscape' : 'Portrait'}</span>
-                        </button>
+                      <div className="flex flex-col gap-2 pt-2 border-t border-slate-800/80 text-xs">
+                        {/* Orientation Rotate & Frame Scale */}
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            onClick={() => setIsLandscape(v => !v)}
+                            className={`flex-1 py-1.5 px-2.5 rounded-lg border flex items-center justify-center gap-1.5 text-[11px] font-medium transition-all ${
+                              isLandscape
+                                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                                : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800'
+                            }`}
+                          >
+                            <RotateCw size={12} className={isLandscape ? 'rotate-90 transition-transform' : ''} />
+                            <span>{isLandscape ? 'Landscape' : 'Portrait'}</span>
+                          </button>
 
-                        {/* Scale Percentage Indicator */}
-                        <div className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-[10px] font-mono text-slate-400">
-                          {Math.round(scale * 100)}%
+                          <div className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-[10px] font-mono text-slate-400" title="Skala Layar Frame">
+                            {Math.round(scale * 100)}% Layar
+                          </div>
+                        </div>
+
+                        {/* Font Size Adjuster Controls */}
+                        <div className="flex items-center justify-between gap-1.5 bg-slate-900/90 border border-slate-800/90 p-1.5 rounded-xl text-[11px]">
+                          <div className="flex items-center gap-1 text-slate-400 px-1">
+                            <Type size={13} />
+                            <span className="font-medium text-[10px]">Font:</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setFontScale(s => Math.max(s - 5, 75))}
+                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded-md font-bold text-slate-300 transition-colors"
+                              title="Kecilkan Ukuran Teks"
+                            >
+                              A-
+                            </button>
+
+                            <span className="px-1.5 font-mono font-bold text-amber-400 text-[10px]">
+                              {fontScale}%
+                            </span>
+
+                            <button
+                              onClick={() => setFontScale(s => Math.min(s + 5, 125))}
+                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded-md font-bold text-slate-300 transition-colors"
+                              title="Besarkan Ukuran Teks"
+                            >
+                              A+
+                            </button>
+
+                            <button
+                              onClick={() => setFontScale(activePreset.defaultFontScale)}
+                              className="px-1.5 py-0.5 bg-slate-800/60 hover:bg-slate-700 text-[9px] text-slate-400 rounded-md transition-colors ml-1"
+                              title="Reset Ukuran Font"
+                            >
+                              Reset
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
