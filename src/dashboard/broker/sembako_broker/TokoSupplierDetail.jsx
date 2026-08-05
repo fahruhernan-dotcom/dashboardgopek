@@ -390,7 +390,7 @@ export default function SembakoTokoSupplierDetail() {
       </main>
 
       {/* Sheets / Modals */}
-      <Sheet open={openModal === 'bayar'} onOpenChange={(v) => !v && setOpenModal(null)}>
+      <Sheet open={openModal === 'bayar'} onOpenChange={(v) => { if (!v) { setOpenModal(null); setSelectedInvoice(null); } }}>
         <SheetContent side="right" className="bg-[#06090F] border-white/10 text-left p-6 sm:max-w-md overflow-y-auto">
           <SheetHeader className="mb-6">
             <SheetTitle className="font-display font-black text-white uppercase text-xl text-left flex items-center gap-2">
@@ -401,11 +401,12 @@ export default function SembakoTokoSupplierDetail() {
           </SheetHeader>
           {selectedInvoice || !isCustomer ? (
             <PaymentForm 
+              key={selectedInvoice?.id || 'supplier'}
               invoice={selectedInvoice} 
               isCustomer={isCustomer}
               parentId={id}
               maxAmount={isCustomer ? selectedInvoice?.remaining_amount : supplierTotalHutang}
-              onClose={() => { setOpenModal(null); queryClient.invalidateQueries() }} 
+              onClose={() => { setOpenModal(null); setSelectedInvoice(null); queryClient.invalidateQueries() }} 
             />
           ) : (
             <div className="text-center py-12 space-y-3">
@@ -426,6 +427,7 @@ export default function SembakoTokoSupplierDetail() {
             <SheetDescription className="sr-only">Form untuk memperbarui profil customer atau supplier sembako.</SheetDescription>
           </SheetHeader>
           <EditProfileForm 
+            key={profileData?.id || 'edit'}
             profile={profileData} 
             isCustomer={isCustomer} 
             onClose={() => { setOpenModal(null); queryClient.invalidateQueries() }} 

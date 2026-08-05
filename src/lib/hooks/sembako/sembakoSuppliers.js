@@ -14,13 +14,47 @@ export const useSembakoSuppliers = () => {
     staleTime: STALE_5M,
     queryFn: async () => {
       try {
-        const { data, error } = await supabase.from('sembako_suppliers')
+        const { data: suppliers, error: suppError } = await supabase.from('sembako_suppliers')
           .select('*')
           .eq('tenant_id', tenant.id)
           .eq('is_deleted', false)
           .order('supplier_name')
-        if (error) { console.warn('[useSembakoSuppliers]', error.message); return [] }
-        return data || []
+        if (suppError) { console.warn('[useSembakoSuppliers]', suppError.message); return [] }
+
+        // Fetch supplier batch total costs
+        const { data: batches, error: batchError } = await supabase.from('sembako_stock_batches')
+          .select('supplier_id, total_cost')
+          .eq('tenant_id', tenant.id)
+          .eq('is_deleted', false)
+
+        // Fetch supplier payments
+        const { data: payments, error: payError } = await supabase.from('sembako_supplier_payments')
+          .select('supplier_id, amount')
+          .eq('tenant_id', tenant.id)
+          .eq('is_deleted', false)
+
+        const batchCostMap = (batches || []).reduce((acc, b) => {
+          if (!b.supplier_id) return acc
+          acc[b.supplier_id] = (acc[b.supplier_id] || 0) + (Number(b.total_cost) || 0)
+          return acc
+        }, {})
+
+        const paymentMap = (payments || []).reduce((acc, p) => {
+          if (!p.supplier_id) return acc
+          acc[p.supplier_id] = (acc[p.supplier_id] || 0) + (Number(p.amount) || 0)
+          return acc
+        }, {})
+
+        return (suppliers || []).map(s => {
+          const totalCost = batchCostMap[s.id] || 0
+          const totalPaid = paymentMap[s.id] || 0
+          return {
+            ...s,
+            total_purchase_value: totalCost,
+            total_paid_value: totalPaid,
+            total_outstanding: Math.max(0, totalCost - totalPaid)
+          }
+        })
       } catch (e) { console.warn('[useSembakoSuppliers]', e); return [] }
     }
   })
@@ -131,6 +165,7 @@ export const useRecordSembakoSupplierPayment = () => {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['sembako-supplier-payments', vars.supplier_id] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-supplier-invoices', vars.supplier_id] })
       queryClient.invalidateQueries({ queryKey: ['sembako-suppliers'] })
       queryClient.invalidateQueries({ queryKey: ['sembako-dashboard-stats'] })
       toast.success('Pembayaran ke supplier dicatat')

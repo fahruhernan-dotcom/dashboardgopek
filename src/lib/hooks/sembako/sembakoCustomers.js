@@ -5,6 +5,7 @@ import { useAuth } from '../useAuth'
 import { normalizeSupabaseError } from '../../supabaseErrorHandler'
 import { logSupabaseError } from '@/lib/logger/supabaseLogger'
 import { STALE_5M, sanitizeDBPayload, getTenantId } from './sembakoCommon'
+import { processSaleRow } from './sembakoSales'
 
 export const useSembakoCustomers = () => {
   const { tenant } = useAuth()
@@ -14,13 +15,34 @@ export const useSembakoCustomers = () => {
     staleTime: STALE_5M,
     queryFn: async () => {
       try {
-        const { data, error } = await supabase.from('sembako_customers')
+        const { data: customers, error: custError } = await supabase.from('sembako_customers')
           .select('*')
           .eq('tenant_id', tenant.id)
           .eq('is_deleted', false)
           .order('customer_name')
-        if (error) { console.warn('[useSembakoCustomers]', error.message); return [] }
-        return data || []
+        if (custError) { console.warn('[useSembakoCustomers]', custError.message); return [] }
+
+        // Fetch sales to calculate outstanding balance
+        const { data: sales, error: salesError } = await supabase.from('sembako_sales')
+          .select('customer_id, remaining_amount')
+          .eq('tenant_id', tenant.id)
+          .eq('is_deleted', false)
+        
+        if (salesError) {
+          console.warn('[useSembakoCustomers] sales fetch error:', salesError.message)
+          return customers || []
+        }
+
+        const outstandingMap = (sales || []).reduce((acc, sale) => {
+          if (!sale.customer_id) return acc
+          acc[sale.customer_id] = (acc[sale.customer_id] || 0) + (Number(sale.remaining_amount) || 0)
+          return acc
+        }, {})
+
+        return (customers || []).map(c => ({
+          ...c,
+          total_outstanding: outstandingMap[c.id] || 0
+        }))
       } catch (e) { console.warn('[useSembakoCustomers]', e); return [] }
     }
   })
@@ -95,12 +117,28 @@ export const useSembakoCustomerInvoices = (customerId) => useQuery({
   staleTime: STALE_5M,
   queryFn: async () => {
     const { data, error } = await supabase.from('sembako_sales')
-      .select('*, sembako_sale_items(*)')
+      .select('*, sembako_sale_items(*), sembako_payments(*)')
       .eq('customer_id', customerId)
       .eq('is_deleted', false)
       .order('transaction_date', { ascending: false })
     if (error) throw normalizeSupabaseError(error)
-    return data
+
+    // Fetch returns for these sales to calculate processed values
+    const { data: dbReturns } = await supabase
+      .from('sembako_returns')
+      .select('*')
+      .eq('customer_id', customerId)
+      .eq('is_deleted', false)
+
+    let localReturns = []
+    try {
+      const saved = localStorage.getItem('gopek_retur_list')
+      if (saved) localReturns = JSON.parse(saved)
+    } catch (e) { }
+
+    const returnsData = [...(dbReturns || []), ...localReturns]
+
+    return (data || []).map(sale => processSaleRow(sale, returnsData))
   }
 })
 

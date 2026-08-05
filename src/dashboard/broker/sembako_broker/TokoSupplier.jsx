@@ -133,23 +133,28 @@ export default function SembakoTokoSupplier() {
   }, [allBatches])
 
   const totalPiutang = useMemo(
-    () => Object.values(customerStats).reduce((sum, item) => sum + (item.calculatedOutstanding || 0), 0),
-    [customerStats]
+    () => customers.reduce((sum, c) => sum + (c.total_outstanding || 0), 0),
+    [customers]
   )
 
   const totalBelanjaSupplier = useMemo(
-    () => Object.values(supplierStats).reduce((sum, item) => sum + (item.totalPurchaseValue || 0), 0),
-    [supplierStats]
+    () => suppliers.reduce((sum, s) => sum + (s.total_purchase_value || 0), 0),
+    [suppliers]
+  )
+
+  const totalHutangSupplier = useMemo(
+    () => suppliers.reduce((sum, s) => sum + (s.total_outstanding || 0), 0),
+    [suppliers]
   )
 
   const customersWithDebt = useMemo(
-    () => customers.filter((customer) => (customerStats[customer.id]?.calculatedOutstanding || 0) > 0).length,
-    [customerStats, customers]
+    () => customers.filter((customer) => (customer.total_outstanding || 0) > 0).length,
+    [customers]
   )
 
   const activeSuppliers = useMemo(
-    () => suppliers.filter((supplier) => (supplierStats[supplier.id]?.batchCount || 0) > 0).length,
-    [supplierStats, suppliers]
+    () => suppliers.filter((supplier) => (supplier.total_outstanding || 0) > 0).length,
+    [suppliers]
   )
 
   const areas = useMemo(() => {
@@ -180,9 +185,9 @@ export default function SembakoTokoSupplier() {
       { label: 'Punya Tagihan', value: customersWithDebt, color: 'red' },
     ]
     : [
+      { label: 'Total Hutang', value: totalHutangSupplier, isCurrency: true, color: 'red' },
       { label: 'Total Belanja', value: totalBelanjaSupplier, isCurrency: true, color: 'green' },
       { label: 'Supplier', value: suppliers.length },
-      { label: 'Punya Batch', value: activeSuppliers, color: 'amber' },
     ]
 
   if (isCustError) return <SembakoErrorState error={custError} onRetry={refetchCust} />
@@ -561,7 +566,7 @@ function TokoList({ customers, customerStats, search, selectedArea, onlyHutang }
   const filtered = useMemo(() => {
     return customers
       .filter((customer) => {
-        const outstanding = customerStats[customer.id]?.calculatedOutstanding || 0
+        const outstanding = customer.total_outstanding || 0
         const haystack = [customer.customer_name, customer.area, customer.phone]
           .filter(Boolean)
           .join(' ')
@@ -574,11 +579,11 @@ function TokoList({ customers, customerStats, search, selectedArea, onlyHutang }
         return matchesSearch && matchesArea && matchesDebt
       })
       .sort((left, right) => {
-        const leftOutstanding = customerStats[left.id]?.calculatedOutstanding || 0
-        const rightOutstanding = customerStats[right.id]?.calculatedOutstanding || 0
+        const leftOutstanding = left.total_outstanding || 0
+        const rightOutstanding = right.total_outstanding || 0
         return rightOutstanding - leftOutstanding
       })
-  }, [customerStats, customers, onlyHutang, search, selectedArea])
+  }, [customers, onlyHutang, search, selectedArea])
 
   if (!filtered.length) {
     return (
@@ -594,7 +599,7 @@ function TokoList({ customers, customerStats, search, selectedArea, onlyHutang }
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {filtered.map((customer) => {
         const stats = customerStats[customer.id] || {}
-        const outstanding = stats.calculatedOutstanding || 0
+        const outstanding = customer.total_outstanding || 0
         const invoiceCount = stats.invoiceCount || 0
         const lastTxDate = stats.lastTransactionDate
           ? new Date(stats.lastTransactionDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' })
@@ -681,11 +686,11 @@ function SupplierList({ suppliers, supplierStats, search }) {
         return haystack.includes(search.toLowerCase())
       })
       .sort((left, right) => {
-        const leftValue = supplierStats[left.id]?.totalPurchaseValue || 0
-        const rightValue = supplierStats[right.id]?.totalPurchaseValue || 0
+        const leftValue = left.total_outstanding || 0
+        const rightValue = right.total_outstanding || 0
         return rightValue - leftValue
       })
-  }, [search, supplierStats, suppliers])
+  }, [search, suppliers])
 
   if (!filtered.length) {
     return (
@@ -730,8 +735,8 @@ function SupplierList({ suppliers, supplierStats, search }) {
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-3">
-                  <MetricBlock label="Nilai Belanja" value={formatIDR(stats.totalPurchaseValue || 0)} tone="amber" compact />
-                  <MetricBlock label="Total Batch" value={stats.batchCount || 0} tone="default" compact />
+                  <MetricBlock label="Sisa Hutang" value={formatIDR(supplier.total_outstanding || 0)} tone={supplier.total_outstanding > 0 ? "red" : "green"} compact />
+                  <MetricBlock label="Nilai Belanja" value={formatIDR(supplier.total_purchase_value || 0)} tone="amber" compact />
                 </div>
               </div>
             </div>
