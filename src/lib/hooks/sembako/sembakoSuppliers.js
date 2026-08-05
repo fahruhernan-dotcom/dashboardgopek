@@ -23,7 +23,7 @@ export const useSembakoSuppliers = () => {
 
         // Fetch supplier batch total costs
         const { data: batches, error: batchError } = await supabase.from('sembako_stock_batches')
-          .select('supplier_id, total_cost')
+          .select('supplier_id, total_cost, qty_masuk, buy_price')
           .eq('tenant_id', tenant.id)
           .eq('is_deleted', false)
 
@@ -35,7 +35,8 @@ export const useSembakoSuppliers = () => {
 
         const batchCostMap = (batches || []).reduce((acc, b) => {
           if (!b.supplier_id) return acc
-          acc[b.supplier_id] = (acc[b.supplier_id] || 0) + (Number(b.total_cost) || 0)
+          const cost = Number(b.total_cost) > 0 ? Number(b.total_cost) : (Number(b.qty_masuk || 0) * Number(b.buy_price || 0))
+          acc[b.supplier_id] = (acc[b.supplier_id] || 0) + cost
           return acc
         }, {})
 
@@ -131,7 +132,10 @@ export const useSembakoSupplierInvoices = (supplierId) => useQuery({
       .eq('is_deleted', false)
       .order('purchase_date', { ascending: false })
     if (error) throw normalizeSupabaseError(error)
-    return data
+    return (data || []).map(b => ({
+      ...b,
+      total_cost: Number(b.total_cost) > 0 ? Number(b.total_cost) : (Number(b.qty_masuk || 0) * Number(b.buy_price || 0))
+    }))
   }
 })
 

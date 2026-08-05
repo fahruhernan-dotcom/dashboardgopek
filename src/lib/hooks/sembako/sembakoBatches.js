@@ -171,7 +171,9 @@ export const useAddStockBatch = () => {
         batch_code: generatedBatchCode,
         qty_masuk: qtyInt,
         qty_sisa: qtyInt,
-        buy_price, purchase_date: pDate, notes,
+        buy_price,
+        total_cost: qtyInt * Number(buy_price || 0),
+        purchase_date: pDate, notes,
       }
       if (expiry_date) payload.expiry_date = expiry_date
 
@@ -180,7 +182,10 @@ export const useAddStockBatch = () => {
 
       if (error && (error.message?.includes('expiry_date') || error.message?.includes('qty_masuk') || error.code === 'PGRST204')) {
         // Safe fallback if Supabase DB schema is missing expiry_date or qty_masuk column
-        const safePayload = { tenant_id, product_id, supplier_id, buy_price, purchase_date, notes }
+        const safePayload = {
+          tenant_id, product_id, supplier_id, buy_price, purchase_date, notes,
+          total_cost: qtyInt * Number(buy_price || 0)
+        }
         if (!error.message?.includes('qty_masuk')) safePayload.qty_masuk = qtyInt
         if (!error.message?.includes('qty_sisa')) safePayload.qty_sisa = qtyInt
         if (!error.message?.includes('expiry_date') && expiry_date) safePayload.expiry_date = expiry_date
@@ -213,6 +218,10 @@ export const useAddStockBatch = () => {
       queryClient.invalidateQueries({ queryKey: ['sembako-products'] })
       queryClient.invalidateQueries({ queryKey: ['sembako-batches', vars.product_id] })
       queryClient.invalidateQueries({ queryKey: ['sembako-all-batches'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-suppliers'] })
+      if (vars.supplier_id) {
+        queryClient.invalidateQueries({ queryKey: ['sembako-supplier-invoices', vars.supplier_id] })
+      }
       queryClient.invalidateQueries({ queryKey: ['sembako-dashboard-stats'] })
       toast.success('Stok berhasil ditambahkan')
     },
