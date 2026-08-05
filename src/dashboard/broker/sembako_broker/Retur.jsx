@@ -1,39 +1,53 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RotateCcw, Plus, Search, Filter, AlertCircle, CheckCircle2, Clock, PackageX, User, Store, ArrowUpRight, ArrowDownLeft, X, ChevronDown, Check } from 'lucide-react'
+import { RotateCcw, Plus, Search, Filter, AlertCircle, CheckCircle2, Clock, PackageX, User, Store, ArrowUpRight, ArrowDownLeft, X, ChevronDown, Check, FileText, Link2, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
+import { SembakoPageHeader } from '@/dashboard/broker/sembako_broker/components/SembakoPageHeader'
+import { SembakoSummaryStrip } from '@/dashboard/broker/sembako_broker/components/SembakoSummaryStrip'
 import { C } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import {
   useSembakoProducts,
   useSembakoCustomers,
   useSembakoSuppliers,
+  useSembakoSales,
   useSembakoReturns,
   useCreateSembakoReturn,
-  useUpdateSembakoReturnStatus
+  useUpdateSembakoReturnStatus,
+  useDeleteSembakoReturn
 } from '@/lib/hooks/useSembakoData'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useOutletContext } from 'react-router-dom'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
+import { useBackHandler } from '@/lib/hooks/useBackHandler'
+import { formatDate } from '@/lib/format'
 
 const fmt = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
 
 export default function SembakoRetur() {
   const { brokerType } = useParams()
-  const brokerBase = `/broker/${brokerType || 'distributor_sembako'}`
   const navigate = useNavigate()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
 
   const { data: products = [] } = useSembakoProducts()
   const { data: customers = [] } = useSembakoCustomers()
   const { data: suppliers = [] } = useSembakoSuppliers()
+  const { data: salesList = [] } = useSembakoSales()
 
   const { data: returnsList = [], isLoading: returnsLoading } = useSembakoReturns()
   const createReturnMut = useCreateSembakoReturn()
   const updateStatusMut = useUpdateSembakoReturnStatus()
+  const deleteReturnMut = useDeleteSembakoReturn()
 
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('all') // 'all', 'sale_return', 'purchase_return'
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  // Confirmation state for deleting/cancelling retur
+  const [confirmCancelReturn, setConfirmCancelReturn] = useState(null)
+
+  // Close modal on Android hardware back button
+  useBackHandler(sheetOpen, () => setSheetOpen(false))
 
   // Close modal on Esc key press
   useEffect(() => {
@@ -48,19 +62,76 @@ export default function SembakoRetur() {
 
   // Form State for new Return
   const [form, setForm] = useState({
+    selection_mode: 'transaction', // 'transaction' or 'manual'
     type: 'sale_return',
+    sale_id: '',
+    customer_id: '',
+    supplier_id: '',
     party_name: '',
     product_id: '',
+    product_name: '',
     quantity: 1,
     unit: 'slop',
     unit_price: '',
     reason: 'Pita Cukai Cacat',
     action: 'fifo_stock',
+    financial_action: 'potong_piutang',
     notes: '',
   })
 
+  // Currently selected transaction/sale object
+  const selectedSale = useMemo(() => {
+    if (!form.sale_id) return null
+    return salesList.find(s => s.id === form.sale_id)
+  }, [form.sale_id, salesList])
+
+  // Available items in the selected sale
+  const saleItems = useMemo(() => {
+    if (!selectedSale) return []
+    return selectedSale.sembako_sale_items || selectedSale.items || []
+  }, [selectedSale])
+
+  // When sale is picked, auto-set party name and customer id
+  const handleSelectSale = (saleId) => {
+    const saleObj = salesList.find(s => s.id === saleId)
+    if (saleObj) {
+      setForm(prev => ({
+        ...prev,
+        sale_id: saleObj.id,
+        customer_id: saleObj.customer_id || '',
+        party_name: saleObj.customer_name || '',
+        product_id: '',
+        product_name: '',
+        unit_price: '',
+      }))
+    } else {
+      setForm(prev => ({ ...prev, sale_id: '', product_id: '', product_name: '' }))
+    }
+  }
+
+  // When sale item is picked
+  const handleSelectSaleItem = (productId) => {
+    const itemObj = saleItems.find(i => (i.product_id || i.id) === productId)
+    if (itemObj) {
+      const pName = itemObj.product_name || 'Produk'
+      const qty = Number(itemObj.quantity || 1)
+      const uPrice = Number(itemObj.price_per_unit || itemObj.sell_price || 0)
+      const uUnit = itemObj.unit || 'slop'
+      
+      setForm(prev => ({
+        ...prev,
+        product_id: itemObj.product_id || productId,
+        product_name: pName,
+        quantity: qty,
+        unit: uUnit,
+        unit_price: uPrice,
+      }))
+    }
+  }
+
   const handleCreateReturn = async (e) => {
     e.preventDefault()
+    if (createReturnMut.isPending) return
     if (!form.party_name.trim()) return toast.error('Nama Toko / Supplier wajib diisi')
     if (!form.product_id) return toast.error('Pilih produk yang diretur')
     if (!form.quantity || form.quantity <= 0) return toast.error('Jumlah retur tidak valid')
@@ -73,7 +144,10 @@ export default function SembakoRetur() {
       return_type: form.type,
       party_name: form.party_name,
       product_id: form.product_id,
-      product_name: selectedProduct ? selectedProduct.product_name : 'Produk Rokok',
+      product_name: form.product_name || (selectedProduct ? selectedProduct.product_name : 'Produk Sembako'),
+      customer_id: form.customer_id || null,
+      supplier_id: form.supplier_id || null,
+      sale_id: form.sale_id || null,
       quantity: Number(form.quantity),
       unit: form.unit,
       unit_price: unitPrice,
@@ -86,14 +160,20 @@ export default function SembakoRetur() {
 
     setSheetOpen(false)
     setForm({
+      selection_mode: 'transaction',
       type: 'sale_return',
+      sale_id: '',
+      customer_id: '',
+      supplier_id: '',
       party_name: '',
       product_id: '',
+      product_name: '',
       quantity: 1,
       unit: 'slop',
       unit_price: '',
       reason: 'Pita Cukai Cacat',
       action: 'fifo_stock',
+      financial_action: 'potong_piutang',
       notes: '',
     })
   }
@@ -104,175 +184,205 @@ export default function SembakoRetur() {
     toast.info(`Status retur diubah ke ${nextStatus === 'completed' ? 'Selesai' : 'Diproses'}`)
   }
 
+  const handleCancelReturn = async (rObj) => {
+    await deleteReturnMut.mutateAsync(rObj)
+    setConfirmCancelReturn(null)
+  }
+
   const filteredReturns = useMemo(() => {
     return returnsList.filter(r => {
+      const invoiceNo = r.sembako_sales?.invoice_number || ''
       const matchSearch = r.party_name.toLowerCase().includes(search.toLowerCase()) ||
         r.product_name.toLowerCase().includes(search.toLowerCase()) ||
+        invoiceNo.toLowerCase().includes(search.toLowerCase()) ||
         r.id.toLowerCase().includes(search.toLowerCase())
-      const matchType = filterType === 'all' ? true : r.type === filterType
+      const matchType = filterType === 'all' ? true : (r.return_type || r.type) === filterType
       return matchSearch && matchType
     })
   }, [returnsList, search, filterType])
 
   const totalReturnAmount = useMemo(() => {
-    return returnsList.reduce((acc, curr) => acc + (curr.amount || 0), 0)
+    return returnsList.reduce((acc, curr) => acc + Number(curr.total_amount || curr.amount || 0), 0)
   }, [returnsList])
 
   const pendingCount = useMemo(() => {
     return returnsList.filter(r => r.status === 'pending').length
   }, [returnsList])
 
-  return (
-    <div className="bg-background min-h-screen text-white pb-28">
-      <BrokerMobileHeader title="Retur Produk Rokok" />
+  const summaryItems = [
+    { label: 'Total Retur', value: `${returnsList.length} Transaksi`, color: 'amber', subLabel: `${pendingCount} perlu diproses` },
+    { label: 'Nilai Barang Diretur', value: totalReturnAmount, isCurrency: true, color: 'red', subLabel: 'Penjualan & Pembelian' },
+    { label: 'Penanganan Stok', value: 'FIFO Reversal', color: 'green', subLabel: 'Stok gudang otomatis terupdate' },
+  ]
 
-      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-4 md:pt-8">
-        {/* Header Title Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-orange-600/15 via-[#121824] to-[#121824] border border-orange-500/25 rounded-2xl p-5 md:p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400/90 mb-1 block">
-                MANAJEMEN DISTRIBUSI ROKOK
-              </span>
-              <h1 className="text-xl md:text-2xl font-black font-['Sora'] text-white flex items-center gap-2.5">
-                <RotateCcw className="text-orange-500" size={26} /> Retur & Klaim Produk Rokok
-              </h1>
-              <p className="text-xs text-slate-400 mt-1 max-w-xl">
-                Pencatatan klaim barang cacat, pita cukai rusak, atau pengembalian stok toko dengan kalkulasi stok FIFO otomatis.
-              </p>
-            </div>
+  const typeFilters = [
+    { id: 'all', label: 'Semua Retur' },
+    { id: 'sale_return', label: 'Retur Pelanggan (Jual)' },
+    { id: 'purchase_return', label: 'Retur Pabrik (Beli)' },
+  ]
+
+  return (
+    <div className="bg-background min-h-screen text-foreground pb-28 text-left">
+      {!isDesktop && <BrokerMobileHeader title="Retur Produk" onMenuClick={() => setSidebarOpen(true)} />}
+
+      <div className="mx-auto max-w-7xl">
+        <SembakoPageHeader
+          title="Retur Produk"
+          subtitle="Pencatatan klaim barang cacat & pelacakan retur berbasis nota transaksi"
+          isDesktop={isDesktop}
+          searchQuery={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Cari toko, no invoice, produk, atau ID retur..."
+          filters={typeFilters}
+          activeFilter={filterType}
+          onFilterChange={setFilterType}
+          actionButton={
             <button
               onClick={() => setSheetOpen(true)}
-              className="h-11 px-5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-600/30 transition-all cursor-pointer whitespace-nowrap self-start md:self-auto"
+              className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
             >
-              <Plus size={16} /> Catat Retur Baru
+              <Plus size={16} />
+              <span>Catat Retur Baru</span>
             </button>
-          </div>
-        </div>
+          }
+        />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 mb-6">
-          <div className="bg-[#121824] border border-slate-800/90 hover:border-slate-700 rounded-2xl p-4 transition-all">
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">
-              <PackageX size={14} className="text-orange-500" /> Total Retur
-            </div>
-            <p className="text-xl md:text-2xl font-black font-['Sora'] text-white">{returnsList.length} Transaksi</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">{pendingCount} perlu diproses</p>
-          </div>
-
-          <div className="bg-[#121824] border border-slate-800/90 hover:border-slate-700 rounded-2xl p-4 transition-all">
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">
-              <RotateCcw size={14} className="text-red-400" /> Nilai Barang Diretur
-            </div>
-            <p className="text-xl md:text-2xl font-black font-['Sora'] text-red-400">Rp {fmt(totalReturnAmount)}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Penjualan & Pembelian</p>
-          </div>
-
-          <div className="col-span-2 md:col-span-1 bg-[#121824] border border-slate-800/90 hover:border-slate-700 rounded-2xl p-4 transition-all">
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">
-              <Clock size={14} className="text-amber-400" /> Penanganan Stok
-            </div>
-            <p className="text-sm font-bold text-amber-400 mt-1">FIFO Reversal & Loss Report</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Otomatis update stok gudang</p>
-          </div>
-        </div>
-
-        {/* Filter & Search Bar */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-5">
-          {/* Tabs */}
-          <div className="flex bg-[#121824] p-1 rounded-xl border border-slate-800/80 self-start md:self-auto overflow-x-auto max-w-full">
-            <button
-              onClick={() => setFilterType('all')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${filterType === 'all' ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20' : 'text-slate-400 hover:text-white'}`}
-            >
-              Semua
-            </button>
-            <button
-              onClick={() => setFilterType('sale_return')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${filterType === 'sale_return' ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20' : 'text-slate-400 hover:text-white'}`}
-            >
-              Retur Pelanggan (Jual)
-            </button>
-            <button
-              onClick={() => setFilterType('purchase_return')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${filterType === 'purchase_return' ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20' : 'text-slate-400 hover:text-white'}`}
-            >
-              Retur Pabrik (Beli)
-            </button>
-          </div>
-
-          {/* Search Input */}
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Cari toko, produk, atau ID..."
-              className="w-full bg-[#121824] border border-slate-800/90 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-orange-500 transition-all"
-            />
-          </div>
-        </div>
+        <SembakoSummaryStrip items={summaryItems} />
 
         {/* Returns List */}
-        {filteredReturns.length === 0 ? (
-          <div className="bg-[#121824] border border-slate-800/80 rounded-2xl p-12 text-center text-slate-500">
-            <RotateCcw size={36} className="mx-auto mb-3 opacity-30 text-orange-500" />
-            <p className="text-base font-bold text-slate-300">Belum ada riwayat retur produk</p>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Klik "+ Catat Retur Baru" untuk menambah klaim produk rokok dari toko atau ke supplier.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredReturns.map(r => (
-              <motion.div
-                key={r.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-[#121824] border border-slate-800/80 hover:border-orange-500/40 rounded-2xl p-4 md:p-5 transition-all shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3 mb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${r.type === 'sale_return' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      }`}>
-                      {r.type === 'sale_return' ? 'Retur dari Toko' : 'Retur ke Pabrik'}
-                    </span>
-                    <span className="text-xs font-mono font-bold text-slate-500">{r.id}</span>
-                  </div>
-                  <button
-                    onClick={() => handleToggleStatus(r.id, r.status)}
-                    className={`text-[10px] font-bold px-3 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${r.status === 'completed'
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                        : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
-                      }`}
+        <div className="px-4 sm:px-6 pt-2">
+          {filteredReturns.length === 0 ? (
+            <div className="bg-card border border-border/60 rounded-2xl p-12 text-center text-muted-foreground">
+              <RotateCcw size={36} className="mx-auto mb-3 opacity-30 text-amber-500" />
+              <p className="text-base font-bold text-foreground">Belum ada riwayat retur produk</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">Klik "+ Catat Retur Baru" untuk menambah klaim produk berdasarkan transaksi nota toko atau ke supplier.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredReturns.map(r => {
+                const rType = r.return_type || r.type || 'sale_return'
+                const invNumber = r.sembako_sales?.invoice_number || (r.sale_id ? `Invoice ID: ${r.sale_id.slice(0, 8)}` : null)
+                return (
+                  <motion.div
+                    key={r.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-card border border-border/60 hover:border-amber-500/30 rounded-2xl p-4 sm:p-5 transition-all shadow-sm"
                   >
-                    {r.status === 'completed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
-                    {r.status === 'completed' ? 'Selesai' : 'Diproses'}
-                  </button>
-                </div>
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md ${rType === 'sale_return' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                          }`}>
+                          {rType === 'sale_return' ? 'Retur dari Toko' : 'Retur ke Pabrik'}
+                        </span>
+                        {invNumber && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                            <FileText size={11} /> {invNumber}
+                          </span>
+                        )}
+                        <span className="text-xs font-mono font-bold text-muted-foreground">{r.return_number || r.id}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleStatus(r.id, r.status)}
+                          className={`text-xs font-bold px-3 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${r.status === 'completed'
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                              : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
+                            }`}
+                        >
+                          {r.status === 'completed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
+                          {r.status === 'completed' ? 'Selesai' : 'Diproses'}
+                        </button>
+                        
+                        <button
+                          onClick={() => setConfirmCancelReturn(r)}
+                          title="Batalkan Retur ini"
+                          className="p-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-800/60 pt-3">
-                  <div>
-                    <h3 className="text-base font-bold text-white font-['Sora']">{r.product_name}</h3>
-                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-                      <Store size={13} className="text-slate-500" /> <span className="font-semibold text-slate-200">{r.party_name}</span>
-                      <span>·</span>
-                      <span className="text-orange-400 font-bold bg-orange-500/10 px-2 py-0.5 rounded-md border border-orange-500/20">{r.quantity} {r.unit}</span>
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-1.5">
-                      Alasan: <span className="text-slate-300 italic">{r.reason}</span> · Action: <span className="text-amber-400 font-semibold">{r.action === 'fifo_stock' ? 'Masuk Stok (FIFO)' : 'Afkir / Loss'}</span>
-                    </p>
-                  </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border/40 pt-3">
+                      <div>
+                        <h3 className="text-base font-bold text-foreground font-sans">{r.product_name}</h3>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                          <Store size={13} className="text-muted-foreground/60" /> <span className="font-semibold text-foreground">{r.party_name}</span>
+                          <span>·</span>
+                          <span className="text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">{r.quantity} {r.unit}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          Alasan: <span className="text-foreground/80 italic">{r.reason}</span> · Action: <span className="text-amber-400 font-semibold">{r.action === 'fifo_stock' ? 'Masuk Stok (FIFO)' : 'Afkir / Loss'}</span>
+                        </p>
+                      </div>
 
-                  <div className="text-left sm:text-right mt-2 sm:mt-0 bg-[#0E1420] sm:bg-transparent p-3 sm:p-0 rounded-xl border sm:border-0 border-slate-800">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nilai Retur</p>
-                    <p className="text-lg font-black font-['Sora'] text-red-400 mt-0.5">Rp {fmt(r.amount)}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                      <div className="text-left sm:text-right bg-background/50 sm:bg-transparent p-3 sm:p-0 rounded-xl border sm:border-0 border-border/40">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Nilai Retur</p>
+                        <p className="text-lg font-black text-rose-500 mt-0.5">Rp {fmt(r.total_amount || r.amount)}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Modal Konfirmasi Pembatalan Retur */}
+      <AnimatePresence>
+        {confirmCancelReturn && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4"
+            onClick={() => setConfirmCancelReturn(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-card border border-red-500/30 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl"
+            >
+              <div className="flex items-center gap-3 text-red-500">
+                <AlertCircle size={24} />
+                <h3 className="text-base font-bold text-foreground">Batalkan Retur Barang?</h3>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Anda yakin ingin membatalkan retur <strong className="text-foreground">{confirmCancelReturn.product_name}</strong> ({confirmCancelReturn.quantity} {confirmCancelReturn.unit}) dari toko <strong className="text-foreground">{confirmCancelReturn.party_name}</strong>? Penyesuaian stok gudang akan dikembalikan otomatis.
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+                <button
+                  type="button"
+                  onClick={() => setConfirmCancelReturn(null)}
+                  className="px-4 h-10 rounded-xl font-bold text-xs bg-background border border-border text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteReturnMut.isPending}
+                  onClick={() => handleCancelReturn(confirmCancelReturn)}
+                  className="px-4 h-10 rounded-xl font-bold text-xs bg-red-600 hover:bg-red-500 text-white cursor-pointer flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleteReturnMut.isPending ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Membatalkan...</span>
+                    </>
+                  ) : (
+                    'Ya, Batalkan Retur'
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal / Sheet Catat Retur Baru */}
       <AnimatePresence>
@@ -290,14 +400,14 @@ export default function SembakoRetur() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#0E1420] border-t-2 border-orange-500 sm:border sm:border-slate-800 rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto"
+              className="bg-card border-t-2 border-amber-500 sm:border sm:border-border rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
                 <div className="flex items-center gap-2">
-                  <RotateCcw className="text-orange-500" size={20} />
-                  <h2 className="text-base font-bold font-['Sora'] text-white">Catat Retur Produk Rokok</h2>
+                  <RotateCcw className="text-amber-500" size={20} />
+                  <h2 className="text-base font-bold text-foreground">Catat Retur Produk</h2>
                 </div>
-                <button onClick={() => setSheetOpen(false)} className="text-slate-400 hover:text-white">
+                <button onClick={() => setSheetOpen(false)} className="text-muted-foreground hover:text-foreground">
                   <X size={18} />
                 </button>
               </div>
@@ -305,12 +415,12 @@ export default function SembakoRetur() {
               <form onSubmit={handleCreateReturn} className="space-y-4 text-xs">
                 {/* Tipe Retur */}
                 <div>
-                  <label className="block text-slate-400 font-bold mb-1.5">Tipe Transaksi Retur</label>
+                  <label className="block text-muted-foreground font-bold mb-1.5">Tipe Transaksi Retur</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, type: 'sale_return' })}
-                      className={`p-3 rounded-xl border font-bold text-left transition-all ${form.type === 'sale_return' ? 'bg-orange-600/15 border-orange-500 text-orange-400' : 'bg-[#121824] border-slate-800 text-slate-400'
+                      className={`p-3 rounded-xl border font-bold text-left transition-all ${form.type === 'sale_return' ? 'bg-amber-500/15 border-amber-500 text-amber-400' : 'bg-background border-border text-muted-foreground'
                         }`}
                     >
                       <ArrowDownLeft size={16} className="mb-1" />
@@ -318,8 +428,8 @@ export default function SembakoRetur() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setForm({ ...form, type: 'purchase_return' })}
-                      className={`p-3 rounded-xl border font-bold text-left transition-all ${form.type === 'purchase_return' ? 'bg-blue-600/15 border-blue-500 text-blue-400' : 'bg-[#121824] border-slate-800 text-slate-400'
+                      onClick={() => setForm({ ...form, type: 'purchase_return', selection_mode: 'manual' })}
+                      className={`p-3 rounded-xl border font-bold text-left transition-all ${form.type === 'purchase_return' ? 'bg-sky-500/15 border-sky-500 text-sky-400' : 'bg-background border-border text-muted-foreground'
                         }`}
                     >
                       <ArrowUpRight size={16} className="mb-1" />
@@ -328,85 +438,191 @@ export default function SembakoRetur() {
                   </div>
                 </div>
 
-                {/* Pilih Toko / Supplier (Custom Select) */}
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1.5">
-                    {form.type === 'sale_return' ? 'Pilih Toko / Pelanggan' : 'Pilih Pabrik / Supplier'}
-                  </label>
-                  <CustomSelect
-                    value={form.party_name}
-                    onChange={val => setForm({ ...form, party_name: val === 'custom' ? '' : val, is_custom_party: val === 'custom' })}
-                    placeholder={`-- ${form.type === 'sale_return' ? 'Pilih Toko Terdaftar' : 'Pilih Supplier Terdaftar'} --`}
-                    options={[
-                      { value: '', label: `-- ${form.type === 'sale_return' ? 'Pilih Toko Terdaftar' : 'Pilih Supplier Terdaftar'} --` },
-                      ...(form.type === 'sale_return'
-                        ? customers.map(c => ({ value: c.customer_name, label: `${c.customer_name} ${c.address ? `(${c.address})` : ''}` }))
-                        : suppliers.map(s => ({ value: s.supplier_name, label: s.supplier_name }))
-                      ),
-                      { value: 'custom', label: '✏️ + Input Nama Toko / Supplier Baru' }
-                    ]}
-                  />
+                {/* Mode Pemilihan: Berdasarkan Transaksi vs Manual */}
+                {form.type === 'sale_return' && (
+                  <div>
+                    <label className="block text-muted-foreground font-bold mb-1.5">Metode Pemilihan Retur</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, selection_mode: 'transaction' })}
+                        className={`p-2.5 rounded-xl border font-bold text-left flex items-center gap-2 transition-all ${form.selection_mode === 'transaction'
+                            ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+                            : 'bg-background border-border text-muted-foreground'
+                          }`}
+                      >
+                        <FileText size={15} />
+                        <span>Berdasarkan Transaksi (Invoice)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, selection_mode: 'manual', sale_id: '' })}
+                        className={`p-2.5 rounded-xl border font-bold text-left flex items-center gap-2 transition-all ${form.selection_mode === 'manual'
+                            ? 'bg-amber-500/15 border-amber-500 text-amber-400'
+                            : 'bg-background border-border text-muted-foreground'
+                          }`}
+                      >
+                        <Store size={15} />
+                        <span>Manual / Bebas</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-                  {(form.is_custom_party || (form.type === 'sale_return' && customers.length === 0) || (form.type === 'purchase_return' && suppliers.length === 0)) && (
-                    <input
-                      type="text"
-                      value={form.party_name}
-                      onChange={e => setForm({ ...form, party_name: e.target.value })}
-                      placeholder={form.type === 'sale_return' ? 'Ketik Nama Toko / Pelanggan Baru...' : 'Ketik Nama Pabrik / Supplier Baru...'}
-                      className="w-full bg-[#121824] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-orange-500 mt-2"
-                    />
-                  )}
-                </div>
+                {/* IF SELECTION MODE IS TRANSACTION */}
+                {form.type === 'sale_return' && form.selection_mode === 'transaction' && (
+                  <>
+                    {/* Pilih Invoice Penjualan */}
+                    <div>
+                      <label className="block text-emerald-400 font-bold mb-1.5 flex items-center gap-1.5">
+                        <Link2 size={13} /> Pilih Nota / Invoice Penjualan
+                      </label>
+                      <CustomSelect
+                        value={form.sale_id}
+                        onChange={handleSelectSale}
+                        placeholder="-- Pilih Invoice Penjualan --"
+                        options={[
+                          { value: '', label: '-- Pilih Invoice Penjualan --' },
+                          ...salesList.map(s => ({
+                            value: s.id,
+                            label: `${s.invoice_number} · ${s.customer_name} (${formatDate(s.transaction_date)}) - Rp ${fmt(s.total_amount)}`
+                          }))
+                        ]}
+                      />
+                    </div>
 
-                {/* Pilih Produk */}
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1.5">Produk Rokok</label>
-                  <CustomSelect
-                    value={form.product_id}
-                    onChange={val => setForm({ ...form, product_id: val })}
-                    placeholder="-- Pilih Produk Rokok --"
-                    options={[
-                      { value: '', label: '-- Pilih Produk Rokok --' },
-                      ...products.map(p => ({
-                        value: p.id,
-                        label: `${p.product_name} (Stok: ${p.current_stock} ${p.unit || 'slop'})`
-                      }))
-                    ]}
-                  />
-                </div>
+                    {/* Jika Invoice Dipilih -> Tampilkan Pilihan Produk Dari Invoice Tersebut */}
+                    {selectedSale && (
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 space-y-3">
+                        <div className="flex items-center justify-between text-xs text-emerald-400 font-bold">
+                          <span>🔗 Terhubung: {selectedSale.invoice_number}</span>
+                          <span>{selectedSale.customer_name}</span>
+                        </div>
+
+                        <div>
+                          <label className="block text-muted-foreground font-bold mb-1">Pilih Produk Dari Invoice Ini</label>
+                          <CustomSelect
+                            value={form.product_id}
+                            onChange={handleSelectSaleItem}
+                            placeholder="-- Pilih Produk Yang Terjual --"
+                            options={[
+                              { value: '', label: '-- Pilih Produk Yang Terjual --' },
+                              ...saleItems.map(item => ({
+                                value: item.product_id || item.id,
+                                label: `${item.product_name} (${item.quantity} ${item.unit || 'pcs'} @ Rp ${fmt(item.price_per_unit || item.sell_price)})`
+                              }))
+                            ]}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* IF SELECTION MODE IS MANUAL OR FOR PURCHASE RETURN */}
+                {(form.selection_mode === 'manual' || form.type === 'purchase_return') && (
+                  <>
+                    {/* Pilih Toko / Supplier */}
+                    <div>
+                      <label className="block text-muted-foreground font-bold mb-1.5">
+                        {form.type === 'sale_return' ? 'Pilih Toko / Pelanggan' : 'Pilih Pabrik / Supplier'}
+                      </label>
+                      <CustomSelect
+                        value={form.party_name}
+                        onChange={val => setForm({ ...form, party_name: val === 'custom' ? '' : val, is_custom_party: val === 'custom' })}
+                        placeholder={`-- ${form.type === 'sale_return' ? 'Pilih Toko Terdaftar' : 'Pilih Supplier Terdaftar'} --`}
+                        options={[
+                          { value: '', label: `-- ${form.type === 'sale_return' ? 'Pilih Toko Terdaftar' : 'Pilih Supplier Terdaftar'} --` },
+                          ...(form.type === 'sale_return'
+                            ? customers.map(c => ({ value: c.customer_name, label: `${c.customer_name} ${c.address ? `(${c.address})` : ''}` }))
+                            : suppliers.map(s => ({ value: s.supplier_name, label: s.supplier_name }))
+                          ),
+                          { value: 'custom', label: '✏️ + Input Nama Toko / Supplier Baru' }
+                        ]}
+                      />
+
+                      {(form.is_custom_party || (form.type === 'sale_return' && customers.length === 0) || (form.type === 'purchase_return' && suppliers.length === 0)) && (
+                        <input
+                          type="text"
+                          value={form.party_name}
+                          onChange={e => setForm({ ...form, party_name: e.target.value })}
+                          placeholder={form.type === 'sale_return' ? 'Ketik Nama Toko / Pelanggan Baru...' : 'Ketik Nama Pabrik / Supplier Baru...'}
+                          className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 mt-2"
+                        />
+                      )}
+                    </div>
+
+                    {/* Pilih Produk Master */}
+                    <div>
+                      <label className="block text-muted-foreground font-bold mb-1.5">Produk</label>
+                      <CustomSelect
+                        value={form.product_id}
+                        onChange={val => {
+                          const p = products.find(prod => prod.id === val)
+                          setForm({
+                            ...form,
+                            product_id: val,
+                            product_name: p?.product_name || '',
+                            unit_price: p?.sell_price || ''
+                          })
+                        }}
+                        placeholder="-- Pilih Produk --"
+                        options={[
+                          { value: '', label: '-- Pilih Produk --' },
+                          ...products.map(p => ({
+                            value: p.id,
+                            label: `${p.product_name} (Stok: ${p.current_stock} ${p.unit || 'pcs'})`
+                          }))
+                        ]}
+                      />
+                    </div>
+                  </>
+                )}
 
                 {/* Qty & Unit */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-400 font-bold mb-1.5">Jumlah (Qty)</label>
+                    <label className="block text-muted-foreground font-bold mb-1.5">Jumlah (Qty)</label>
                     <input
                       type="number"
                       min="1"
                       value={form.quantity}
                       onChange={e => setForm({ ...form, quantity: e.target.value })}
-                      className="w-full bg-[#121824] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-orange-500"
+                      className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 font-bold"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 font-bold mb-1.5">Satuan</label>
-                    <CustomSelect
-                      value={form.unit}
-                      onChange={val => setForm({ ...form, unit: val })}
-                      placeholder="Pilih Satuan"
-                      options={[
-                        { value: 'slop', label: 'Slop' },
-                        { value: 'pres', label: 'Pres' },
-                        { value: 'bal', label: 'Bal' },
-                        { value: 'karton', label: 'Karton / Dus' },
-                        { value: 'pack', label: 'Pack / Bungkus' },
-                      ]}
-                    />
+                    <label className="block text-muted-foreground font-bold mb-1.5 flex items-center justify-between">
+                      <span>Satuan</span>
+                      {!!form.product_id && <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1">🔒 Terkunci dari Transaksi</span>}
+                    </label>
+                    {!!form.product_id ? (
+                      <div className="w-full bg-background/50 border border-amber-500/30 rounded-xl px-3.5 py-2.5 text-xs text-amber-400 font-bold flex items-center justify-between cursor-not-allowed select-none">
+                        <span className="capitalize">{(form.unit || 'slop')}</span>
+                        <span className="text-[10px] bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full text-amber-400 font-bold">🔒 Lock</span>
+                      </div>
+                    ) : (
+                      <CustomSelect
+                        value={form.unit}
+                        onChange={val => setForm({ ...form, unit: val })}
+                        placeholder="Pilih Satuan"
+                        options={[
+                          { value: 'pcs', label: 'Pcs' },
+                          { value: 'slop', label: 'Slop' },
+                          { value: 'pres', label: 'Pres' },
+                          { value: 'bal', label: 'Bal' },
+                          { value: 'karton', label: 'Karton / Dus' },
+                          { value: 'kg', label: 'Kg' },
+                          { value: 'pack', label: 'Pack / Bungkus' },
+                        ]}
+                      />
+                    )}
                   </div>
                 </div>
 
                 {/* Alasan Retur */}
                 <div>
-                  <label className="block text-slate-400 font-bold mb-1.5">Alasan Retur</label>
+                  <label className="block text-muted-foreground font-bold mb-1.5">Alasan Retur</label>
                   <CustomSelect
                     value={form.reason}
                     onChange={val => setForm({ ...form, reason: val })}
@@ -414,8 +630,8 @@ export default function SembakoRetur() {
                     options={[
                       { value: 'Pita Cukai Cacat', label: 'Pita Cukai Cacat / Rusak' },
                       { value: 'Bungkus Sobek / Penyok', label: 'Bungkus Sobek / Penyok Saat Transit' },
-                      { value: 'Rokok Lembab / Jamuran', label: 'Rokok Lembab / Jamuran' },
-                      { value: 'Salah Kirim Varian', label: 'Salah Kirim Varian' },
+                      { value: 'Barang Lembab / Jamuran', label: 'Barang Lembab / Jamuran / Rusak' },
+                      { value: 'Salah Kirim Varian', label: 'Salah Kirim Varian / Barang' },
                       { value: 'Expired / Tukar Pabrik', label: 'Expired / Tukar Pabrik' },
                     ]}
                   />
@@ -423,7 +639,7 @@ export default function SembakoRetur() {
 
                 {/* Tindakan Stok (FIFO) */}
                 <div>
-                  <label className="block text-slate-400 font-bold mb-1.5">Tindakan terhadap Stok (FIFO)</label>
+                  <label className="block text-muted-foreground font-bold mb-1.5">Tindakan terhadap Stok (FIFO)</label>
                   <CustomSelect
                     value={form.action}
                     onChange={val => setForm({ ...form, action: val })}
@@ -438,13 +654,13 @@ export default function SembakoRetur() {
                 {/* Penanganan Piutang / Keuangan Toko */}
                 {form.type === 'sale_return' && (
                   <div>
-                    <label className="block text-slate-400 font-bold mb-1.5">Penanganan Piutang / Keuangan Toko</label>
+                    <label className="block text-muted-foreground font-bold mb-1.5">Penanganan Piutang / Keuangan Toko</label>
                     <CustomSelect
                       value={form.financial_action || 'potong_piutang'}
                       onChange={val => setForm({ ...form, financial_action: val })}
                       placeholder="Pilih Penanganan Piutang"
                       options={[
-                        { value: 'potong_piutang', label: '💳 Potong Piutang Toko (Otomatis Kurangi Hutang & Tandai Lunas)' },
+                        { value: 'potong_piutang', label: '💳 Potong Piutang Toko (Otomatis Kurangi Hutang Nota)' },
                         { value: 'refund_cash', label: '💵 Refund Tunai / Cash (Uang Kembali ke Toko)' },
                         { value: 'store_credit', label: '🏦 Deposit / Kredit Toko (Untuk Pembelian Berikutnya)' },
                       ]}
@@ -452,12 +668,20 @@ export default function SembakoRetur() {
                   </div>
                 )}
 
-                {/* Submit */}
+                {/* Submit Button with Loading & Double-click Lock */}
                 <button
                   type="submit"
-                  className="w-full h-12 bg-orange-600 hover:bg-orange-500 font-bold text-white rounded-xl shadow-lg shadow-orange-600/30 transition-all mt-2 cursor-pointer"
+                  disabled={createReturnMut.isPending}
+                  className="w-full h-12 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-xl shadow-lg shadow-amber-600/30 transition-all mt-2 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Simpan Retur Produk
+                  {createReturnMut.isPending ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Menyimpan Retur...</span>
+                    </>
+                  ) : (
+                    'Simpan Retur Produk'
+                  )}
                 </button>
               </form>
             </motion.div>
@@ -477,12 +701,12 @@ function CustomSelect({ value, onChange, options, placeholder }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`w-full bg-[#121824] border ${open ? 'border-orange-500 ring-1 ring-orange-500/50' : 'border-slate-800'} rounded-xl px-3.5 py-2.5 text-left text-xs text-white flex items-center justify-between transition-all cursor-pointer outline-none`}
+        className={`w-full bg-background border ${open ? 'border-amber-500 ring-1 ring-amber-500/50' : 'border-border'} rounded-xl px-3.5 py-2.5 text-left text-xs text-foreground flex items-center justify-between transition-all cursor-pointer outline-none`}
       >
-        <span className={`truncate ${selected && selected.value !== '' ? 'text-white font-bold' : 'text-slate-500 font-normal'}`}>
+        <span className={`truncate ${selected && selected.value !== '' ? 'text-foreground font-bold' : 'text-muted-foreground font-normal'}`}>
           {selected && selected.value !== '' ? selected.label : placeholder || 'Pilih...'}
         </span>
-        <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 flex-shrink-0 ml-2 ${open ? 'rotate-180 text-orange-500' : ''}`} />
+        <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 flex-shrink-0 ml-2 ${open ? 'rotate-180 text-amber-500' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -497,7 +721,7 @@ function CustomSelect({ value, onChange, options, placeholder }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ duration: 0.15 }}
-              className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#161D2B] border border-slate-800 rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800/40"
+              className="absolute left-0 right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-border/40"
             >
               {options.map(opt => (
                 <button
@@ -505,12 +729,12 @@ function CustomSelect({ value, onChange, options, placeholder }) {
                   type="button"
                   onClick={() => { onChange(opt.value); setOpen(false) }}
                   className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center justify-between transition-colors cursor-pointer ${value === opt.value
-                      ? 'bg-orange-600/15 text-orange-400 font-bold'
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white font-medium'
+                      ? 'bg-amber-500/15 text-amber-400 font-bold'
+                      : 'text-muted-foreground hover:bg-background hover:text-foreground font-medium'
                     }`}
                 >
                   <span className="truncate">{opt.label}</span>
-                  {value === opt.value && <Check size={14} className="text-orange-500 flex-shrink-0 ml-2" />}
+                  {value === opt.value && <Check size={14} className="text-amber-500 flex-shrink-0 ml-2" />}
                 </button>
               ))}
             </motion.div>

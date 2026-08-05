@@ -118,21 +118,23 @@ export default function SembakoLaporan() {
   const s = data?.summary || {}
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: '96px' }}>
+    <div className="bg-background min-h-screen text-foreground pb-24 text-left">
       {!isDesktop && <BrokerMobileHeader title="Laporan" onMenuClick={() => setSidebarOpen(true)} />}
-      <div style={{ padding: isDesktop ? '32px 40px' : '20px 16px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4 sm:pt-6">
 
         {/* Header + Date picker */}
-        <div style={{
-          display: 'flex', flexDirection: isDesktop ? 'row' : 'column',
-          alignItems: isDesktop ? 'center' : 'flex-start',
-          justifyContent: 'space-between', gap: '16px', marginBottom: '28px',
-        }}>
-          <h1 style={{ display: isDesktop ? 'block' : 'none', fontSize: isDesktop ? '28px' : '22px', fontWeight: 900, color: C.text, fontFamily: 'DM Sans' }}>
-            Laporan Bisnis
-          </h1>
-          <div style={{ display: 'flex', flexDirection: isDesktop ? 'row' : 'column', alignItems: isDesktop ? 'center' : 'stretch', gap: '8px', width: isDesktop ? 'auto' : '100%' }}>
-            <div style={{ width: isDesktop ? '130px' : '100%' }}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="hidden md:block text-2xl font-bold text-foreground">
+              Laporan Keuangan & Bisnis
+            </h1>
+            <p className="hidden md:block text-xs text-muted-foreground mt-0.5">
+              Analisis performa omzet, HPP, margin & laba bersih
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+            <div className="w-full sm:w-36">
               <CustomSelect
                 value={preset}
                 onChange={handlePresetChange}
@@ -147,23 +149,11 @@ export default function SembakoLaporan() {
               />
             </div>
             {preset === 'custom' && (
-              isDesktop ? (
-                <>
-                  <Calendar size={14} color={C.muted} style={{ flexShrink: 0, marginLeft: '8px' }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <DatePicker id="start-date" value={startDate} onChange={val => setStartDate(val)} placeholder="Start" />
-                  </div>
-                  <span style={{ color: C.muted, fontSize: '12px', fontWeight: 700 }}>—</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <DatePicker id="end-date" value={endDate} onChange={val => setEndDate(val)} placeholder="End" />
-                  </div>
-                </>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <DatePicker id="start-date" value={startDate} onChange={val => setStartDate(val)} placeholder="Dari" />
-                  <DatePicker id="end-date" value={endDate} onChange={val => setEndDate(val)} placeholder="Sampai" />
-                </div>
-              )
+              <div className="flex items-center gap-2">
+                <DatePicker id="start-date" value={startDate} onChange={val => setStartDate(val)} placeholder="Start" />
+                <span className="text-muted-foreground font-bold text-xs">—</span>
+                <DatePicker id="end-date" value={endDate} onChange={val => setEndDate(val)} placeholder="End" />
+              </div>
             )}
           </div>
         </div>

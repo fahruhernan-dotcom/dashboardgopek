@@ -1,0 +1,140 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../../supabase'
+import { toast } from 'sonner'
+import { useAuth } from '../useAuth'
+import { normalizeSupabaseError } from '../../supabaseErrorHandler'
+import { logSupabaseError } from '@/lib/logger/supabaseLogger'
+import { STALE_5M, sanitizeDBPayload, getTenantId } from './sembakoCommon'
+
+export const useSembakoSuppliers = () => {
+  const { tenant } = useAuth()
+  return useQuery({
+    queryKey: ['sembako-suppliers', tenant?.id],
+    enabled: !!tenant?.id,
+    staleTime: STALE_5M,
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase.from('sembako_suppliers')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .eq('is_deleted', false)
+          .order('supplier_name')
+        if (error) { console.warn('[useSembakoSuppliers]', error.message); return [] }
+        return data || []
+      } catch (e) { console.warn('[useSembakoSuppliers]', e); return [] }
+    }
+  })
+}
+
+export const useCreateSembakoSupplier = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload) => {
+      const tenant_id = await getTenantId()
+      const cleanPayload = sanitizeDBPayload({ ...payload, tenant_id }, 'sembako_suppliers')
+      const { data, error } = await supabase.from('sembako_suppliers').insert(cleanPayload).select().single()
+      if (error) {
+        logSupabaseError(error, { table: 'sembako_suppliers', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.supplier.create' })
+        throw error
+      }
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sembako-suppliers'] })
+      toast.success('Supplier berhasil ditambahkan')
+    },
+    onError: (err) => toast.error(normalizeSupabaseError(err).message),
+  })
+}
+
+export const useUpdateSembakoSupplier = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...updates }) => {
+      const cleanUpdates = sanitizeDBPayload(updates, 'sembako_suppliers')
+      const { error } = await supabase.from('sembako_suppliers')
+        .update(cleanUpdates).eq('id', id)
+      if (error) {
+        logSupabaseError(error, { table: 'sembako_suppliers', operation: 'update', component: 'useSembakoData', actionName: 'sembako.supplier.update' })
+        throw error
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sembako-suppliers'] })
+      toast.success('Supplier berhasil diperbarui')
+    },
+    onError: (err) => toast.error(normalizeSupabaseError(err).message),
+  })
+}
+
+export const useDeleteSembakoSupplier = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from('sembako_suppliers')
+        .update({ is_deleted: true }).eq('id', id)
+      if (error) {
+        logSupabaseError(error, { table: 'sembako_suppliers', operation: 'update', component: 'useSembakoData', actionName: 'sembako.supplier.delete' })
+        throw error
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sembako-suppliers'] })
+      toast.success('Supplier berhasil dihapus')
+    },
+    onError: (err) => toast.error(normalizeSupabaseError(err).message),
+  })
+}
+
+export const useSembakoSupplierInvoices = (supplierId) => useQuery({
+  queryKey: ['sembako-supplier-invoices', supplierId],
+  enabled: !!supplierId,
+  staleTime: STALE_5M,
+  queryFn: async () => {
+    const { data, error } = await supabase.from('sembako_stock_batches')
+      .select('*, sembako_products(product_name, unit)')
+      .eq('supplier_id', supplierId)
+      .eq('is_deleted', false)
+      .order('purchase_date', { ascending: false })
+    if (error) throw normalizeSupabaseError(error)
+    return data
+  }
+})
+
+export const useSembakoSupplierPayments = (supplierId) => useQuery({
+  queryKey: ['sembako-supplier-payments', supplierId],
+  enabled: !!supplierId,
+  staleTime: STALE_5M,
+  queryFn: async () => {
+    const { data, error } = await supabase.from('sembako_supplier_payments')
+      .select('*')
+      .eq('supplier_id', supplierId)
+      .eq('is_deleted', false)
+      .order('payment_date', { ascending: false })
+    if (error) throw normalizeSupabaseError(error)
+    return data
+  }
+})
+
+export const useRecordSembakoSupplierPayment = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload) => {
+      const tenant_id = await getTenantId()
+      const { error } = await supabase
+        .from('sembako_supplier_payments')
+        .insert({ ...payload, tenant_id })
+      if (error) {
+        logSupabaseError(error, { table: 'sembako_supplier_payments', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.supplier_payment.create' })
+        throw error
+      }
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['sembako-supplier-payments', vars.supplier_id] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-suppliers'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-dashboard-stats'] })
+      toast.success('Pembayaran ke supplier dicatat')
+    },
+    onError: (err) => toast.error(normalizeSupabaseError(err).message),
+  })
+}

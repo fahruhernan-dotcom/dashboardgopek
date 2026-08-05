@@ -191,7 +191,7 @@ export default function SembakoTokoSupplier() {
   if (isBatchError) return <SembakoErrorState error={batchError} onRetry={refetchBatch} />
 
   return (
-    <div className="min-h-screen bg-[#06090F] pb-24 text-left">
+    <div className="min-h-screen bg-background pb-24 text-left">
       {!isDesktop && <BrokerMobileHeader title="Toko & Supplier" onMenuClick={() => setSidebarOpen(true)} />}
 
       <div className="mx-auto max-w-7xl">
@@ -235,14 +235,14 @@ export default function SembakoTokoSupplier() {
         />
 
         {!isDesktop && (
-          <div className="px-5 pt-4">
+          <div className="px-4 sm:px-6 pt-4">
             <SegmentSwitch sub={sub} setSub={setSub} />
           </div>
         )}
 
         <SembakoSummaryStrip items={summaryItems} />
 
-        <div className="space-y-4 px-5 pt-4">
+        <div className="space-y-4 px-4 sm:px-6 pt-2">
           {sub === 'toko' && areas.length > 1 && (
             <div className="flex flex-wrap gap-2">
               <SembakoFilterPill
@@ -285,12 +285,12 @@ export default function SembakoTokoSupplier() {
 
 function SegmentSwitch({ sub, setSub }) {
   return (
-    <div className="flex items-center gap-1 rounded-2xl border border-[#EA580C]/10 bg-[#1C1208] p-1.5">
+    <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-card p-1">
       <button
         onClick={() => setSub('toko')}
         className={cn(
-          'h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all',
-          sub === 'toko' ? 'bg-[#EA580C] text-white shadow-lg shadow-orange-950/20' : 'text-[#92400E] hover:text-[#FEF3C7]'
+          'h-9 rounded-lg px-4 text-xs font-bold transition-all cursor-pointer select-none',
+          sub === 'toko' ? 'bg-amber-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
         )}
       >
         Toko
@@ -298,8 +298,8 @@ function SegmentSwitch({ sub, setSub }) {
       <button
         onClick={() => setSub('supplier')}
         className={cn(
-          'h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all',
-          sub === 'supplier' ? 'bg-[#F59E0B] text-[#1C1208] shadow-lg shadow-amber-950/20' : 'text-[#92400E] hover:text-[#FEF3C7]'
+          'h-9 rounded-lg px-4 text-xs font-bold transition-all cursor-pointer select-none',
+          sub === 'supplier' ? 'bg-amber-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
         )}
       >
         Supplier
@@ -606,57 +606,57 @@ function TokoList({ customers, customerStats, search, selectedArea, onlyHutang }
             type="button"
             onClick={() => navigate(`customer/${customer.id}`)}
             whileTap={{ scale: 0.985 }}
-            className="group w-full rounded-2xl border border-[#EA580C]/10 bg-[#1C1208] px-4 py-3 text-left transition-all hover:border-[#EA580C]/25 hover:bg-[#221508]"
+            className="group w-full rounded-2xl border border-border/60 bg-card px-4 py-3 text-left transition-all hover:border-amber-500/30 hover:bg-card/90 shadow-sm cursor-pointer"
           >
             {/* Row 1: avatar + name + chevron */}
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EA580C]/10 text-[12px] font-black uppercase text-[#EA580C]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-xs font-black uppercase text-amber-500 border border-amber-500/20">
                 {(customer.customer_name || '--').slice(0, 2)}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-[13px] font-black uppercase tracking-tight text-[#FEF3C7]">
+                  <p className="truncate text-sm font-bold text-foreground">
                     {customer.customer_name}
                   </p>
-                  <Badge className="h-4 shrink-0 border-none bg-[#EA580C]/10 px-1.5 text-[7px] font-black uppercase tracking-wider text-[#EA580C]">
+                  <Badge className="h-4 shrink-0 border-none bg-amber-500/10 px-1.5 text-[8px] font-black uppercase tracking-wider text-amber-400">
                     {customer.customer_type || 'customer'}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] font-bold text-[#94A3B8]">{customer.area || 'Tanpa Area'}</span>
+                <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                  <span>{customer.area || 'Tanpa Area'}</span>
                   {customer.phone && (
                     <>
-                      <span className="text-[#EA580C]/20">·</span>
-                      <span className="text-[10px] font-bold text-[#94A3B8]">{customer.phone}</span>
+                      <span>·</span>
+                      <span>{customer.phone}</span>
                     </>
                   )}
                 </div>
               </div>
-              <ChevronRight className="shrink-0 text-[#92400E] transition-all group-hover:translate-x-0.5 group-hover:text-[#EA580C]" size={14} />
+              <ChevronRight className="shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-amber-500" size={16} />
             </div>
 
             {/* Row 2: metrics strip */}
-            <div className="mt-3 flex items-center justify-between rounded-xl bg-[#EA580C]/[0.04] px-3 py-2">
+            <div className="mt-3 flex items-center justify-between rounded-xl bg-background/60 border border-border/40 px-3 py-2">
               <div>
-                <p className="text-[8px] font-black uppercase tracking-widest text-[#94A3B8]">Piutang</p>
-                <p className={cn('text-[12px] font-black tabular-nums', outstanding > 0 ? 'text-[#F87171]' : 'text-[#34D399]')}>
+                <p className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Piutang</p>
+                <p className={cn('text-xs font-black tabular-nums', outstanding > 0 ? 'text-rose-500' : 'text-emerald-400')}>
                   {outstanding > 0 ? formatIDR(outstanding) : 'Lunas'}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-[8px] font-black uppercase tracking-widest text-[#94A3B8]">Invoice</p>
-                <p className="text-[12px] font-black text-[#FEF3C7]">{invoiceCount}</p>
+                <p className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Invoice</p>
+                <p className="text-xs font-black text-foreground">{invoiceCount}</p>
               </div>
               <div className="text-right">
-                <p className="text-[8px] font-black uppercase tracking-widest text-[#94A3B8]">Terakhir</p>
-                <p className="text-[11px] font-bold text-[#FEF3C7]">{lastTxDate || '—'}</p>
+                <p className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Terakhir</p>
+                <p className="text-xs font-medium text-foreground">{lastTxDate || '—'}</p>
               </div>
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((score) => (
                   <Star
                     key={score}
-                    size={9}
-                    className={cn(score <= (customer.reliability_score || 0) ? 'fill-amber-400 text-amber-400' : 'text-[#EA580C]/25')}
+                    size={10}
+                    className={cn(score <= (customer.reliability_score || 0) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30')}
                   />
                 ))}
               </div>
@@ -699,7 +699,7 @@ function SupplierList({ suppliers, supplierStats, search }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {filtered.map((supplier) => {
         const stats = supplierStats[supplier.id] || {}
         const lastDate = stats.lastPurchaseDate
@@ -712,31 +712,31 @@ function SupplierList({ suppliers, supplierStats, search }) {
             type="button"
             onClick={() => navigate(`supplier/${supplier.id}`)}
             whileTap={{ scale: 0.992 }}
-            className="group flex items-center justify-between rounded-[24px] border border-[#F59E0B]/10 bg-[#1C1208] p-4 text-left shadow-lg transition-all hover:border-[#F59E0B]/25"
+            className="group flex items-center justify-between rounded-2xl border border-border/60 bg-card p-4 text-left shadow-sm transition-all hover:border-amber-500/30 cursor-pointer"
           >
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#F59E0B]/15 bg-[#F59E0B]/10">
-                <Package size={22} className="text-[#F59E0B]" />
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10">
+                <Package size={20} className="text-amber-500" />
               </div>
 
               <div className="min-w-0">
-                <h3 className="truncate font-display text-base font-black uppercase tracking-tight text-[#FEF3C7]">
+                <h3 className="truncate font-sans text-sm font-bold text-foreground">
                   {supplier.supplier_name}
                 </h3>
 
-                <div className="mt-1 flex flex-wrap items-center gap-3 text-[10px] font-black uppercase text-[#94A3B8]">
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   {supplier.phone && <MiniInfo icon={Phone} text={supplier.phone} />}
                   {lastDate && <MiniInfo icon={MapPin} text={`Batch ${lastDate}`} />}
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-4">
+                <div className="mt-2 flex flex-wrap gap-3">
                   <MetricBlock label="Nilai Belanja" value={formatIDR(stats.totalPurchaseValue || 0)} tone="amber" compact />
                   <MetricBlock label="Total Batch" value={stats.batchCount || 0} tone="default" compact />
                 </div>
               </div>
             </div>
 
-            <ChevronRight className="ml-4 text-[#92400E] transition-all group-hover:translate-x-1 group-hover:text-[#F59E0B]" size={18} />
+            <ChevronRight className="ml-2 text-muted-foreground transition-all group-hover:translate-x-1 group-hover:text-amber-500 shrink-0" size={16} />
           </MotionButton>
         )
       })}

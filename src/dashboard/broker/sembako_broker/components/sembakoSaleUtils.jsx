@@ -17,10 +17,10 @@ export const PAYMENT_TERMS_DAYS = { cash: 0, net3: 3, net7: 7, net14: 14, net30:
 export const PAYMENT_TERMS_LABEL = { cash: 'Cash', net3: 'NET 3', net7: 'NET 7', net14: 'NET 14', net30: 'NET 30' }
 
 export const CUSTOMER_TYPES = [
-  'warung','toko_retail','supermarket','restoran','catering','grosir','lainnya'
+  'warung', 'toko_retail', 'supermarket', 'restoran', 'catering', 'grosir', 'lainnya'
 ]
 export const CUSTOMER_TYPE_OPTIONS = CUSTOMER_TYPES.map(t => ({ value: t, label: t.toUpperCase() }))
-export const PAYMENT_METHOD_OPTIONS = ['cash','transfer','qris','giro','cek'].map(m => ({ value: m, label: m.toUpperCase() }))
+export const PAYMENT_METHOD_OPTIONS = ['cash', 'transfer', 'qris', 'giro', 'cek', 'potong_deposit'].map(m => ({ value: m, label: m === 'potong_deposit' ? 'POTONG DEPOSIT TOKO' : m.toUpperCase() }))
 export const INVOICE_FILTERS = [
   { id: 'all', label: 'Semua Invoice' },
   { id: 'unpaid', label: 'Punya Piutang' },
@@ -229,7 +229,7 @@ export function ProgressIndicator({ currentStep, steps }) {
 export function LoadingSkeleton() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {[1,2,3].map(i => (
+      {[1, 2, 3].map(i => (
         <Skeleton key={i} style={{ height: '140px', width: '100%', borderRadius: '20px', background: 'rgba(255,255,255,0.05)' }} />
       ))}
     </div>
@@ -289,4 +289,113 @@ export function SummaryLine({ label, value, bold, color = C.text }) {
       <span style={{ fontSize: '13px', fontWeight: bold ? 800 : 500, color: color }}>{value}</span>
     </div>
   )
+}
+
+export function calculateSaleFinancials(sale, returnsList = [], products = []) {
+  if (!sale) return { grandTotal: 0, paidAmount: 0, remainingAmount: 0, overpayAmount: 0, isOverpaid: false, itemsSubtotal: 0, totalReturnAmount: 0, netMarginPct: 0, profit: 0, grossProfit: 0, effectiveCogs: 0, items: [], saleReturns: [] }
+
+  const items = Array.isArray(sale.sembako_sale_items) ? sale.sembako_sale_items : []
+  const directReturns = Array.isArray(sale?.sembako_returns) ? sale.sembako_returns.filter(r => !r.is_deleted) : []
+  const hookedReturns = sale.id ? returnsList.filter(r => r && !r.is_deleted && (r.sale_id === sale.id || String(r.sale_id) === String(sale.id))) : []
+  const invoiceReturns = sale.invoice_number ? returnsList.filter(r => r && !r.is_deleted && r.invoice_number && String(r.invoice_number).trim() === String(sale.invoice_number).trim()) : []
+  const saleReturns = directReturns.length > 0 ? directReturns : (hookedReturns.length > 0 ? hookedReturns : invoiceReturns)
+
+  const getItemPrice = (r) => {
+    if (Number(r.unit_price) > 0) return Number(r.unit_price)
+    const matchItem = items.find(i => i.product_id === r.product_id || i.product_name === r.product_name)
+    if (matchItem) return Number(matchItem.price_per_unit || matchItem.sell_price || matchItem.unit_price || 0)
+    const matchProd = products.find(p => p.id === r.product_id || p.product_name === r.product_name)
+    return Number(matchProd?.sell_price || 0)
+  }
+
+  const getItemCogs = (r) => {
+    const matchItem = items.find(i => i.product_id === r.product_id || i.product_name === r.product_name)
+    if (matchItem && Number(matchItem.cogs_per_unit) > 0) return Number(matchItem.cogs_per_unit)
+    const matchProd = products.find(p => p.id === r.product_id || p.product_name === r.product_name)
+    return Number(matchProd?.avg_buy_price || 0)
+  }
+
+  const getReturnAmount = (r) => {
+    const amt = Number(r.total_amount || r.amount || 0)
+    if (amt > 0) return amt
+    return Math.round(Number(r.quantity || 0) * getItemPrice(r))
+  }
+
+  const totalReturnAmount = saleReturns.reduce((sum, r) => sum + getReturnAmount(r), 0)
+  const totalReturnCogs = saleReturns.reduce((sum, r) => sum + Math.round(Number(r.quantity || 0) * getItemCogs(r)), 0)
+
+  const cogsFromItems = items.reduce((s, i) => s + Math.round((i.quantity || 0) * (i.cogs_per_unit || 0)), 0)
+  const cogsFromProducts = items.reduce((s, i) => {
+    if (!i.product_id) return s
+    const prod = products.find(p => p.id === i.product_id)
+    return s + Math.round((i.quantity || 0) * (prod?.avg_buy_price || 0))
+  }, 0)
+  const totalCogs = Number(sale.total_cogs) || cogsFromItems || cogsFromProducts
+  const cogsIsEstimate = !Number(sale.total_cogs) && !cogsFromItems && cogsFromProducts > 0
+  const effectiveCogs = Math.max(0, totalCogs - totalReturnCogs)
+
+  const itemsSubtotalFromItems = items.length > 0
+    ? items.reduce((s, i) => s + Math.round((i.quantity || 0) * (Number(i.price_per_unit ?? i.sell_price ?? i.unit_price ?? 0))), 0)
+    : 0
+  // itemsSubtotal for display only (gross sebelum retur)
+  // sale.subtotal dari hook = initialSubtotal (gross), aman dipakai
+  const itemsSubtotal = itemsSubtotalFromItems || Number(sale.subtotal) || 0
+  const deliveryCost = Number(sale.delivery_cost) || 0
+  const otherCost = Number(sale.other_cost) || 0
+
+  // ponytail: items dari DB JOIN selalu akurat — pakai untuk grandTotal jika ada.
+  // sale.total_amount bisa corrupted jika DB di-update salah; items tidak bisa circular.
+  // Jika items kosong, percaya sale.total_amount dari hook (hook juga pakai items saat pertama load).
+  const grandTotal = itemsSubtotalFromItems > 0
+    ? Math.max(0, itemsSubtotalFromItems - totalReturnAmount)
+    : Math.max(0, Number(sale.total_amount) || 0)
+
+  const payments = Array.isArray(sale.sembako_payments) ? sale.sembako_payments.filter(p => !p.is_deleted) : []
+  // ponytail: hanya hitung uang MASUK (positif, bukan refund). Refund ditrack di refundPaymentsAmount.
+  const paidFromPayments = payments
+    .filter(p => Number(p.amount || p.amount_paid || 0) > 0 && p.payment_method !== 'pengembalian_tunai_retur')
+    .reduce((s, p) => s + (Number(p.amount || p.amount_paid) || 0), 0)
+  // Hitung refund yang sudah dikembalikan ke toko
+  const refundPaymentsAmount = payments
+    .filter(p => p.payment_method === 'pengembalian_tunai_retur' || Number(p.amount || p.amount_paid || 0) < 0)
+    .reduce((s, p) => s + Math.abs(Number(p.amount || p.amount_paid || 0)), 0)
+  // raw_paid bersih: positif payments dikurangi yang sudah direfund
+  const netPaidFromPayments = Math.max(0, paidFromPayments - refundPaymentsAmount)
+  const rawPaidAmount = Math.max(Number(sale.raw_paid_amount || sale.paid_amount || 0), netPaidFromPayments)
+
+  const isOverpaid = (saleReturns.length > 0 || sale.is_overpaid) && rawPaidAmount > grandTotal
+  const overpayAmount = isOverpaid ? (rawPaidAmount - grandTotal) : (sale.overpay_amount || 0)
+  const paidAmount = Math.min(grandTotal, rawPaidAmount)
+  const remainingAmount = isOverpaid ? 0 : Math.max(0, grandTotal - paidAmount)
+
+  const totalExpenses = deliveryCost + otherCost
+  const grossProfit = Math.max(0, (itemsSubtotal - totalReturnAmount) - effectiveCogs)
+  const profit = Math.max(0, grossProfit - totalExpenses)
+  const netMarginPct = grandTotal > 0 ? Math.round((profit / grandTotal) * 100) : 0
+
+
+
+  return {
+    items,
+    saleReturns,
+    totalReturnAmount,
+    totalReturnCogs,
+    itemsSubtotal,
+    deliveryCost,
+    otherCost,
+    totalExpenses,
+    grandTotal,
+    grossPaidAmount: paidFromPayments,  // uang masuk bruto (belum dikurangi refund) — untuk display 'Total Uang Diterima'
+    rawPaidAmount,                       // net bersih (setelah refund) — untuk hitung overpay
+    paidAmount,
+    remainingAmount,
+    isOverpaid,
+    overpayAmount,
+    effectiveCogs,
+    cogsIsEstimate,
+    grossProfit,
+    profit,
+    netMarginPct,
+    refundPaymentsAmount,
+  }
 }

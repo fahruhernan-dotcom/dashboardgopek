@@ -1,0 +1,127 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../../supabase'
+import { toast } from 'sonner'
+import { useAuth } from '../useAuth'
+import { normalizeSupabaseError } from '../../supabaseErrorHandler'
+import { logSupabaseError } from '@/lib/logger/supabaseLogger'
+import { STALE_5M, sanitizeDBPayload, getTenantId } from './sembakoCommon'
+
+export const useSembakoCustomers = () => {
+  const { tenant } = useAuth()
+  return useQuery({
+    queryKey: ['sembako-customers', tenant?.id],
+    enabled: !!tenant?.id,
+    staleTime: STALE_5M,
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase.from('sembako_customers')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .eq('is_deleted', false)
+          .order('customer_name')
+        if (error) { console.warn('[useSembakoCustomers]', error.message); return [] }
+        return data || []
+      } catch (e) { console.warn('[useSembakoCustomers]', e); return [] }
+    }
+  })
+}
+
+export const useCreateSembakoCustomer = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload) => {
+      const tenant_id = await getTenantId()
+      const cleanPayload = sanitizeDBPayload({ ...payload, tenant_id }, 'sembako_customers')
+      const { data, error } = await supabase.from('sembako_customers')
+        .insert(cleanPayload)
+        .select().single()
+      if (error) {
+        logSupabaseError(error, { table: 'sembako_customers', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.customer.create' })
+        throw error
+      }
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sembako-customers'] })
+      toast.success('Toko berhasil ditambahkan')
+    },
+    onError: (err) => toast.error(normalizeSupabaseError(err).message),
+  })
+}
+
+export const useUpdateSembakoCustomer = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...updates }) => {
+      const cleanUpdates = sanitizeDBPayload(updates, 'sembako_customers')
+      const { error } = await supabase.from('sembako_customers')
+        .update(cleanUpdates).eq('id', id)
+      if (error) {
+        logSupabaseError(error, { table: 'sembako_customers', operation: 'update', component: 'useSembakoData', actionName: 'sembako.customer.update' })
+        throw error
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sembako-customers'] })
+      toast.success('Toko berhasil diperbarui')
+    },
+    onError: (err) => toast.error(normalizeSupabaseError(err).message),
+  })
+}
+
+export const useDeleteSembakoCustomer = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from('sembako_customers')
+        .update({ is_deleted: true }).eq('id', id)
+      if (error) {
+        logSupabaseError(error, { table: 'sembako_customers', operation: 'update', component: 'useSembakoData', actionName: 'sembako.customer.delete' })
+        throw error
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sembako-customers'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-dashboard-stats'] })
+      toast.success('Toko berhasil dihapus')
+    },
+    onError: (err) => toast.error(normalizeSupabaseError(err).message),
+  })
+}
+
+export const useSembakoCustomerInvoices = (customerId) => useQuery({
+  queryKey: ['sembako-customer-invoices', customerId],
+  enabled: !!customerId,
+  staleTime: STALE_5M,
+  queryFn: async () => {
+    const { data, error } = await supabase.from('sembako_sales')
+      .select('*, sembako_sale_items(*)')
+      .eq('customer_id', customerId)
+      .eq('is_deleted', false)
+      .order('transaction_date', { ascending: false })
+    if (error) throw normalizeSupabaseError(error)
+    return data
+  }
+})
+
+export const useSembakoCustomerPayments = (customerId) => useQuery({
+  queryKey: ['sembako-customer-payments', customerId],
+  enabled: !!customerId,
+  staleTime: STALE_5M,
+  queryFn: async () => {
+    try {
+      const { data, error } = await supabase.from('sembako_payments')
+        .select('*, sembako_sales(invoice_number, is_deleted)')
+        .eq('customer_id', customerId)
+        .order('payment_date', { ascending: false })
+      if (error) {
+        console.warn('[useSembakoCustomerPayments]', error.message)
+        return []
+      }
+      return (data || []).filter(p => !p.sembako_sales || !p.sembako_sales.is_deleted)
+    } catch (e) {
+      console.warn('[useSembakoCustomerPayments]', e)
+      return []
+    }
+  }
+})

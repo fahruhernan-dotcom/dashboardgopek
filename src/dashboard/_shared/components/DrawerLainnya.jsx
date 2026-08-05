@@ -26,12 +26,15 @@ import { useNavigate } from 'react-router-dom'
 import { getBusinessModel } from '@/lib/businessModel'
 import ThemePicker from '@/components/ui/ThemePicker'
 import { isSuperadmin as checkIsSuperadmin, isOwner, isStaff, isViewOnly } from '@/lib/auth'
+import { useBackHandler } from '@/lib/hooks/useBackHandler'
+
 const ICON_MAP = {
   Truck, Wallet, BarChart2, BarChart3, Car, Calculator, User, Users,
   Package, RefreshCw, ClipboardList, ShoppingCart, CreditCard, History, Store, LayoutGrid, Shield,
 }
 
 export default function DrawerLainnya({ isOpen, onClose, userType }) {
+  useBackHandler(isOpen, onClose)
   const { profile, tenant, profiles, isSuperadmin, switchTenant } = useAuth()
   const navigate = useNavigate()
   const model = getBusinessModel(userType, profile?.sub_type)
@@ -94,7 +97,7 @@ export default function DrawerLainnya({ isOpen, onClose, userType }) {
             <div className="shrink-0 w-10 h-1.5 bg-muted/20 rounded-full mx-auto my-4" />
 
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}>
+            <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6" style={{ paddingBottom: 'max(2rem, calc(1.5rem + env(safe-area-inset-bottom, 16px)))' }}>
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h2 className="font-display text-lg font-bold">Layanan Lainnya</h2>

@@ -268,10 +268,10 @@ export function SembakoInvoice({
         {/* HEADER */}
         <View style={s.header}>
           <View>
-            <Text style={s.companyName}>{tenant?.business_name || 'Grosir Sembako'}</Text>
+            <Text style={s.companyName}>{tenant?.business_name || 'GPK'}</Text>
             <Text style={s.companyDetail}>{tenant?.location || '-'}</Text>
             <Text style={s.companyDetail}>Tel: {tenant?.phone || '-'}</Text>
-            <Text style={s.companyDetail}>TernakOS — Platform Manajemen Peternakan</Text>
+            <Text style={s.companyDetail}>Dashboard GPK — Platform Manajemen Bisnis</Text>
           </View>
           <View>
             <Text style={s.docTitle}>INVOICE</Text>
@@ -375,7 +375,7 @@ export function SembakoInvoice({
               </View>
               {items.map((item, idx) => {
                 const qty = Number(item.quantity || item.quantity_kg || 0)
-                const price = Number(item.price_per_unit || item.price_per_kg || 0)
+                const price = Number(item.price_per_unit ?? item.sell_price ?? item.price_per_kg ?? item.unit_price ?? 0)
                 const itemSubtotal = Number(item.subtotal ?? Math.round(qty * price))
                 const unit         = item.unit || 'pcs'
                 return (
@@ -492,7 +492,7 @@ export function SembakoInvoice({
           <Text style={s.footerText}>
             {invoiceNumber} | Ref: {invoice?.invoice_number || '-'} | {formatDatePDF(new Date())} | {generatedBy || '-'}
           </Text>
-          <Text style={s.footerText}>Powered by TernakOS — ternakos.com</Text>
+          <Text style={s.footerText}>Powered by Dashboard GPK</Text>
         </View>
 
       </Page>

@@ -12,6 +12,7 @@ import {
   useRecordSembakoPayment, useUpdateSembakoSale, useCreateSembakoCustomer, useCreateSembakoEmployee,
 } from '@/lib/hooks/useSembakoData'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
+import { useBackHandler } from '@/lib/hooks/useBackHandler'
 import SembakoInvoicePreview from '../SembakoInvoicePreview'
 import {
   C,
@@ -215,13 +216,16 @@ function QuickAddProduct({ form, onChange, onSave, onCancel, saving }) {
 // ─── Product Item Row ─────────────────────────────────────────────────────────
 function ProductItemRow({ item, idx, products: _products, productOptions, total: _total, overStock, onChangeItem, onRemove, onAddNew, isOnly }) {
   const subtotal = Math.round((item.quantity || 0) * (item.price_per_unit || 0))
+  const hpp = item.cogs_per_unit || 0
+  const isBelowHpp = hpp > 0 && item.price_per_unit > 0 && item.price_per_unit < hpp
+  const marginPerUnit = item.price_per_unit > 0 && hpp > 0 ? item.price_per_unit - hpp : null
 
   return (
     <div
       className="rounded-2xl p-4 space-y-3"
       style={{
         background: SURFACE,
-        border: `1px solid ${overStock ? 'rgba(239,68,68,0.35)' : BORDER}`,
+        border: `1px solid ${overStock ? 'rgba(239,68,68,0.35)' : isBelowHpp ? 'rgba(239,68,68,0.35)' : BORDER}`,
         position: 'relative',
       }}
     >
@@ -267,14 +271,31 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
         <div>
           <label className={labelCn}>Harga / Unit</label>
           <InputRupiah value={item.price_per_unit} onChange={v => onChangeItem(idx, 'price_per_unit', v)} />
+          {/* HPP hint dari batch */}
+          {hpp > 0 && (
+            <div className="flex items-center justify-between mt-1.5">
+              <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: isBelowHpp ? '#EF4444' : '#92400E' }}>
+                {isBelowHpp ? '⚠️ HPP' : 'HPP'}
+              </span>
+              <span className="text-[9px] font-bold tabular-nums" style={{ color: isBelowHpp ? '#EF4444' : '#92400E' }}>
+                {formatIDR(hpp)}/unit
+              </span>
+            </div>
+          )}
+          {marginPerUnit !== null && !isBelowHpp && (
+            <div className="flex items-center justify-between mt-0.5">
+              <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: '#22C55E' }}>Margin</span>
+              <span className="text-[9px] font-bold tabular-nums" style={{ color: '#22C55E' }}>+{formatIDR(marginPerUnit)}/unit</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Subtotal pill */}
       {subtotal > 0 && (
-        <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: `rgba(234,88,12,0.07)`, border: `1px solid ${BORDER}` }}>
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: isBelowHpp ? 'rgba(239,68,68,0.07)' : `rgba(234,88,12,0.07)`, border: `1px solid ${isBelowHpp ? 'rgba(239,68,68,0.2)' : BORDER}` }}>
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: MUTED }}>Subtotal</span>
-          <span className="text-sm font-black" style={{ color: TEXT }}>{formatIDR(subtotal)}</span>
+          <span className="text-sm font-black" style={{ color: isBelowHpp ? '#EF4444' : TEXT }}>{formatIDR(subtotal)}</span>
         </div>
       )}
     </div>
@@ -348,7 +369,8 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   const [quickAddProd, setQuickAddProd]     = useState(false)
   const [newProdForm, setNewProdForm]       = useState({ product_name: '', category: 'lainnya', unit: 'pcs', sell_price: 0 })
 
-  const [useDelivery, setUseDelivery]           = useState(false)
+  const [useDelivery, setUseDelivery]           = useState(true)
+  const [deliveryStatus, setDeliveryStatus]     = useState('terkirim') // 'terkirim' | 'pending'
   const [deliveryDriver, setDeliveryDriver]     = useState('')
   const [deliveryVehicle, setDeliveryVehicle]   = useState('')
   const [deliveryPlate, setDeliveryPlate]       = useState('')
@@ -403,18 +425,24 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   const totalCogs    = items.reduce((s, i) => s + Math.round((i.quantity || 0) * (i.cogs_per_unit || 0)), 0)
   const grossProfit  = totalAmount - totalCogs
   const netProfit    = grossProfit - deliveryCost - otherCost
-  const marginPct    = totalAmount > 0 ? Math.round((grossProfit / totalAmount) * 100) : 0
+  const netMarginPct = totalAmount > 0 ? Math.round((netProfit / totalAmount) * 100) : 0
 
   // ── Edit prefill ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!open || !editSale) {
-      if (!open) lastPrefillKeyRef.current = null
+    if (!open) {
+      // Reset step ketika sheet ditutup supaya buka ulang selalu mulai dari awal
+      setStep(0)
+      setSuccessData(null)
+      lastPrefillKeyRef.current = null
       return
     }
+    if (!editSale) return
+
     const prefillKey = `${editSale.id}:${editSale.updated_at || editSale.transaction_date || ''}`
     if (lastPrefillKeyRef.current === prefillKey) return
     lastPrefillKeyRef.current = prefillKey
 
+    // Prefill semua field dari data invoice lama
     setCustId(editSale.customer_id || '')
     setTxnDate(editSale.transaction_date?.slice(0, 10) || new Date().toISOString().slice(0, 10))
     setDueDate(editSale.due_date?.slice(0, 10) || '')
@@ -427,10 +455,15 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         product_id: it.product_id, product_name: it.product_name, unit: it.unit,
         quantity: it.quantity, price_per_unit: it.price_per_unit, cogs_per_unit: it.cogs_per_unit
       })))
+      // Data lengkap — buka di step 1 (barang) supaya langsung bisa review/edit
+      setStep(1)
     } else {
+      // Items kosong (data lama) — buka di step 1 juga, customer sudah prefill, tinggal isi barang
       setItems([{ product_id: '', product_name: '', unit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
+      setStep(1)
     }
   }, [open, editSale])
+
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   function handleSelectCustomer(id) {
@@ -533,9 +566,9 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           driver_name: employees.find(e => e.id === deliveryDriver)?.full_name || null,
           vehicle_type: deliveryVehicle, vehicle_plate: deliveryPlate.toUpperCase(),
           delivery_date: txnDate,
-          delivery_area: deliveryArea || selectedCust?.address || '',
-          delivery_cost: deliveryCost, status: 'pending',
-          notes: 'Otomatis dari wizard penjualan',
+          status: deliveryStatus || 'terkirim',
+          delivered_at: deliveryStatus === 'terkirim' ? new Date().toISOString() : null,
+          notes: deliveryStatus === 'terkirim' ? 'Pengiriman langsung saat penjualan' : 'Jadwal pengiriman dari wizard penjualan',
         })
       }
 
@@ -557,17 +590,103 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         otherCost, other_cost: otherCost,
         netProfit: grossProfit - deliveryCost - otherCost,
         hasDelivery: useDelivery,
+        deliveryStatus: deliveryStatus,
         driverName: employees.find(e => e.id === deliveryDriver)?.full_name,
         transaction_date: txnDate, sembako_sale_items: validItems,
         remaining_amount: totalAmount - payAmount,
       })
+      clearInvoiceDraft()
     } catch (err) {
       console.error(err)
     }
   }
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- React Compiler skip; manual useCallback must remain
-  const handleClose = useCallback(() => {
+  const INVOICE_DRAFT_KEY = 'sembako_invoice_wizard_draft'
+  const EDIT_DRAFT_KEY = editId ? `sembako_edit_draft_v2_${editId}` : null
+
+  // ── Auto Draft Persistence ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (open && !editId) {
+      try {
+        const saved = localStorage.getItem(INVOICE_DRAFT_KEY)
+        if (saved) {
+          const d = JSON.parse(saved)
+          if (d.custId) setCustId(d.custId)
+          if (d.txnDate) setTxnDate(d.txnDate)
+          if (d.dueDate) setDueDate(d.dueDate)
+          if (Array.isArray(d.items) && d.items.length > 0) setItems(d.items)
+          if (d.deliveryCost !== undefined) setDeliveryCost(d.deliveryCost)
+          if (d.otherCost !== undefined) setOtherCost(d.otherCost)
+          if (d.payAmount !== undefined) setPayAmount(d.payAmount)
+          if (d.payMethod) setPayMethod(d.payMethod)
+          if (d.notes) setNotes(d.notes)
+          if (d.useDelivery !== undefined) setUseDelivery(d.useDelivery)
+          if (d.deliveryDriver) setDeliveryDriver(d.deliveryDriver)
+          if (d.deliveryVehicle) setDeliveryVehicle(d.deliveryVehicle)
+          if (d.deliveryPlate) setDeliveryPlate(d.deliveryPlate)
+          if (d.deliveryArea) setDeliveryArea(d.deliveryArea)
+          if (d.fuelCost !== undefined) setFuelCost(d.fuelCost)
+          if (d.step !== undefined) setStep(d.step)
+        }
+      } catch (e) {
+        console.warn('[Draft] Failed to load draft:', e)
+      }
+    }
+    // Mode edit: coba load edit-draft yang tersimpan sebelumnya
+    if (open && editId && EDIT_DRAFT_KEY) {
+      try {
+        const saved = localStorage.getItem(EDIT_DRAFT_KEY)
+        if (saved) {
+          const d = JSON.parse(saved)
+          // Hanya restore kalau timestamp-nya lebih baru dari data DB
+          const prefillKey = `${editId}:${editSale?.updated_at || editSale?.transaction_date || ''}`
+          if (d._prefillKey === prefillKey) {
+            if (d.custId) setCustId(d.custId)
+            if (d.txnDate) setTxnDate(d.txnDate)
+            if (d.dueDate) setDueDate(d.dueDate)
+            if (Array.isArray(d.items) && d.items.length > 0) setItems(d.items)
+            if (d.deliveryCost !== undefined) setDeliveryCost(d.deliveryCost)
+            if (d.otherCost !== undefined) setOtherCost(d.otherCost)
+            if (d.payAmount !== undefined) setPayAmount(d.payAmount)
+            if (d.payMethod) setPayMethod(d.payMethod)
+            if (d.notes !== undefined) setNotes(d.notes)
+            // Jangan restore step — selalu mulai di step 1 (Items) saat edit
+            // supaya user langsung lihat produk yang mau diubah
+            setStep(1)
+            toast.info('Draft edit sebelumnya dipulihkan', { duration: 2500 })
+          }
+        }
+      } catch (e) {
+        console.warn('[EditDraft] Failed to load edit draft:', e)
+      }
+    }
+  }, [open, editId])
+
+  useEffect(() => {
+    if (open && !editId) {
+      const draftData = {
+        custId, txnDate, dueDate, items, deliveryCost, otherCost,
+        payAmount, payMethod, notes, useDelivery, deliveryDriver,
+        deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step
+      }
+      localStorage.setItem(INVOICE_DRAFT_KEY, JSON.stringify(draftData))
+    }
+    // Mode edit: simpan progress edit ke localStorage per-invoice
+    if (open && editId && EDIT_DRAFT_KEY && lastPrefillKeyRef.current) {
+      const prefillKey = lastPrefillKeyRef.current
+      const editDraftData = {
+        _prefillKey: prefillKey,
+        custId, txnDate, dueDate, items, deliveryCost, otherCost,
+        payAmount, payMethod, notes
+        // step TIDAK disimpan — selalu buka dari step 1
+      }
+      localStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify(editDraftData))
+    }
+  }, [open, editId, EDIT_DRAFT_KEY, custId, txnDate, dueDate, items, deliveryCost, otherCost, payAmount, payMethod, notes, useDelivery, deliveryDriver, deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step])
+
+  const clearInvoiceDraft = useCallback(() => {
+    localStorage.removeItem(INVOICE_DRAFT_KEY)
+    if (EDIT_DRAFT_KEY) localStorage.removeItem(EDIT_DRAFT_KEY)
     lastPrefillKeyRef.current = null
     const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10) }
     setStep(0); setCustId(''); setTxnDate(new Date().toISOString().slice(0, 10)); setDueDate(tomorrow())
@@ -577,11 +696,22 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     setUseDelivery(false); setDeliveryDriver(''); setDeliveryVehicle(''); setDeliveryPlate(''); setDeliveryArea(''); setFuelCost(0)
     setAddKurir(false); setNewKurirForm({ full_name: '', phone: '' })
     setQuickAddCust(false); setQuickAddProd(false); setShowCustSearch(false)
+  }, [EDIT_DRAFT_KEY])
+
+  const handleClose = useCallback(() => {
     onOpenChange(false)
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- closing line suppress
   }, [onOpenChange])
 
+  const handleCancelReset = useCallback(() => {
+    clearInvoiceDraft()
+    toast.success('Draft penjualan telah dibersihkan')
+    onOpenChange(false)
+  }, [clearInvoiceDraft, onOpenChange])
+
   const handleSheetOpenChange = v => { if (!v) handleClose(); else onOpenChange(true) }
+
+  // Intercept Android hardware back button when invoice sheet is open
+  useBackHandler(open, handleClose)
 
   const STEPS = ['Pilih Toko', 'Input Produk', 'Pengiriman', 'Summary']
 
@@ -702,7 +832,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           </div>
 
           {/* ── Step content ── */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 pb-4">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 pb-[max(24px,calc(16px+env(safe-area-inset-bottom,16px)))]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
@@ -932,25 +1062,77 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                 ════════════════════════════════════════ */}
                 {step === 2 && (
                   <>
-                    {/* Toggle switch card */}
-                    <button
-                      type="button"
-                      onClick={() => setUseDelivery(v => !v)}
-                      className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-left"
-                      style={{
-                        background: useDelivery ? 'rgba(96,165,250,0.08)' : SURFACE,
-                        border: `${useDelivery ? 2 : 1}px solid ${useDelivery ? '#60A5FA' : BORDER}`,
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      <div style={{ width: 44, height: 24, borderRadius: 12, background: useDelivery ? '#3B82F6' : 'rgba(255,255,255,0.12)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
-                        <div style={{ position: 'absolute', top: 3, left: useDelivery ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.35)' }} />
+                    {/* Opsi Pengiriman: Terkirim vs Scheduled vs Tanpa Kurir */}
+                    <div className="space-y-2">
+                      <label className={labelCn}>Status & Metode Pengiriman</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {/* Card 1: Langsung Terkirim */}
+                        <button
+                          type="button"
+                          onClick={() => { setUseDelivery(true); setDeliveryStatus('terkirim'); }}
+                          className="p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer"
+                          style={{
+                            background: (useDelivery && deliveryStatus === 'terkirim') ? 'rgba(34,197,94,0.12)' : SURFACE,
+                            borderColor: (useDelivery && deliveryStatus === 'terkirim') ? '#22C55E' : BORDER,
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-lg">✅</span>
+                            {(useDelivery && deliveryStatus === 'terkirim') && <Check size={16} color="#22C55E" strokeWidth={3} />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs" style={{ color: (useDelivery && deliveryStatus === 'terkirim') ? '#4ADE80' : TEXT }}>
+                              Langsung Terkirim
+                            </p>
+                            <p className="text-[10px] mt-0.5 font-medium" style={{ color: MUTED }}>Barang sudah sampai / diserahkan</p>
+                          </div>
+                        </button>
+
+                        {/* Card 2: Jadwalkan Pengiriman */}
+                        <button
+                          type="button"
+                          onClick={() => { setUseDelivery(true); setDeliveryStatus('pending'); }}
+                          className="p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer"
+                          style={{
+                            background: (useDelivery && deliveryStatus === 'pending') ? 'rgba(96,165,250,0.12)' : SURFACE,
+                            borderColor: (useDelivery && deliveryStatus === 'pending') ? '#3B82F6' : BORDER,
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-lg">🚚</span>
+                            {(useDelivery && deliveryStatus === 'pending') && <Check size={16} color="#60A5FA" strokeWidth={3} />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs" style={{ color: (useDelivery && deliveryStatus === 'pending') ? '#93C5FD' : TEXT }}>
+                              Jadwalkan Kirim
+                            </p>
+                            <p className="text-[10px] mt-0.5 font-medium" style={{ color: MUTED }}>Trip armada / kurir nanti</p>
+                          </div>
+                        </button>
+
+                        {/* Card 3: Tanpa Kurir / Ambil Mandiri */}
+                        <button
+                          type="button"
+                          onClick={() => { setUseDelivery(false); }}
+                          className="p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer"
+                          style={{
+                            background: !useDelivery ? 'rgba(148,163,184,0.12)' : SURFACE,
+                            borderColor: !useDelivery ? '#94A3B8' : BORDER,
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-lg">🏪</span>
+                            {!useDelivery && <Check size={16} color="#94A3B8" strokeWidth={3} />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs" style={{ color: !useDelivery ? '#F1F5F9' : TEXT }}>
+                              Tanpa Pengiriman
+                            </p>
+                            <p className="text-[10px] mt-0.5 font-medium" style={{ color: MUTED }}>Ambil di toko / cash & carry</p>
+                          </div>
+                        </button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm" style={{ color: useDelivery ? '#93C5FD' : TEXT }}>Jadwalkan Pengiriman</p>
-                        <p className="text-[11px] mt-0.5 font-medium" style={{ color: MUTED }}>Trip pengiriman otomatis dibuat saat simpan</p>
-                      </div>
-                    </button>
+                    </div>
 
                     <AnimatePresence>
                       {useDelivery && (
@@ -958,11 +1140,16 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="space-y-4 overflow-hidden"
+                          className="space-y-4 overflow-hidden pt-1"
                         >
+                          <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs font-medium text-blue-300 flex items-center gap-2">
+                            <span>💡</span>
+                            <span>Rincian kurir & kendaraan di bawah ini <strong>opsional</strong>. Boleh langsung klik <strong>"Lanjut"</strong>.</span>
+                          </div>
+
                           {/* Jenis Kendaraan chips */}
                           <div>
-                            <label className={labelCn}>Jenis Kendaraan</label>
+                            <label className={labelCn}>Jenis Kendaraan <span className="normal-case opacity-60 font-normal">(Opsional)</span></label>
                             <div className="flex flex-wrap gap-2 mt-1">
                               {VEHICLE_TYPES.map(({ value, label, Icon }) => {
                                 const active = deliveryVehicle === value
@@ -988,18 +1175,18 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
                           {/* No. Plat */}
                           <div>
-                            <label className={labelCn}>No. Plat</label>
+                            <label className={labelCn}>No. Plat <span className="normal-case opacity-60 font-normal">(Opsional)</span></label>
                             <input
                               className={inputCn}
                               value={deliveryPlate}
                               onChange={e => setDeliveryPlate(e.target.value.toUpperCase())}
-                              placeholder="B 1234 XY"
+                              placeholder="B 1234 XY (opsional)"
                             />
                           </div>
 
                           {/* Sopir / Kurir */}
                           <div>
-                            <label className={labelCn}>Sopir / Kurir (Opsional)</label>
+                            <label className={labelCn}>Sopir / Kurir <span className="normal-case opacity-60 font-normal">(Opsional)</span></label>
                             <div className="space-y-2">
                               {/* Belum Ditentukan */}
                               <button
@@ -1012,7 +1199,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                                 }}
                               >
                                 <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, color: MUTED }}>–</div>
-                                <span className="font-bold text-sm" style={{ color: !deliveryDriver ? '#93C5FD' : MUTED }}>Belum Ditentukan</span>
+                                <span className="font-bold text-sm" style={{ color: !deliveryDriver ? '#93C5FD' : MUTED }}>Belum Ditentukan (Kosongkan)</span>
                                 {!deliveryDriver && <Check size={14} color="#60A5FA" strokeWidth={3} className="ml-auto" />}
                               </button>
 
@@ -1093,18 +1280,18 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
                           {/* Area Pengiriman */}
                           <div>
-                            <label className={labelCn}>Area Pengiriman</label>
+                            <label className={labelCn}>Area Pengiriman <span className="normal-case opacity-60 font-normal">(Opsional)</span></label>
                             <input
                               className={inputCn}
                               value={deliveryArea}
                               onChange={e => setDeliveryArea(e.target.value)}
-                              placeholder="Contoh: Kec. Setiabudi"
+                              placeholder="Contoh: Kec. Setiabudi (opsional)"
                             />
                           </div>
 
                           {/* Biaya BBM */}
                           <div>
-                            <label className={labelCn}>Biaya BBM (Internal)</label>
+                            <label className={labelCn}>Biaya BBM Internal <span className="normal-case opacity-60 font-normal">(Opsional)</span></label>
                             <InputRupiah value={fuelCost} onChange={setFuelCost} />
                           </div>
                         </motion.div>
@@ -1131,34 +1318,36 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     <div
                       className="rounded-2xl p-4 space-y-3"
                       style={{
-                        background: grossProfit >= 0 ? 'rgba(16, 185, 129,0.08)' : 'rgba(239,68,68,0.05)',
-                        border: `1px solid ${grossProfit >= 0 ? 'rgba(16, 185, 129,0.25)' : 'rgba(239,68,68,0.2)'}`,
+                        background: netProfit >= 0 ? 'rgba(16, 185, 129,0.08)' : 'rgba(239,68,68,0.05)',
+                        border: `1px solid ${netProfit >= 0 ? 'rgba(16, 185, 129,0.25)' : 'rgba(239,68,68,0.2)'}`,
                       }}
                     >
                       <div className="flex items-end justify-between">
                         <div>
-                          <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: grossProfit >= 0 ? '#10B981' : '#EF4444' }}>
+                          <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: netProfit >= 0 ? '#10B981' : '#EF4444' }}>
                             Estimasi Net Profit
                           </p>
-                          <p className="text-2xl font-black" style={{ color: grossProfit >= 0 ? '#10B981' : '#EF4444', fontFamily: 'Sora' }}>
+                          <p className="text-2xl font-black" style={{ color: netProfit >= 0 ? '#10B981' : '#EF4444', fontFamily: 'Sora' }}>
                             {formatIDR(netProfit)}
                           </p>
                         </div>
                         <div
                           className="px-3 py-1.5 rounded-full text-xs font-black"
-                          style={{ background: grossProfit >= 0 ? 'rgba(16, 185, 129,0.15)' : 'rgba(239,68,68,0.15)', color: grossProfit >= 0 ? '#10B981' : '#EF4444' }}
+                          style={{ background: netProfit >= 0 ? 'rgba(16, 185, 129,0.15)' : 'rgba(239,68,68,0.15)', color: netProfit >= 0 ? '#10B981' : '#EF4444' }}
                         >
-                          Margin {marginPct}%
+                          Net Margin {netMarginPct}%
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-[11px]">
                         <div>
-                          <span style={{ color: MUTED }}>Gross Profit</span>
-                          <p className="font-black mt-0.5" style={{ color: grossProfit >= 0 ? '#10B981' : '#EF4444' }}>{formatIDR(grossProfit)}</p>
+                          <span style={{ color: MUTED }}>Gross Profit (Tagihan - HPP)</span>
+                          <p className="font-black mt-0.5" style={{ color: grossProfit >= 0 ? '#10B981' : '#EF4444' }}>
+                            {formatIDR(grossProfit)} {totalCogs === 0 && <span className="text-[9px] font-normal text-amber-400/80">(HPP Rp 0)</span>}
+                          </p>
                         </div>
                         {(deliveryCost > 0 || otherCost > 0) && (
                           <div>
-                            <span style={{ color: MUTED }}>Dikurangi Biaya</span>
+                            <span style={{ color: MUTED }}>Dikurangi Biaya Operasional</span>
                             <p className="font-black mt-0.5" style={{ color: '#EF4444' }}>-{formatIDR(deliveryCost + otherCost)}</p>
                           </div>
                         )}
@@ -1182,29 +1371,43 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                       </div>
                     )}
 
+                    {/* HPP = 0 warning: profit estimate tidak akurat */}
+                    {totalAmount > 0 && totalCogs === 0 && items.some(i => i.product_id) && (
+                      <div
+                        className="flex items-start gap-2.5 px-4 py-3 rounded-xl"
+                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}
+                      >
+                        <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
+                        <div>
+                          <p className="text-xs font-bold" style={{ color: '#F59E0B' }}>HPP / Modal belum terhitung</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>Estimasi profit di atas <strong>belum dikurangi modal beli</strong>. Pastikan produk sudah punya data batch/stok masuk agar HPP otomatis terisi.</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Margin warning for negative margins (RUGI) */}
-                    {totalAmount > 0 && marginPct < 0 && (
+                    {totalAmount > 0 && netMarginPct < 0 && (
                       <div
                         className="flex items-start gap-2.5 px-4 py-3 rounded-xl"
                         style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}
                       >
                         <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>🚨</span>
                         <div>
-                          <p className="text-xs font-bold" style={{ color: '#EF4444' }}>PERHATIAN: Transaksi ini RUGI ({marginPct}%)</p>
+                          <p className="text-xs font-bold" style={{ color: '#EF4444' }}>PERHATIAN: Transaksi ini RUGI ({netMarginPct}%)</p>
                           <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>Harga jual lebih rendah dari HPP. Periksa harga atau COGS sebelum menyimpan.</p>
                         </div>
                       </div>
                     )}
 
                     {/* Margin warning for thin margins (0-5%) */}
-                    {totalAmount > 0 && marginPct < 5 && marginPct >= 0 && (
+                    {totalAmount > 0 && totalCogs > 0 && netMarginPct < 5 && netMarginPct >= 0 && (
                       <div
                         className="flex items-start gap-2.5 px-4 py-3 rounded-xl"
                         style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}
                       >
                         <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
                         <div>
-                          <p className="text-xs font-bold" style={{ color: '#F59E0B' }}>Margin tipis ({marginPct}%)</p>
+                          <p className="text-xs font-bold" style={{ color: '#F59E0B' }}>Margin tipis ({netMarginPct}%)</p>
                           <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>Pastikan harga jual sudah benar agar keuntungan optimal</p>
                         </div>
                       </div>
@@ -1290,11 +1493,10 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
               </button>
             ) : (
               <button
-                onClick={handleClose}
-                className="flex-1 h-12 rounded-xl font-bold text-sm transition-all"
-                style={{ border: `1px solid ${BORDER}`, color: TEXT, background: 'transparent' }}
+                onClick={handleCancelReset}
+                className="flex-1 h-12 rounded-xl font-bold text-sm transition-all text-red-400 hover:bg-red-500/10 border border-red-500/20"
               >
-                Batal
+                Batal & Reset
               </button>
             )}
 

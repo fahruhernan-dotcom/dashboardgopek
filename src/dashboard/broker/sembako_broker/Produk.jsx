@@ -22,7 +22,10 @@ import { useOutletContext, useLocation, useNavigate } from 'react-router-dom'
 import { C } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
 import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/SembakoUiPrimitives'
+import { SembakoPageHeader } from '@/dashboard/broker/sembako_broker/components/SembakoPageHeader'
+import { SembakoSummaryStrip } from '@/dashboard/broker/sembako_broker/components/SembakoSummaryStrip'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
+import { useBackHandler } from '@/lib/hooks/useBackHandler'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -40,7 +43,7 @@ const CATEGORIES = [
 
 const UNITS = ['slop', 'pres', 'bal', 'karton', 'pack', 'bungkus', 'pcs', 'dus']
 
-const fmt = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
+const fmt = (n) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(Number(n) || 0))
 
 // ── Stock bar helpers ─────────────────────────────────────────────────────────
 
@@ -72,9 +75,14 @@ function marginInfo(product) {
   return { pct: margin.toFixed(1), color: margin > 15 ? '#021a02' : margin > 5 ? '#FBBF24' : '#F87171' }
 }
 
+import { useAuth } from '@/lib/hooks/useAuth'
+import { recordAuditLog } from '@/lib/hooks/useSembakoAudit'
+
 // ── Sheet overlay ─────────────────────────────────────────────────────────────
 
 function ProductSheet({ product, onClose }) {
+  useBackHandler(true, onClose)
+  const { profile } = useAuth()
   const isEdit = !!product?.id
   const createMut = useCreateSembakoProduct()
   const updateMut = useUpdateSembakoProduct()
@@ -108,8 +116,24 @@ function ProductSheet({ product, onClose }) {
     }
     if (isEdit) {
       await updateMut.mutateAsync({ id: product.id, ...payload })
+      recordAuditLog({
+        action_type: 'EDIT_PRODUK',
+        product_name: form.product_name,
+        old_value: `Rp ${Number(product.sell_price || 0).toLocaleString('id-ID')}`,
+        new_value: `Rp ${Number(payload.sell_price || 0).toLocaleString('id-ID')}`,
+        notes: `Perubahan data produk (${form.category}, Satuan: ${form.unit})`,
+        profile,
+      })
     } else {
       await createMut.mutateAsync(payload)
+      recordAuditLog({
+        action_type: 'TAMBAH_PRODUK',
+        product_name: form.product_name,
+        old_value: 'Produk Baru',
+        new_value: `Rp ${Number(payload.sell_price || 0).toLocaleString('id-ID')}`,
+        notes: `Penambahan produk baru`,
+        profile,
+      })
     }
     onClose()
   }
@@ -643,127 +667,86 @@ export default function Produk() {
     </div>
   )
 
+  const summaryItems = [
+    { label: 'Total Produk Aktif', value: stats.total, color: 'amber' },
+    { label: 'Stok Menipis', value: stats.lowStock > 0 ? `${stats.lowStock} produk` : 'Stok Aman', color: stats.lowStock > 0 ? 'red' : 'green', subLabel: stats.lowStock > 0 ? 'perlu restock' : 'semua aman' },
+    { label: 'Total Nilai Stok', value: stats.nilaiStok, isCurrency: true, color: 'amber' },
+  ]
+
+  const categoryFilters = categories.map(c => ({ id: c, label: c }))
+
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
-      {/* Header */}
+    <div className="min-h-screen bg-background text-foreground pb-24 text-left">
       {!isDesktop && <BrokerMobileHeader title="Produk" onMenuClick={() => setSidebarOpen(true)} />}
 
-      <div style={{ padding: '20px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: isDesktop ? 'block' : 'none' }}>
-          <h1 style={{ fontFamily: 'Sora', fontSize: 20, fontWeight: 800, color: C.text, margin: 0 }}>Manajemen Produk</h1>
-          <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: TEXT_SEC, marginTop: 2 }}>{stats.total} produk aktif</p>
-        </div>
-        <button
-          onClick={() => setSheet('new')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, background: C.accent, border: 'none',
-            borderRadius: 12, padding: '10px 16px', color: 'white', fontFamily: 'Sora',
-            fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(234,88,12,0.35)',
-            marginLeft: isDesktop ? 0 : 'auto'
-          }}
-        >
-          <Plus size={16} /> Tambah
-        </button>
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, padding: '16px 16px 0' }}>
-        <StatCard label="Total Produk" value={stats.total} color={C.text} />
-        <StatCard label="Stok Menipis" value={stats.lowStock} color={stats.lowStock > 0 ? '#F87171' : '#021a02'} sub={stats.lowStock > 0 ? 'perlu restock' : 'aman'} />
-        <StatCard label="Nilai Stok" value={`Rp ${stats.nilaiStok >= 1_000_000 ? (stats.nilaiStok / 1_000_000).toFixed(1) + 'jt' : fmt(stats.nilaiStok)}`} color={C.accent} />
-      </div>
-
-      {/* Search + filter */}
-      <div style={{ padding: '14px 16px 0' }}>
-        <div style={{ position: 'relative', marginBottom: 12 }}>
-          <Search size={15} color="#6B7280" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
-          <input
-            id="product-search" name="search"
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari produk..."
-            style={{ ...inputStyle, paddingLeft: 36, background: C.card }}
-          />
-          {search && (
-            <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-              <X size={14} color="#6B7280" />
-            </button>
-          )}
-        </div>
-
-        {/* Category pills */}
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-          {categories.map(cat => (
+      <div className="mx-auto max-w-7xl">
+        <SembakoPageHeader
+          title="Manajemen Produk"
+          subtitle={`Katalog & Harga Rokok · ${stats.total} produk aktif`}
+          isDesktop={isDesktop}
+          searchQuery={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Cari produk..."
+          filters={categoryFilters}
+          activeFilter={catFilter}
+          onFilterChange={setCatFilter}
+          actionButton={
             <button
-              key={cat}
-              onClick={() => setCatFilter(cat)}
-              style={{
-                flexShrink: 0, background: catFilter === cat ? 'rgba(234,88,12,0.15)' : C.card,
-                border: `1px solid ${catFilter === cat ? 'rgba(234,88,12,0.5)' : C.border}`,
-                borderRadius: 20, padding: '6px 14px',
-                color: catFilter === cat ? C.accent : TEXT_SEC,
-                fontSize: 12, fontFamily: 'DM Sans', fontWeight: catFilter === cat ? 700 : 400,
-                cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
+              onClick={() => setSheet('new')}
+              className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
             >
-              {cat}
+              <Plus size={16} />
+              <span>Tambah Produk</span>
             </button>
-          ))}
+          }
+        />
+
+        <SembakoSummaryStrip items={summaryItems} />
+
+        {/* Toggle non-aktif */}
+        <div className="px-4 sm:px-6 pt-2 pb-2 flex items-center justify-between">
+          <button
+            onClick={() => setShowInactive(v => !v)}
+            className="border-0 bg-transparent cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-2 text-xs font-medium transition-colors"
+          >
+            {showInactive ? <ToggleRight size={22} className="text-amber-500" /> : <ToggleLeft size={22} className="text-muted-foreground" />}
+            <span>Tampilkan produk non-aktif</span>
+          </button>
         </div>
-      </div>
 
-      {/* Toggle non-aktif */}
-      <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button
-          onClick={() => setShowInactive(v => !v)}
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: showInactive ? C.accent : '#6B7280', display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          {showInactive ? <ToggleRight size={20} color={C.accent} /> : <ToggleLeft size={20} color="#6B7280" />}
-          <span style={{ fontFamily: 'DM Sans', fontSize: 12 }}>Tampilkan non-aktif</span>
-        </button>
-      </div>
-
-      {/* Product grid */}
-      <div style={{ padding: '14px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-        <AnimatePresence>
-          {filtered.length === 0 ? (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px 0' }}>
-              <Package size={40} color="#4B5563" style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-              <p style={{ fontFamily: 'Sora', fontSize: 16, color: TEXT_SEC, marginBottom: 8 }}>
-                {search ? 'Produk tidak ditemukan' : 'Belum ada produk'}
-              </p>
-              <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: '#4B5563', marginBottom: search ? 0 : 16 }}>
-                {search ? 'Coba kata kunci lain' : 'Mulai dengan menambahkan produk yang Anda jual'}
-              </p>
-              {!search && (
-                <button
-                  onClick={() => setSheet('new')}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    padding: '10px 22px', borderRadius: 12,
-                    background: C.accent, color: '#fff',
-                    fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans',
-                    border: 'none', cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(234,88,12,0.3)',
-                  }}
-                >
-                  <Plus size={15} /> Tambah Produk Pertama
-                </button>
-              )}
-            </div>
-          ) : (
-            filtered.map(product => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onEdit={setSheet}
-                onDelete={handleDelete}
-              />
-            ))
-          )}
-        </AnimatePresence>
+        {/* Product grid */}
+        <div className="px-4 sm:px-6 pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+          <AnimatePresence>
+            {filtered.length === 0 ? (
+              <div className="col-span-full text-center py-16 bg-card border border-border/60 rounded-2xl">
+                <Package size={40} className="mx-auto mb-3 opacity-40 text-muted-foreground" />
+                <p className="font-bold text-base text-foreground mb-1">
+                  {search ? 'Produk tidak ditemukan' : 'Belum ada produk'}
+                </p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {search ? 'Coba kata kunci lain' : 'Mulai dengan menambahkan produk yang Anda jual'}
+                </p>
+                {!search && (
+                  <button
+                    onClick={() => setSheet('new')}
+                    className="inline-flex items-center gap-2 px-5 h-10 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all shadow-lg shadow-amber-600/20"
+                  >
+                    <Plus size={15} /> Tambah Produk Pertama
+                  </button>
+                )}
+              </div>
+            ) : (
+              filtered.map(product => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onEdit={setSheet}
+                  onDelete={handleDelete}
+                />
+              ))
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Sheet */}

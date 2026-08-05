@@ -11,7 +11,6 @@ import SembakoTokoSupplier from '../sembako_broker/TokoSupplier'
 import SembakoTokoSupplierDetail from '../sembako_broker/TokoSupplierDetail'
 import SembakoAkun from '@/dashboard/_shared/pages/Akun'
 import SembakoTimManajemenPage from '../sembako_broker/TimManajemenPage'
-import SembakoTutorial from '../sembako_broker/SembakoTutorial'
 import SembakoRetur from '../sembako_broker/Retur'
 import WelcomeOnlyOverlay from '@/dashboard/_shared/components/WelcomeOnlyOverlay'
 
@@ -42,7 +41,6 @@ export function BrokerPageRouter({ page }) {
     return (
       <>
         {component}
-        <SembakoTutorial />
         <WelcomeOnlyOverlay accent="#EA580C" accentDim="rgba(234,88,12,0.12)" />
       </>
     )

@@ -142,25 +142,25 @@ export const SEMBAKO_BROKER_PLAN_CONFIG = {
   accentColor: '#EA580C',
 
   starter: {
-    penjualan: { allowed: true, quotaPerMonth: FALLBACK_TRANSACTION_QUOTA },
-    penjualanPdf: false,
-    tim: { allowed: false },
-    pegawai: false,                    // planRequired: 'pro'
-    laporan: false,                    // planRequired: 'pro'
-    multiGudang: false,                // planRequired: 'business'
+    penjualan: { allowed: true, quotaPerMonth: null },
+    penjualanPdf: true,
+    tim: { allowed: true, maxMembers: null },
+    pegawai: true,
+    laporan: true,
+    multiGudang: true,
   },
   pro: {
     penjualan: { allowed: true, quotaPerMonth: null },
     penjualanPdf: true,
-    tim: { allowed: true, maxMembers: 3 },
+    tim: { allowed: true, maxMembers: null },
     pegawai: true,
     laporan: true,
-    multiGudang: false,                // planRequired: 'business'
+    multiGudang: true,
   },
   business: {
     penjualan: { allowed: true, quotaPerMonth: null },
     penjualanPdf: true,
-    tim: { allowed: true, maxMembers: null },  // unlimited
+    tim: { allowed: true, maxMembers: null },
     pegawai: true,
     laporan: true,
     multiGudang: true,

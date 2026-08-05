@@ -2,22 +2,17 @@ import React from 'react'
 import { formatIDR } from '@/lib/format'
 
 const COLOR_MAP = {
-  red:   { text: '#F87171', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.18)',   bar: '#EF4444' },
-  green: { text: '#34D399', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.18)',  bar: '#10B981' },
-  amber: { text: '#FBBF24', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.18)',  bar: '#F59E0B' },
-  default:{ text: '#FEF3C7', bg: 'rgba(234,88,12,0.06)', border: 'rgba(234,88,12,0.15)',   bar: '#EA580C' },
+  red:   { text: '#F87171', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',   bar: '#EF4444' },
+  green: { text: '#34D399', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.2)',  bar: '#10B981' },
+  amber: { text: '#FBBF24', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.2)',  bar: '#F59E0B' },
+  default:{ text: '#F59E0B', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.2)',   bar: '#D97706' },
 }
 
 export function SembakoSummaryStrip({ items = [] }) {
   if (!items.length) return null
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: `repeat(${Math.min(items.length, 3)}, 1fr)`,
-      gap: '10px',
-      padding: '12px 20px',
-    }}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4 sm:px-6 py-4">
       {items.map((item) => {
         const c = COLOR_MAP[item.color] || COLOR_MAP.default
         const displayValue = item.isCurrency
@@ -27,44 +22,34 @@ export function SembakoSummaryStrip({ items = [] }) {
         return (
           <div
             key={item.label}
+            className="relative overflow-hidden rounded-2xl p-4 transition-all shadow-sm border"
             style={{
               background: c.bg,
-              border: `1px solid ${c.border}`,
-              borderRadius: '14px',
-              padding: '12px 14px',
-              position: 'relative',
-              overflow: 'hidden',
+              borderColor: c.border,
             }}
           >
-            {/* accent bar top */}
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0,
-              height: '3px', background: c.bar, borderRadius: '14px 14px 0 0',
-              opacity: 0.7,
-            }} />
+            {/* Accent bar top */}
+            <div
+              className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+              style={{ background: c.bar }}
+            />
 
-            <p style={{
-              fontSize: '9px', fontWeight: 900, letterSpacing: '0.12em',
-              textTransform: 'uppercase', color: c.text, opacity: 1,
-              marginBottom: '6px', fontFamily: 'DM Sans',
-            }}>
+            <p
+              className="text-[11px] font-extrabold tracking-wider uppercase mb-1.5"
+              style={{ color: c.text }}
+            >
               {item.label}
             </p>
 
-            <p style={{
-              fontSize: item.isCurrency ? '15px' : '22px',
-              fontWeight: 900, fontFamily: 'Sora, DM Sans',
-              color: '#FFFFFF', lineHeight: 1,
-              letterSpacing: item.isCurrency ? '-0.02em' : '0',
-            }}>
+            <p className="text-xl sm:text-2xl font-black text-foreground tracking-tight font-sans truncate">
               {displayValue}
             </p>
 
             {item.subLabel && (
-              <p style={{
-                fontSize: '10px', fontWeight: 700, color: c.text,
-                opacity: 0.9, marginTop: '4px', fontFamily: 'DM Sans',
-              }}>
+              <p
+                className="text-xs font-semibold mt-1.5 line-clamp-1"
+                style={{ color: c.text }}
+              >
                 {item.subLabel}
               </p>
             )}

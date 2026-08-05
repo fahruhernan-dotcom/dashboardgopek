@@ -16,7 +16,7 @@ export default function DesktopSidebarLayout({ children }) {
           flex: 1,
           minHeight: 0,
           overflowY: 'auto',
-          padding: '24px 32px',
+          padding: '16px 20px',
           display: 'flex',
           flexDirection: 'column',
           background: 'hsl(var(--background))',

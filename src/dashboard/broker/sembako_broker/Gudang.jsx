@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { Plus, ChevronDown, ChevronUp, X, Search, Package, ArrowRightLeft, History } from 'lucide-react'
+import { Plus, ChevronDown, ChevronUp, X, Search, Package, ArrowRightLeft, History, CheckCircle2, RotateCcw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import {
@@ -9,23 +9,29 @@ import {
   useSembakoAllBatches,
   useSembakoStockOut,
   useAdjustBatchStock,
+  useAddStockBatch,
+  useSembakoReturns,
+  useUpdateSembakoReturnStatus,
 } from '@/lib/hooks/useSembakoData'
 import { useSearchParams, useOutletContext } from 'react-router-dom'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { C, fmtDate, CustomSelect, InputRupiah } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
 import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/SembakoUiPrimitives'
+import { SembakoPageHeader } from '@/dashboard/broker/sembako_broker/components/SembakoPageHeader'
+import { SembakoSummaryStrip } from '@/dashboard/broker/sembako_broker/components/SembakoSummaryStrip'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { canViewAuditLogs } from '@/lib/auth/business-roles'
 import { useSembakoAuditLogs, recordAuditLog } from '@/lib/hooks/useSembakoAudit'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { SembakoTambahStokSheet } from './components/SembakoTambahStokSheet'
+import { useBackHandler } from '@/lib/hooks/useBackHandler'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const TEXT_SEC = '#A8764A'
 
-const fmt = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
+const fmt = (n) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(Number(n) || 0))
 
 const inputSt = {
   width: '100%', height: '40px', background: C.input,
@@ -87,8 +93,14 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
 
       {filtered.map(product => {
         const batches = batchesForProduct(product.id)
+        const batchSum = batches.reduce((sum, b) => sum + Number(b.qty_sisa ?? b.qty_masuk ?? 0), 0)
+        const displayStock = (product.current_stock !== undefined && product.current_stock !== null) ? Number(product.current_stock) : batchSum
+        const productValuation = batches.length > 0
+          ? batches.reduce((sum, b) => sum + (Number(b.qty_sisa || 0) * Number(b.buy_price || 0)), 0)
+          : displayStock * (product.avg_buy_price || 0)
+        const productAvgBuyPrice = displayStock > 0 ? Math.round(productValuation / displayStock) : (product.avg_buy_price || 0)
         const isOpen = expanded === product.id
-        const isLow = product.min_stock_alert > 0 && product.current_stock <= product.min_stock_alert
+        const isLow = product.min_stock_alert > 0 && displayStock <= product.min_stock_alert
 
         return (
           <div key={product.id} style={{ marginBottom: 8, background: C.card, border: `1px solid ${isLow ? 'rgba(248,113,113,0.3)' : C.border}`, borderRadius: 14, overflow: 'hidden' }}>
@@ -102,12 +114,15 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
                   <span style={{ fontFamily: 'Sora', fontSize: 14, fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{product.product_name}</span>
                   {isLow && <span style={{ fontSize: 10, background: 'rgba(248,113,113,0.15)', color: '#F87171', padding: '1px 8px', borderRadius: 20, fontFamily: 'DM Sans', fontWeight: 600 }}>Menipis</span>}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, color: isLow ? '#F87171' : C.accent, fontFamily: 'DM Sans', fontWeight: 600 }}>
-                    {fmt(product.current_stock)} {product.unit}
+                    {fmt(displayStock)} {product.unit}
                   </span>
                   <span style={{ fontSize: 13, color: '#6B7280', fontFamily: 'DM Sans' }}>
                     Jual: Rp {fmt(product.sell_price)}
+                  </span>
+                  <span style={{ fontSize: 11, color: '#F59E0B', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', padding: '1px 8px', borderRadius: 8, fontFamily: 'DM Sans', fontWeight: 700 }}>
+                    Asset: Rp {fmt(productValuation)}
                   </span>
                 </div>
               </div>
@@ -126,52 +141,81 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
                   transition={{ duration: 0.2 }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <div style={{ borderTop: `1px solid ${C.border}`, padding: '8px 14px 12px' }}>
+                  <div style={{ borderTop: `1px solid ${C.border}`, padding: '12px 14px' }}>
+                    {/* Valuation Breakdown Strip */}
+                    <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 12, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 10, fontFamily: 'DM Sans', fontWeight: 800, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Penjelasan Nilai Stok (Modal Asset)</div>
+                        <div style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'DM Sans', marginTop: 2 }}>
+                          Total {fmt(displayStock)} {product.unit} @ Avg Modal Rp {fmt(productAvgBuyPrice)}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'DM Sans', fontWeight: 600 }}>Total Nilai Asset</div>
+                        <div style={{ fontFamily: 'Sora', fontSize: 14, fontWeight: 800, color: '#F59E0B' }}>Rp {fmt(productValuation)}</div>
+                      </div>
+                    </div>
+
                     {batches.length === 0 ? (
                       <p style={{ fontSize: 13, color: '#6B7280', fontFamily: 'DM Sans', padding: '8px 0' }}>Tidak ada stok tersisa di batch manapun.</p>
                     ) : (
-                      batches.map((batch, i) => (
-                        <div key={batch.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < batches.length - 1 ? `1px solid rgba(255,255,255,0.04)` : 'none' }}>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontSize: 11, fontFamily: 'DM Sans', color: '#94A3B8' }}>{batch.batch_code || 'N/A'}</span>
-                              {i === 0 && <span style={{ fontSize: 9, background: 'rgba(234,88,12,0.15)', color: C.accent, padding: '1px 6px', borderRadius: 10, fontWeight: 700, letterSpacing: '0.04em' }}>FIFO NEXT</span>}
+                      batches.map((batch, i) => {
+                        const batchCode = batch.batch_code || `BTC-${String(batch.id || '').slice(0, 8).toUpperCase()}`
+                        const dateStr = fmtDate(batch.purchase_date || batch.created_at)
+                        const batchValuation = Number(batch.qty_sisa) * Number(batch.buy_price || 0)
+                        return (
+                          <div key={batch.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < batches.length - 1 ? `1px solid rgba(255,255,255,0.04)` : 'none' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 11, fontFamily: 'DM Sans', fontWeight: 700, color: '#94A3B8' }}>{batchCode}</span>
+                                {i === 0 && <span style={{ fontSize: 9, background: 'rgba(234,88,12,0.15)', color: C.accent, padding: '1px 6px', borderRadius: 10, fontWeight: 700, letterSpacing: '0.04em' }}>FIFO NEXT</span>}
+                              </div>
+                              <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'DM Sans', marginTop: 2 }}>
+                                Tgl Masuk: {dateStr}
+                                {batch.expiry_date && <span style={{ color: new Date(batch.expiry_date) < new Date() ? '#F87171' : '#6B7280' }}> · Exp: {fmtDate(batch.expiry_date)}</span>}
+                              </div>
+                              {batch.sembako_suppliers?.supplier_name && (
+                                <div style={{ fontSize: 11, color: '#4B5563', fontFamily: 'DM Sans' }}>Supplier: {batch.sembako_suppliers.supplier_name}</div>
+                              )}
                             </div>
-                            <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'DM Sans', marginTop: 2 }}>
-                              {fmtDate(batch.purchase_date)}
-                              {batch.expiry_date && <span style={{ color: new Date(batch.expiry_date) < new Date() ? '#F87171' : '#6B7280' }}> · exp {fmtDate(batch.expiry_date)}</span>}
+                            <div className="flex items-center gap-4">
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>{fmt(batch.qty_sisa)} {product.unit}</div>
+                                <div style={{ fontSize: 11, color: TEXT_SEC, fontFamily: 'DM Sans' }}>@ Rp {fmt(batch.buy_price)}</div>
+                                <div style={{ fontSize: 11, color: '#F59E0B', fontFamily: 'DM Sans', fontWeight: 700, marginTop: 1 }}>
+                                  = Rp {fmt(batchValuation)}
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onAdjust(batch, product) }}
+                                className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 hover:bg-orange-500 hover:text-white transition-all"
+                              >
+                                <ArrowRightLeft size={14} />
+                              </button>
                             </div>
-                            {batch.sembako_suppliers?.supplier_name && (
-                              <div style={{ fontSize: 11, color: '#4B5563', fontFamily: 'DM Sans' }}>{batch.sembako_suppliers.supplier_name}</div>
-                            )}
                           </div>
-                          <div className="flex items-center gap-4">
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>{fmt(batch.qty_sisa)} {product.unit}</div>
-                              <div style={{ fontSize: 11, color: TEXT_SEC, fontFamily: 'DM Sans' }}>@ Rp {fmt(batch.buy_price)}</div>
-                            </div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onAdjust(batch, product) }}
-                              className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 hover:bg-orange-500 hover:text-white transition-all"
-                            >
-                              <ArrowRightLeft size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))
+                        )
+                      })
                     )}
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex flex-wrap gap-2 mt-2">
                       <button
                         type="button"
                         onClick={() => onTambah(product.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(234,88,12,0.08)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '7px 14px', color: C.accent, fontFamily: 'DM Sans', fontSize: 12, cursor: 'pointer' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(234,88,12,0.12)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '7px 14px', color: C.accent, fontFamily: 'DM Sans', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
                       >
                         <Plus size={14} /> Stok Masuk
                       </button>
                       <button
                         type="button"
+                        onClick={() => onAdjust(batches[0] || null, product)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(251,146,60,0.12)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '7px 14px', color: '#FB923C', fontFamily: 'DM Sans', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        <ArrowRightLeft size={14} /> Adjust Stok
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => onShowHistory(product)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '7px 14px', color: '#94A3B8', fontFamily: 'DM Sans', fontSize: 12, cursor: 'pointer' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '7px 14px', color: '#94A3B8', fontFamily: 'DM Sans', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                       >
                         <History size={14} /> Kartu Stok
                       </button>
@@ -191,38 +235,153 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
 
 function RiwayatMasuk() {
   const { data: batches = [], isLoading, isError, error, refetch } = useSembakoAllBatches()
+  const { data: returnsList = [] } = useSembakoReturns()
 
   if (isLoading) return <LoadingRow />
   if (isError) return <SembakoErrorState error={error} onRetry={refetch} />
 
+  const returEntries = returnsList.map(r => ({
+    id: `retur-${r.id}`,
+    is_retur: true,
+    product_name: r.product_name,
+    qty_masuk: r.quantity,
+    unit: r.unit,
+    buy_price: (r.total_amount || 0) / (r.quantity || 1),
+    created_at: r.created_at,
+    party_name: r.party_name,
+    status: r.status,
+    raw_return: r
+  }))
+
+  const combined = [
+    ...batches.map(b => ({
+      ...b,
+      is_retur: false,
+      product_name: b.sembako_products?.product_name || '-',
+      unit: b.sembako_products?.unit || 'pcs'
+    })),
+    ...returEntries
+  ].sort((a, b) => new Date(b.created_at || b.date_received) - new Date(a.created_at || a.date_received))
+
+  if (combined.length === 0) return <EmptyState label="Belum ada riwayat stok masuk" sub="Stok bertambah saat pembelian pabrik / retur toko dicatat" />
+
   return (
     <div>
-      {batches.length === 0 && (
-        <EmptyState label="Belum ada riwayat stok masuk" />
-      )}
-      {batches.map(batch => (
-        <div key={batch.id} style={{ marginBottom: 8, background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-            <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {batch.sembako_products?.product_name || '-'}
+      {combined.map(item => {
+        if (item.is_retur) {
+          const isDone = item.status === 'completed'
+          return (
+            <div key={item.id} style={{ marginBottom: 8, background: 'rgba(245,158,11,0.05)', border: `1px solid rgba(245,158,11,0.25)`, borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <span style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>{item.product_name}</span>
+                  <span style={{ fontSize: 10, background: 'rgba(245,158,11,0.2)', color: '#F59E0B', padding: '1px 8px', borderRadius: 20, fontFamily: 'DM Sans', fontWeight: 800 }}>RETUR TOKO</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'DM Sans', fontWeight: 600 }}>Toko: {item.party_name}</div>
+                <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'DM Sans', marginTop: 2 }}>
+                  Tgl Retur: {fmtDate(item.created_at)}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>
+                  +{fmt(item.qty_masuk)} {item.unit}
+                </div>
+                <div style={{ fontSize: 11, color: isDone ? '#34D399' : '#F59E0B', fontFamily: 'DM Sans', fontWeight: 700, marginTop: 2 }}>
+                  {isDone ? '✓ Di Gudang' : '⏳ Pending Validasi'}
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'DM Sans' }}>{batch.batch_code}</div>
-            <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'DM Sans', marginTop: 2 }}>
-              {fmtDate(batch.purchase_date)}
-              {batch.sembako_suppliers?.supplier_name && ` · ${batch.sembako_suppliers.supplier_name}`}
+          )
+        }
+
+        const batchCode = item.batch_code || `BTC-${String(item.id || '').slice(0, 8).toUpperCase()}`
+        const dateStr = fmtDate(item.purchase_date || item.created_at)
+        return (
+          <div key={item.id} style={{ marginBottom: 8, background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+              <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.product_name}
+              </div>
+              <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'DM Sans', fontWeight: 600 }}>{batchCode}</div>
+              <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'DM Sans', marginTop: 2 }}>
+                Tgl Masuk: {dateStr}
+                {item.sembako_suppliers?.supplier_name && ` · ${item.sembako_suppliers.supplier_name}`}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.accent }}>
+                +{fmt(item.qty_masuk)} {item.unit}
+              </div>
+              <div style={{ fontSize: 11, color: TEXT_SEC, fontFamily: 'DM Sans' }}>@ Rp {fmt(item.buy_price)}</div>
+              <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'DM Sans' }}>
+                Sisa: {fmt(item.qty_sisa)}
+              </div>
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.accent }}>
-              +{fmt(batch.qty_masuk)} {batch.sembako_products?.unit}
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Tab: Retur Gudang (Validasi Terima Barang) ───────────────────────────────
+
+function ReturGudangTab() {
+  const { data: returnsList = [], isLoading } = useSembakoReturns()
+  const updateStatusMut = useUpdateSembakoReturnStatus()
+
+  if (isLoading) return <LoadingRow />
+  if (returnsList.length === 0) return <EmptyState label="Belum ada klaim retur produk" sub="Retur dari pelanggan akan muncul di sini untuk divalidasi ke gudang" />
+
+  const handleValidate = async (rObj) => {
+    try {
+      await updateStatusMut.mutateAsync({ id: rObj.id, status: 'completed' })
+      toast.success(`Barang retur (${rObj.product_name}) telah divalidasi & diterima di Gudang!`)
+    } catch (err) {
+      toast.error('Gagal memvalidasi retur barang')
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {returnsList.map(r => {
+        const isDone = r.status === 'completed'
+        return (
+          <div key={r.id} className="p-4 rounded-2xl bg-card border border-border flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-sm text-foreground">{r.product_name}</span>
+                <span className="text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                  +{r.quantity} {r.unit}
+                </span>
+                <span className={cn(
+                  "text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider",
+                  isDone ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                )}>
+                  {isDone ? "✓ Sudah Diterima di Gudang" : "⏳ Menunggu Validasi Gudang"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Toko / Pihak: <strong className="text-foreground">{r.party_name}</strong> · Alasan: {r.reason || 'Klaim Retur'}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                Nilai Retur: <strong className="text-amber-400">Rp {fmt(r.total_amount || r.amount || 0)}</strong> · Tgl: {fmtDate(r.created_at)}
+              </p>
             </div>
-            <div style={{ fontSize: 11, color: TEXT_SEC, fontFamily: 'DM Sans' }}>@ Rp {fmt(batch.buy_price)}</div>
-            <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'DM Sans' }}>
-              Sisa: {fmt(batch.qty_sisa)}
-            </div>
+
+            {!isDone && (
+              <button
+                onClick={() => handleValidate(r)}
+                disabled={updateStatusMut.isPending}
+                className="flex items-center justify-center gap-2 px-4 h-9 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer shadow-lg shadow-emerald-600/20 active:scale-95 shrink-0"
+              >
+                <CheckCircle2 size={15} />
+                <span>Validasi Barang Sudah di Gudang</span>
+              </button>
+            )}
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -264,6 +423,26 @@ function RiwayatKeluar() {
   )
 }
 
+function getActionStyle(action_type) {
+  const type = String(action_type || '').toUpperCase()
+  if (type.includes('ADJ') || type.includes('ADJUST')) {
+    return { label: '⚖ PENYESUAIAN STOK', bg: 'rgba(245,158,11,0.15)', color: '#FBBF24', border: 'rgba(245,158,11,0.3)' }
+  }
+  if (type.includes('MASUK') || type.includes('IN')) {
+    return { label: '📦 STOK MASUK', bg: 'rgba(16,185,129,0.15)', color: '#34D399', border: 'rgba(16,185,129,0.3)' }
+  }
+  if (type.includes('KELUAR') || type.includes('SALE') || type.includes('OUT')) {
+    return { label: '🛒 PENJUALAN / KELUAR', bg: 'rgba(56,189,248,0.15)', color: '#38BDF8', border: 'rgba(56,189,248,0.3)' }
+  }
+  if (type.includes('EDIT')) {
+    return { label: '✏️ EDIT PRODUK', bg: 'rgba(168,85,247,0.15)', color: '#C084FC', border: 'rgba(168,85,247,0.3)' }
+  }
+  if (type.includes('TAMBAH')) {
+    return { label: '✨ PRODUK BARU', bg: 'rgba(20,184,166,0.15)', color: '#2DD4BF', border: 'rgba(20,184,166,0.3)' }
+  }
+  return { label: `📋 ${type}`, bg: 'rgba(234,88,12,0.15)', color: '#EA580C', border: 'rgba(234,88,12,0.3)' }
+}
+
 function AuditLogTab() {
   const { data: auditLogs = [], isLoading } = useSembakoAuditLogs()
 
@@ -271,35 +450,69 @@ function AuditLogTab() {
   if (auditLogs.length === 0) return <EmptyState label="Belum ada catatan log perubahan" sub="Setiap perubahan stok & transaksi terekam di sini" />
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {auditLogs.map(log => (
-        <div key={log.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', background: 'rgba(234,88,12,0.15)', color: C.accent, padding: '2px 6px', borderRadius: 4 }}>
-                {log.action_type || 'STOK'}
-              </span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.text }}>
-                {log.user_name} ({log.user_role?.toUpperCase()})
-              </span>
-            </div>
-            <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>
-              {log.product_name}
-            </div>
-            {log.notes && (
-              <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2, fontFamily: 'DM Sans' }}>
-                {log.notes}
+    <div className="flex flex-col gap-3">
+      {auditLogs.map(log => {
+        const badge = getActionStyle(log.action_type)
+        const hasOldVal = log.old_value && log.old_value !== '-' && log.old_value !== '0' && log.old_value !== log.new_value
+
+        return (
+          <div
+            key={log.id}
+            className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all space-y-3"
+          >
+            {/* Header: Action Badge & Actor */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span
+                  style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider"
+                >
+                  {badge.label}
+                </span>
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <span>👤 {log.user_name}</span>
+                  {log.user_role && (
+                    <span className="text-[9px] font-black text-slate-400 bg-white/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      {log.user_role}
+                    </span>
+                  )}
+                </span>
               </div>
-            )}
-            <div style={{ fontSize: 10, color: '#6B7280', marginTop: 4, fontFamily: 'DM Sans' }}>
-              {fmtDate(log.timestamp)}
+              <span className="text-[11px] font-medium text-slate-400">
+                📅 {fmtDate(log.timestamp)}
+              </span>
+            </div>
+
+            {/* Content: Product & Change Flow */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+              <div className="space-y-1">
+                <p className="font-display font-bold text-sm text-white leading-tight">
+                  {log.product_name}
+                </p>
+                {log.notes && (
+                  <p className="text-xs text-slate-400 font-medium leading-relaxed flex items-center gap-1.5">
+                    <span className="text-slate-500">💬</span> {log.notes}
+                  </p>
+                )}
+              </div>
+
+              {/* Perubahan Stok / Value Card */}
+              <div className="shrink-0 bg-black/40 border border-white/10 px-3.5 py-2 rounded-xl text-right">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Perubahan</p>
+                {hasOldVal ? (
+                  <div className="flex items-center gap-2 text-xs font-bold">
+                    <span className="text-slate-400 line-through">{log.old_value}</span>
+                    <span className="text-orange-500 font-black">→</span>
+                    <span className="text-orange-400 font-black">{log.new_value}</span>
+                  </div>
+                ) : (
+                  <span className="text-xs font-black text-orange-400">{log.new_value}</span>
+                )}
+              </div>
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.muted }}>Stok: {log.old_value} → {log.new_value}</div>
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -383,7 +596,7 @@ function Chip({ label, value, color }) {
 export default function Gudang() {
   const { profile } = useAuth()
   const showAudit = canViewAuditLogs(profile)
-  const tabsList = useMemo(() => showAudit ? ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar', '📜 Log Perubahan'] : ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar'], [showAudit])
+  const tabsList = useMemo(() => showAudit ? ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar', '🔄 Retur Gudang', '📜 Log Perubahan'] : ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar', '🔄 Retur Gudang'], [showAudit])
   const [searchParams] = useSearchParams()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
@@ -422,7 +635,7 @@ export default function Gudang() {
 
   const totalStokNilai = useMemo(() =>
     products.filter(p => p.is_active && !p.is_deleted)
-      .reduce((s, p) => s + (p.current_stock * (p.avg_buy_price || 0)), 0),
+      .reduce((s, p) => s + (Number(p.current_stock || 0) * (Number(p.avg_buy_price) || 0)), 0),
     [products]
   )
   const lowStockCount = useMemo(() =>
@@ -430,74 +643,71 @@ export default function Gudang() {
     [products]
   )
 
+  const summaryItems = [
+    { label: 'Nilai Stok Gudang', value: totalStokNilai, isCurrency: true, color: 'amber' },
+    { label: 'Total Produk Aktif', value: products.filter(p => p.is_active && !p.is_deleted).length },
+    { label: 'Stok Menipis', value: lowStockCount > 0 ? `${lowStockCount} produk` : 'Stok Aman', color: lowStockCount > 0 ? 'red' : 'green' },
+  ]
+
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
+    <div className="min-h-screen bg-background pb-24 text-left">
       {!isDesktop && <BrokerMobileHeader title="Gudang" onMenuClick={() => setSidebarOpen(true)} />}
 
-      <div style={{ padding: '20px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: isDesktop ? 'block' : 'none' }}>
-          <h1 style={{ fontFamily: 'Sora', fontSize: 20, fontWeight: 800, color: C.text, margin: 0 }}>Gudang</h1>
-          <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: TEXT_SEC, marginTop: 2 }}>
-            Stok · {products.filter(p => p.is_active && !p.is_deleted).length} produk
-          </p>
+      <div className="mx-auto max-w-7xl">
+        <SembakoPageHeader
+          title="Gudang"
+          subtitle="Manajemen Stok & Batch Produk Sembako"
+          isDesktop={isDesktop}
+          actionButton={
+            <button
+              onClick={() => openTambah()}
+              className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95"
+            >
+              <Plus size={16} />
+              <span>Stok Masuk</span>
+            </button>
+          }
+        />
+
+        <SembakoSummaryStrip items={summaryItems} />
+
+        {/* Tabs */}
+        <div className="flex px-4 sm:px-6 gap-2 border-b border-border/60 mt-2 overflow-x-auto scrollbar-hide">
+          {tabsList.map((tab, i) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(i)}
+              className={cn(
+                'py-2.5 px-4 font-bold text-xs border-b-2 transition-all cursor-pointer whitespace-nowrap select-none',
+                activeTab === i
+                  ? 'border-amber-500 text-amber-500'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
-        <button
-          onClick={() => openTambah()}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, background: C.accent, border: 'none',
-            borderRadius: 12, padding: '10px 16px', color: 'white', fontFamily: 'Sora',
-            fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(234,88,12,0.35)',
-            marginLeft: isDesktop ? 0 : 'auto'
-          }}
-        >
-          <Plus size={16} /> Stok Masuk
-        </button>
-      </div>
 
-      {/* Summary chips */}
-      <div style={{ display: 'flex', gap: 10, padding: '14px 16px 0', overflowX: 'auto' }}>
-        <Chip label="Nilai Stok" value={`Rp ${totalStokNilai >= 1_000_000 ? (totalStokNilai / 1_000_000).toFixed(1) + 'jt' : new Intl.NumberFormat('id-ID').format(totalStokNilai)}`} color={C.accent} />
-        <Chip label="Stok Menipis" value={`${lowStockCount} produk`} color={lowStockCount > 0 ? '#F87171' : '#021a02'} />
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', padding: '16px 16px 0', gap: 0, borderBottom: `1px solid ${C.border}`, marginTop: 8 }}>
-        {tabsList.map((tab, i) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(i)}
-            style={{
-              flex: 1, background: 'transparent', border: 'none',
-              borderBottom: activeTab === i ? `2px solid ${C.accent}` : '2px solid transparent',
-              padding: '10px 0', color: activeTab === i ? C.accent : TEXT_SEC,
-              fontFamily: activeTab === i ? 'Sora' : 'DM Sans',
-              fontSize: 13, fontWeight: activeTab === i ? 700 : 400,
-              cursor: 'pointer', transition: 'color 0.15s',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      <div style={{ padding: '14px 16px 0' }}>
-        {activeTab === 0 && (
-          productsLoading
-            ? <ProductSkeleton />
-            : productsIsError || supErr
-              ? <SembakoErrorState error={productsError || supError} onRetry={() => { productsRefetch(); supRefetch(); }} />
-              : <StokSaatIni
-                products={products}
-                onTambah={openTambah}
-                onAdjust={openAdjust}
-                onShowHistory={p => { setHistoryProduct(p); setShowHistorySheet(true) }}
-              />
-        )}
-        {activeTab === 1 && <RiwayatMasuk />}
-        {activeTab === 2 && <RiwayatKeluar />}
-        {activeTab === 3 && <AuditLogTab />}
+        {/* Tab content */}
+        <div className="px-4 sm:px-6 pt-4">
+          {activeTab === 0 && (
+            productsLoading
+              ? <ProductSkeleton />
+              : productsIsError || supErr
+                ? <SembakoErrorState error={productsError || supError} onRetry={() => { productsRefetch(); supRefetch(); }} />
+                : <StokSaatIni
+                  products={products}
+                  onTambah={openTambah}
+                  onAdjust={openAdjust}
+                  onShowHistory={p => { setHistoryProduct(p); setShowHistorySheet(true) }}
+                />
+          )}
+          {activeTab === 1 && <RiwayatMasuk />}
+          {activeTab === 2 && <RiwayatKeluar />}
+          {activeTab === 3 && <ReturGudangTab />}
+          {activeTab === 4 && <AuditLogTab />}
+        </div>
       </div>
 
       {/* Sheet Stok Masuk */}
@@ -537,6 +747,7 @@ export default function Gudang() {
 }
 
 function KartuStokSheet({ product, onClose }) {
+  useBackHandler(true, onClose)
   const { data: batches = [], isLoading: bLoad, isError: bErr, error: bError, refetch: bRefetch } = useSembakoAllBatches()
   const { data: stockOuts = [], isLoading: sLoad, isError: sErr, error: sError, refetch: sRefetch } = useSembakoStockOut()
 
@@ -641,9 +852,18 @@ function KartuStokSheet({ product, onClose }) {
   )
 }
 
+const SField = ({ label, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <label style={{ fontFamily: 'DM Sans', fontSize: 11, fontWeight: 800, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</label>
+    {children}
+  </div>
+)
+
 function AdjustStokSheet({ batch, product, onClose }) {
+  useBackHandler(true, onClose)
   const { profile } = useAuth()
   const adjustMut = useAdjustBatchStock()
+  const addBatch  = useAddStockBatch()
   const [qtyChange, setQtyChange] = useState('')
   const [reason, setReason] = useState('broken') // 'broken' | 'lost' | 'found' | 'other'
   const [notes, setNotes] = useState('')
@@ -653,29 +873,42 @@ function AdjustStokSheet({ batch, product, onClose }) {
     const change = Number(qtyChange)
     if (isNaN(change) || change === 0) return toast.error('Jumlah perubahan tidak boleh 0')
 
-    // Logic: If 'broken' or 'lost', we expect a negative number or we auto-negate it
     const finalChange = (reason === 'broken' || reason === 'lost') ? -Math.abs(change) : change
+    const initialStock = batch?.qty_sisa ?? product?.current_stock ?? 0
 
-    await adjustMut.mutateAsync({
-      batch_id: batch.id,
-      qty_change: finalChange,
-      reason,
-      notes
-    })
+    if (batch?.id) {
+      await adjustMut.mutateAsync({
+        batch_id: batch.id,
+        qty_change: finalChange,
+        reason,
+        notes
+      })
+    } else {
+      await addBatch.mutateAsync({
+        product_id: product.id,
+        supplier_id: null,
+        qty_masuk: Math.max(0, finalChange),
+        buy_price: product.avg_buy_price || 0,
+        purchase_date: new Date().toISOString().slice(0, 10),
+        notes: `Penyesuaian stok (${reason}): ${notes || 'Adjust awal'}`
+      })
+    }
+
+    const nextStock = Math.max(0, initialStock + finalChange)
 
     recordAuditLog({
       action_type: 'STOK_ADJ',
       product_name: product?.product_name || 'Produk Gudang',
-      old_value: batch?.qty_sisa || 0,
-      new_value: (batch?.qty_sisa || 0) + finalChange,
-      notes: `Penyesuaian (${reason}): ${notes || 'Tidak ada catatan'}`,
+      old_value: `${initialStock} ${product?.unit || ''}`,
+      new_value: `${nextStock} ${product?.unit || ''}`,
+      notes: `Penyesuaian stok (${reason.toUpperCase()}): ${notes || 'Tidak ada catatan'}`,
       profile,
     })
 
     onClose()
   }
 
-  const isLoading = adjustMut.isPending
+  const isLoading = adjustMut.isPending || addBatch.isPending
 
   return (
     <motion.div
@@ -710,8 +943,8 @@ function AdjustStokSheet({ batch, product, onClose }) {
         <form onSubmit={handleAdjust} style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
             <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">{product.product_name}</p>
-            <p className="text-sm font-black text-white uppercase tracking-tight">Batch: {batch.batch_code}</p>
-            <p className="text-xs font-bold text-orange-400">Stok Digital Saat Ini: {batch.qty_sisa} {product.unit}</p>
+            <p className="text-sm font-black text-white uppercase tracking-tight">Batch: {batch?.batch_code || 'Batch Utama'}</p>
+            <p className="text-xs font-bold text-orange-400">Stok Digital Saat Ini: {batch?.qty_sisa ?? product.current_stock ?? 0} {product.unit}</p>
           </div>
 
           <SField label="Aksi">
@@ -746,6 +979,44 @@ function AdjustStokSheet({ batch, product, onClose }) {
               autoFocus
             />
           </SField>
+
+          {/* Real-time Projected Stock Preview */}
+          {(() => {
+            const currentStockNum = Number(batch?.qty_sisa ?? product?.current_stock ?? 0)
+            const valNum = Math.abs(Number(qtyChange) || 0)
+            const isDecrease = reason === 'broken' || reason === 'lost'
+            const delta = isDecrease ? -valNum : valNum
+            const projectedStock = Math.max(0, currentStockNum + delta)
+            const hasValue = qtyChange !== '' && !isNaN(Number(qtyChange)) && Number(qtyChange) !== 0
+
+            return (
+              <div className="p-3.5 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-orange-400 uppercase tracking-wider">
+                    {hasValue ? 'Hasil Stok Setelah Adjust' : 'Estimasi Stok Setelah Adjust'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-slate-400 font-bold">
+                      Saat Ini: <strong className="text-white">{currentStockNum}</strong> {product.unit}
+                    </span>
+                    {hasValue && (
+                      <>
+                        <span className="text-xs font-black text-orange-500">→</span>
+                        <span className="text-sm font-black text-white font-display">
+                          {projectedStock.toFixed(2).replace(/\.00$/, '')} {product.unit}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {hasValue && (
+                  <div className={cn("px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider", isDecrease ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30")}>
+                    {isDecrease ? `-${valNum}` : `+${valNum}`} {product.unit}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           <SField label="Keterangan / Alasan">
             <textarea

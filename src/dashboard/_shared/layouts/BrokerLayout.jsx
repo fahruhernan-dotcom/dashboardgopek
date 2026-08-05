@@ -10,7 +10,9 @@ import BusinessModelOverlay from '../components/BusinessModelOverlay'
 import AIChatBubble from '@/dashboard/broker/ai/AIChatBubble'
 import { useNotificationGenerator } from '@/lib/hooks/useNotifications.jsx'
 import { useForceDarkMode } from '@/lib/hooks/useForceDarkMode'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { BusinessNameWarningBanner } from '../components/BusinessNameWarningBanner'
 import InstallAppPrompt from '@/components/InstallAppPrompt'
@@ -21,6 +23,8 @@ import {
   useSembakoSuppliers, useSembakoCustomers,
   useSembakoEmployees, useSembakoDeliveries, useSembakoSalesPendingDelivery,
 } from '@/lib/hooks/useSembakoData'
+
+import { useBackHandler } from '@/lib/hooks/useBackHandler'
 
 // ── AI Error Boundary ─────────────────────────────────────────
 // Isolates crash di AIChatBubble agar tidak merusak halaman utama
@@ -163,27 +167,66 @@ export default function BrokerLayout() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Close mobile sidebar on Android hardware back button
+  useBackHandler(sidebarOpen, () => setSidebarOpen(false))
+
   useEffect(() => {
     const openHandler = () => setSidebarOpen(true)
     window.addEventListener('open-mobile-sidebar', openHandler)
     return () => window.removeEventListener('open-mobile-sidebar', openHandler)
   }, [])
 
-  // Swipe-right-from-left-edge to open sidebar
+  // Swipe-right-from-left-edge & Pull-To-Refresh
   const swipeStartX = useRef(null)
+  const [pullY, setPullY] = useState(0)
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false)
+  const pullStartY = useRef(null)
+  const queryClient = useQueryClient()
+
   const handleTouchStart = (e) => {
     swipeStartX.current = e.touches[0].clientX
+    if (window.scrollY <= 10) {
+      pullStartY.current = e.touches[0].clientY
+    }
   }
+
+  const handleTouchMove = (e) => {
+    if (pullStartY.current !== null && window.scrollY <= 10 && !isPullRefreshing) {
+      const dy = e.touches[0].clientY - pullStartY.current
+      if (dy > 0) {
+        setPullY(Math.min(dy * 0.45, 80))
+      }
+    }
+  }
+
   const handleTouchEnd = (e) => {
-    if (swipeStartX.current === null) return
-    const dx = e.changedTouches[0].clientX - swipeStartX.current
-    // Only trigger if swipe started within 40px of left edge and moved 60px+ right
-    if (!sidebarOpen && swipeStartX.current < 40 && dx > 60) {
-      setSidebarOpen(true)
-    } else if (sidebarOpen && dx < -50) {
-      setSidebarOpen(false)
+    if (pullY > 55 && !isPullRefreshing) {
+      setIsPullRefreshing(true)
+      setPullY(60)
+      queryClient.invalidateQueries().then(() => {
+        return queryClient.refetchQueries()
+      }).then(() => {
+        toast.success('Data berhasil diperbarui!')
+      }).finally(() => {
+        setTimeout(() => {
+          setIsPullRefreshing(false)
+          setPullY(0)
+        }, 500)
+      })
+    } else {
+      setPullY(0)
+    }
+
+    if (swipeStartX.current !== null) {
+      const dx = e.changedTouches[0].clientX - swipeStartX.current
+      if (!sidebarOpen && swipeStartX.current < 40 && dx > 60) {
+        setSidebarOpen(true)
+      } else if (sidebarOpen && dx < -50) {
+        setSidebarOpen(false)
+      }
     }
     swipeStartX.current = null
+    pullStartY.current = null
   }
 
   // Visible loading state — must not return null while AppContentLayout's
@@ -209,18 +252,46 @@ export default function BrokerLayout() {
       return (
         <div
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           style={{
             background: '#06090F',
             minHeight: '100vh',
             maxWidth: '480px',
             margin: '0 auto',
-            paddingBottom: 'calc(90px + env(safe-area-inset-bottom, 0px))',
+            paddingBottom: 'max(105px, calc(90px + env(safe-area-inset-bottom, 16px)))',
             position: 'relative',
             overflowX: 'hidden',
             overscrollBehaviorX: 'none'
           }}
         >
+          {/* Pull to refresh indicator indicator capsule */}
+          {(pullY > 0 || isPullRefreshing) && (
+            <div
+              style={{
+                position: 'fixed',
+                top: `calc(env(safe-area-inset-top, 24px) + ${pullY * 0.6}px)`,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 9999,
+                background: '#1D140A',
+                border: '1px solid rgba(234, 88, 12, 0.4)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                borderRadius: 24,
+                padding: '6px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                pointerEvents: 'none',
+                transition: isPullRefreshing ? 'none' : 'transform 0.2s ease, top 0.2s ease',
+              }}
+            >
+              <RefreshCw size={14} className={isPullRefreshing || pullY > 55 ? 'animate-spin text-orange-500' : 'text-orange-400'} />
+              <span style={{ fontSize: 11, fontFamily: 'DM Sans', fontWeight: 700, color: '#FEF3C7' }}>
+                {isPullRefreshing ? 'Memperbarui data...' : pullY > 55 ? 'Lepaskan untuk refresh' : 'Tarik untuk refresh'}
+              </span>
+            </div>
+          )}
           <SidebarProvider style={{ minHeight: 0 }}>
             <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
           </SidebarProvider>

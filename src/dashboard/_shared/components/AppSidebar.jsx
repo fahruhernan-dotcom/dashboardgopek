@@ -90,8 +90,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { usePlanConfigs } from '@/lib/hooks/useAdminData'
 import { useTheme } from '@/lib/hooks/useTheme'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
+import { useBackHandler } from '@/lib/hooks/useBackHandler'
 
 export default function AppSidebar({ open, onClose }) {
+  useBackHandler(open, onClose)
   const { user, profile, profiles, tenant, ownerTenant, isSuperadmin, switchTenant, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -480,12 +482,12 @@ export default function AppSidebar({ open, onClose }) {
   // Staff invited to a Pro tenant should get Pro features while working INSIDE that tenant.
   // ownerTenant is only used for quota (how many businesses you can create yourself).
   const sub = getSubscriptionStatus(tenant)
-  const isAccountActive = isSuperadmin || sub.status === 'active' || sub.status === 'trial'
-  const canStartTrial = !isSuperadmin && sub.plan === 'starter' && !tenant?.trial_ends_at
-  // Plan-tier gating
-  const planTier = isSuperadmin ? 'business' : (sub.plan || 'starter')
-  const isPro = ['pro', 'business'].includes(planTier) || sub.status === 'trial'
-  const isBusiness = planTier === 'business' || (sub.status === 'trial' && sub.plan === 'business')
+  const isAccountActive = true
+  const canStartTrial = false
+  // Plan-tier gating (Fully Unlocked)
+  const planTier = 'business'
+  const isPro = true
+  const isBusiness = true
 
   const sidebarContent = (
     <>

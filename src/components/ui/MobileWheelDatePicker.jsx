@@ -150,9 +150,9 @@ export function MobileWheelDatePicker({
         <Button
           variant="outline"
           className={cn(
-            "h-14 w-full rounded-2xl bg-[#111C24] border-white/5 px-4 flex items-center justify-start gap-3 hover:bg-white/5 hover:border-white/10 transition-all",
-            !value && "text-[#4B6478]",
-            value && "text-white font-black text-xs uppercase tracking-widest"
+            "h-12 w-full rounded-xl bg-[#231A0E] border-[#EA580C]/25 px-4 flex items-center justify-start gap-3 hover:bg-[#2A1F13] hover:border-[#EA580C]/40 transition-all",
+            !value && "text-[#FCD34D]/60",
+            value && "text-[#FEF3C7] font-semibold text-sm"
           )}
         >
           <CalendarIcon size={18} className={cn("transition-colors", value ? "text-[#EA580C]" : "text-[#4B6478]")} />

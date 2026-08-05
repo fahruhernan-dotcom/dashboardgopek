@@ -12,8 +12,10 @@ import {
   useSembakoSalesPendingDelivery,
   useStartSembakoDelivery,
   useCompleteSembakoDelivery,
+  useCreateSembakoDelivery,
 } from '@/lib/hooks/useSembakoData'
-import { C, sBtn, fmtDate } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
+import { toast } from 'sonner'
+import { C, sBtn, fmtDate, calculateSaleFinancials } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 
 function getDeliveryBadge(deliveries) {
   if (!deliveries || deliveries.length === 0) {
@@ -123,7 +125,7 @@ function MiniDeliveryRow({ delivery, onStart, onComplete, onNavigate }) {
 }
 
 // ── Sale delivery panel (shown in mobile expand) ──────────────────────────────
-function SaleDeliveryPanel({ sale, onOpenDetail }) {
+function SaleDeliveryPanel({ sale, onOpenDetail, onEdit }) {
   const { data: allDeliveries = [] } = useSembakoDeliveries()
   const { data: employees = [] } = useSembakoEmployees()
   const { data: customers = [] } = useSembakoCustomers()
@@ -190,6 +192,12 @@ function SaleDeliveryPanel({ sale, onOpenDetail }) {
           </button>
         )}
         <button
+          onClick={e => { e.stopPropagation(); onEdit?.(sale) }}
+          style={{ ...sBtn(false), flex: 1, padding: '10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+        >
+          ✏️ Edit Nota
+        </button>
+        <button
           onClick={e => { e.stopPropagation(); onOpenDetail?.() }}
           style={{ ...sBtn(false), flex: 1, padding: '10px', fontSize: '12px' }}
         >
@@ -210,24 +218,69 @@ function SaleDeliveryPanel({ sale, onOpenDetail }) {
 }
 
 // ── Main card component ───────────────────────────────────────────────────────
-export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDesktop }) {
+export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDelivery, isDesktop, returnsList = [], products = [] }) {
   const [expanded, setExpanded] = useState(false)
+  const completeDelivery = useCompleteSembakoDelivery()
+  const createDelivery = useCreateSembakoDelivery()
 
   const customerName = sale.sembako_customers?.customer_name || sale.customer_name || 'Umum'
   const items = Array.isArray(sale.sembako_sale_items) ? sale.sembako_sale_items : []
   const deliveries = Array.isArray(sale.sembako_deliveries) ? sale.sembako_deliveries : []
+  const noItems = items.length === 0  // data belum termuat / sale lama
+
+  // Gunakan fungsi kalkulasi yang sama dengan detail sheet
+  const fin = calculateSaleFinancials(sale, returnsList, products)
+  const totalAmount    = fin.grandTotal
+  const rawPaidAmount  = fin.rawPaidAmount
+  const isOverpaid     = fin.isOverpaid
+  const overpayAmount  = fin.overpayAmount
+  const paidAmount     = fin.paidAmount
+  const remainingAmount = fin.remainingAmount
+  const hasDebt = remainingAmount > 0
+  const isLunas   = sale.payment_status === 'lunas'   || (totalAmount > 0 && remainingAmount <= 0)
+  const isSebagian = sale.payment_status === 'sebagian' || (paidAmount > 0 && remainingAmount > 0)
+  // Pakai fin.profit jika ada retur (DB net_profit stale sebelum retur); fallback ke DB jika tidak ada retur
+  const netProfit = fin.saleReturns.length > 0
+    ? fin.profit
+    : (Number(sale.net_profit) > 0 ? Number(sale.net_profit) : fin.profit)
 
   const initialCustomer = customerName.charAt(0).toUpperCase()
-  const hasDebt = (sale.remaining_amount || 0) > 0
-  const isLunas = sale.payment_status === 'lunas'
-  const isSebagian = sale.payment_status === 'sebagian'
 
   const topItem = items[0]
   const totalQty = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)
+  const cardReturns = Array.isArray(sale.sembako_returns) ? sale.sembako_returns.filter(r => !r.is_deleted) : []
+  const totalReturnQty = cardReturns.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0)
+  const netQty = Math.max(0, totalQty - totalReturnQty)
   const itemUnit = topItem?.unit || 'unit'
 
   const deliveryBadge = getDeliveryBadge(deliveries)
   const allDelivered = deliveries.length > 0 && deliveries.every(d => d.status === 'delivered')
+
+  const handleCompleteDelivery = async (e) => {
+    e?.stopPropagation()
+    try {
+      if (deliveries.length > 0) {
+        const pending = deliveries.filter(d => d.status !== 'delivered')
+        for (const d of pending) {
+          await completeDelivery.mutateAsync(d.id)
+        }
+      } else {
+        await createDelivery.mutateAsync({
+          sale_id: sale.id,
+          driver_name: 'Langsung',
+          vehicle_type: 'Langsung',
+          vehicle_plate: '-',
+          delivery_date: sale.transaction_date || new Date().toISOString().slice(0, 10),
+          status: 'delivered',
+          completed_at: new Date().toISOString(),
+          notes: 'Ditandai terkirim dari kartu nota',
+        })
+      }
+      toast.success('Pengiriman berhasil diselesaikan')
+    } catch (err) {
+      console.error('Failed to complete delivery:', err)
+    }
+  }
 
   const fmt = isDesktop ? formatIDR : formatIDRShort
   const valSize = isDesktop ? 'text-[18px]' : 'text-[13px]'
@@ -322,11 +375,18 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
   const footer = isDesktop ? (
     <>
       <div className="text-left">
-        {isLunas ? (
+        {isOverpaid && overpayAmount > 0 ? (
           <div className="space-y-1">
-            <p className="text-[10px] uppercase font-bold text-[#34D399] tracking-widest leading-none">TOTAL DIBAYAR</p>
+            <p className="text-[10px] uppercase font-bold text-[#34D399] tracking-widest leading-none">BALIKIN / DEPOSIT TOKO</p>
             <p className={cn('font-display font-bold text-[#34D399] leading-none mt-1 tabular-nums', valSize)}>
-              {fmt(sale.total_amount || 0)}
+              {fmt(overpayAmount)}
+            </p>
+          </div>
+        ) : isLunas ? (
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase font-bold text-[#34D399] tracking-widest leading-none">ESTIMASI NET PROFIT</p>
+            <p className={cn('font-display font-bold text-[#34D399] leading-none mt-1 tabular-nums', valSize)}>
+              {fmt(netProfit)}
             </p>
           </div>
         ) : (
@@ -343,7 +403,7 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
               )}
             </div>
             <p className={cn('font-display font-bold text-[#F87171] tabular-nums leading-none mt-1', valSize)}>
-              {fmt(sale.remaining_amount || 0)}
+              {fmt(remainingAmount)}
             </p>
           </div>
         )}
@@ -352,7 +412,7 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
       <div className="text-right">
         <p className="text-[10px] font-black uppercase tracking-widest leading-none text-[#94A3B8]">TOTAL TAGIHAN</p>
         <p className={cn('font-display font-bold tabular-nums leading-none mt-1.5 text-[#F1F5F9]', valSize)}>
-          {fmt(sale.total_amount || 0)}
+          {fmt(totalAmount)}
         </p>
       </div>
     </>
@@ -365,13 +425,18 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
       <div className="space-y-2 text-left border-r border-white/[0.08] pr-4 min-w-0">
         <p className="text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Item</p>
         <p className="font-display text-[22px] font-bold text-[#F1F5F9] tabular-nums leading-none">
-          {items.length} <span className="text-xs font-normal text-[#94A3B8] ml-0.5">jenis</span>
+          {noItems ? '—' : items.length} <span className="text-xs font-normal text-[#94A3B8] ml-0.5">jenis</span>
         </p>
         <div className="space-y-1">
           {topItem && (
             <p className="text-[11px] font-medium text-[#94A3B8] truncate">{topItem.product_name}</p>
           )}
-          <p className="text-[11px] font-medium text-[#94A3B8]">Total {totalQty} {itemUnit}</p>
+          {noItems
+            ? <p className="text-[11px] font-medium text-[#FBBF24]">Buka nota untuk detail</p>
+            : <p className="text-[11px] font-medium text-[#94A3B8]">
+                Total {netQty} {itemUnit} {totalReturnQty > 0 ? `(-${totalReturnQty} retur)` : ''}
+              </p>
+          }
         </div>
       </div>
 
@@ -379,14 +444,20 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
       <div className="space-y-2 text-left border-r border-white/[0.08] pr-4 min-w-0">
         <p className="text-[10px] font-black text-[#94A3B8] uppercase tracking-widest">Tagihan</p>
         <p className="font-display text-[22px] font-bold text-[#F1F5F9] tabular-nums leading-none">
-          {formatIDR(sale.total_amount || 0)}
+          {fmt(totalAmount)}
         </p>
-        <div className="space-y-1">
-          <p className="text-[11px] font-medium text-[#94A3B8]">Dibayar: {formatIDR(sale.paid_amount || 0)}</p>
-          {hasDebt && (
-            <p className="text-[11px] font-medium text-[#F87171]">Sisa: {formatIDR(sale.remaining_amount || 0)}</p>
-          )}
-        </div>
+        <p className="text-[11px] font-medium text-[#94A3B8]">
+          Dibayar: <span className="text-[#34D399] font-bold">{fmt(paidAmount)}</span>
+        </p>
+        {isOverpaid && overpayAmount > 0 ? (
+          <p className="text-[11px] font-medium text-[#34D399]">
+            Balikin Toko: <span className="font-extrabold">{fmt(overpayAmount)}</span>
+          </p>
+        ) : (
+          <p className="text-[11px] font-medium text-[#94A3B8]">
+            Sisa: <span className={cn('font-bold', hasDebt ? 'text-[#F87171]' : 'text-[#34D399]')}>{fmt(remainingAmount)}</span>
+          </p>
+        )}
       </div>
 
       {/* Kolom 3: PENGIRIMAN */}
@@ -410,10 +481,10 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
               <div className="border-t border-white/5 my-1" />
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onManageDelivery?.() }}
-                className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[#94A3B8] transition-colors hover:border-[#EA580C]/20 hover:text-[#FEF3C7] w-full text-left"
+                onClick={handleCompleteDelivery}
+                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-400 transition-all hover:bg-emerald-500/20 active:scale-95 w-full text-center flex items-center justify-center gap-1.5"
               >
-                Atur Pengiriman →
+                ✓ Selesaikan Pengiriman
               </button>
             </>
           )}
@@ -428,14 +499,14 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
       {/* Row 1: item count + total amount */}
       <div className="flex items-baseline justify-between gap-2">
         <div className="flex items-baseline gap-1 flex-1 min-w-0">
-          <span className="text-[13px] font-bold text-[#F1F5F9] tabular-nums leading-none">{items.length}</span>
+          <span className="text-[13px] font-bold text-[#F1F5F9] tabular-nums leading-none">{noItems ? '—' : items.length}</span>
           <span className="text-[9px] font-medium text-[#94A3B8] leading-none">jenis</span>
           <span className="text-[9px] text-[#94A3B8] leading-none mx-0.5">·</span>
-          <span className="text-[13px] font-bold text-[#F1F5F9] tabular-nums leading-none">{totalQty}</span>
-          <span className="text-[9px] font-medium text-[#94A3B8] leading-none">{itemUnit}</span>
+          <span className="text-[13px] font-bold text-[#F1F5F9] tabular-nums leading-none">{noItems ? '—' : netQty}</span>
+          <span className="text-[9px] font-medium text-[#94A3B8] leading-none">{itemUnit}{totalReturnQty > 0 ? ` (-${totalReturnQty})` : ''}</span>
         </div>
         <span className="font-display text-[14px] font-bold text-[#F1F5F9] tabular-nums leading-none shrink-0">
-          {expanded ? formatIDR(sale.total_amount || 0) : formatIDRShort(sale.total_amount || 0)}
+          {expanded ? formatIDR(totalAmount) : formatIDRShort(totalAmount)}
         </span>
       </div>
 
@@ -444,11 +515,15 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
         <span className="text-[9px] font-medium text-[#94A3B8] truncate flex-1">
           {topItem?.product_name || '—'}
         </span>
-        {isLunas ? (
+        {isOverpaid && overpayAmount > 0 ? (
+          <span className="text-[10px] font-black text-[#34D399] shrink-0">
+            Balikin {expanded ? formatIDR(overpayAmount) : formatIDRShort(overpayAmount)}
+          </span>
+        ) : isLunas ? (
           <span className="text-[10px] font-black text-[#34D399] shrink-0">✓ Lunas</span>
         ) : (
           <span className="text-[10px] font-black text-[#F87171] tabular-nums shrink-0">
-            Sisa {expanded ? formatIDR(sale.remaining_amount || 0) : formatIDRShort(sale.remaining_amount || 0)}
+            Sisa {expanded ? formatIDR(remainingAmount) : formatIDRShort(remainingAmount)}
           </span>
         )}
       </div>
@@ -481,7 +556,7 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onManageDelivery, isDes
             transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
             style={{ overflow: 'hidden' }}
           >
-            <SaleDeliveryPanel sale={sale} onOpenDetail={onOpenDetail} />
+            <SaleDeliveryPanel sale={sale} onOpenDetail={onOpenDetail} onEdit={onEdit} />
           </motion.div>
         )}
       </AnimatePresence>

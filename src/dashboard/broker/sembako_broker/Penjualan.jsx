@@ -5,7 +5,7 @@ import {
   Plus, CreditCard, CheckCircle2, AlertTriangle,
   History, Lock,
 } from 'lucide-react'
-import { useSembakoSales } from '@/lib/hooks/useSembakoData'
+import { useSembakoSales, useSembakoReturns, useSembakoProducts } from '@/lib/hooks/useSembakoData'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatIDR } from '@/lib/format'
 import { SembakoPageHeader } from '@/dashboard/broker/sembako_broker/components/SembakoPageHeader'
@@ -59,6 +59,8 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
   const quota = useTransactionQuota(tenant, { tableName: 'sembako_sales', queryKeyPrefix: 'sembako-transaction-quota' })
 
   const { data: sales = [], isLoading, isError, error, refetch } = useSembakoSales()
+  const { data: returnsList = [] } = useSembakoReturns()
+  const { data: products = [] } = useSembakoProducts()
   const [search, setSearch] = useState('')
   const [invoiceFilter, setInvoiceFilter] = useState('all')
   const [page, setPage] = useState(0)
@@ -135,7 +137,9 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
   const handleOpenEdit = useCallback((sale) => {
     setEditSaleId(sale.id)
     setShowDetail(false)
-    setOpenWizard(true)
+    setTimeout(() => {
+      setOpenWizard(true)
+    }, 150)
   }, [setEditSaleId, setShowDetail, setOpenWizard])
 
   const handleWizardClose = useCallback((open) => {
@@ -282,11 +286,14 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
               <SembakoInvoiceCard
                 key={sale.id}
                 sale={sale}
+                returnsList={returnsList}
+                products={products}
                 isDesktop={isDesktop}
                 onOpenDetail={() => {
                   setSelectedSaleId(sale.id)
                   setShowDetail(true)
                 }}
+                onEdit={() => handleOpenEdit(sale)}
                 onManageDelivery={() => handleManageDelivery(sale.id)}
               />
             ))}

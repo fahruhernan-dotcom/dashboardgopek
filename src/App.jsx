@@ -24,9 +24,6 @@ import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 
-// Tutorial — dipakai di semua layout, tetap static
-import SembakoTutorial from './dashboard/broker/sembako_broker/SembakoTutorial'
-
 // ─── Module Importers dengan Background Prefetching ─────────────────────────────
 const pageImporters = {
   beranda:          () => import('./dashboard/broker/sembako_broker/Beranda'),
@@ -126,7 +123,6 @@ function SembakoLayout({ children }) {
     return (
       <DesktopSidebarLayout>
         {children}
-        <SembakoTutorial />
       </DesktopSidebarLayout>
     )
   }
@@ -137,7 +133,6 @@ function SembakoLayout({ children }) {
         <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       </SidebarProvider>
       {children}
-      <SembakoTutorial />
       <BottomNav />
     </div>
   )
@@ -196,8 +191,6 @@ function AppContentLayout() {
   )
 }
 
-import DevicePreviewShell from './components/dev/DevicePreviewShell'
-
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -205,9 +198,7 @@ export default function App() {
         <AuthProvider>
           <TooltipProvider>
             <ScrollToTop />
-            <DevicePreviewShell>
-              <AppContentLayout />
-            </DevicePreviewShell>
+            <AppContentLayout />
           </TooltipProvider>
 
           <Toaster
@@ -234,3 +225,4 @@ export default function App() {
     </QueryClientProvider>
   )
 }
+

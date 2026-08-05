@@ -65,51 +65,66 @@ export function KPICard({ icon: Icon, label, value, sub, accentColor = C.accent,
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
-        background: C.card, borderRadius: '14px', padding: '12px 14px',
+        background: C.card,
+        borderRadius: '16px',
+        padding: '16px 18px',
         border: `1px solid ${C.border}`,
-        borderLeft: urgent ? `3px solid ${accentColor}` : `1px solid ${C.border}`,
-        display: 'flex', alignItems: 'flex-start', gap: '10px',
-        position: 'relative', overflow: 'hidden',
+        borderLeft: urgent ? `4px solid ${accentColor}` : `1px solid ${C.border}`,
+        display: 'flex',
+        flexDirection: 'column',
+        justify: 'space-between',
+        gap: '12px',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
       }}
     >
-      <div style={{
-        width: '32px', height: '32px', borderRadius: '99px', flexShrink: 0, marginTop: '2px',
-        background: `${accentColor}18`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Icon size={15} color={accentColor} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
         <p style={{
-          fontSize: '9px', color: C.muted, fontWeight: 700,
-          letterSpacing: '0.05em', textTransform: 'uppercase',
-          marginBottom: '3px', lineHeight: 1.3,
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          fontSize: '11px', color: C.muted, fontWeight: 800,
+          letterSpacing: '0.06em', textTransform: 'uppercase',
+          lineHeight: 1.3,
         }}>{label}</p>
+        <div style={{
+          width: '36px', height: '36px', borderRadius: '12px', flexShrink: 0,
+          background: `${accentColor}18`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: `1px solid ${accentColor}30`,
+        }}>
+          <Icon size={18} color={accentColor} />
+        </div>
+      </div>
+
+      <div>
         <p style={{
-          fontSize: '15px', fontWeight: 800, color: C.text,
-          lineHeight: 1.1, fontFamily: 'DM Sans',
+          fontSize: '20px', fontWeight: 900, color: C.text,
+          lineHeight: 1.2, fontFamily: 'DM Sans',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          letterSpacing: '-0.02em',
         }}>{value}</p>
         {sub && (
-          <p style={{ fontSize: '9px', color: C.muted, marginTop: '3px', lineHeight: 1.3,
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          <p style={{
+            fontSize: '11px', color: C.muted, marginTop: '4px', lineHeight: 1.4,
+            fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{sub}</p>
         )}
+      </div>
+
+      <div style={{ paddingTop: '8px', borderTop: `1px solid ${C.border}60`, marginTop: 'auto' }}>
         <span style={{
-          display: 'inline-block', marginTop: '4px',
+          display: 'inline-flex', alignItems: 'center', gap: '4px',
           background: trend != null
-            ? (trend >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)')
-            : 'rgba(148, 163, 184, 0.1)',
+            ? (trend >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)')
+            : 'rgba(148, 163, 184, 0.12)',
           color: trend != null ? (trend >= 0 ? '#34D399' : '#F87171') : '#94A3B8',
-          fontSize: '8px', fontWeight: 800, padding: '2px 5px',
-          borderRadius: '4px', letterSpacing: '0.02em', whiteSpace: 'nowrap',
+          fontSize: '10px', fontWeight: 800, padding: '3px 8px',
+          borderRadius: '6px', letterSpacing: '0.02em', whiteSpace: 'nowrap',
           border: trend != null
-            ? (trend >= 0 ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)')
-            : '1px solid rgba(148, 163, 184, 0.2)',
+            ? (trend >= 0 ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)')
+            : '1px solid rgba(148, 163, 184, 0.25)',
         }}>
           {trend != null
-            ? `${trend >= 0 ? '↑' : '↓'} ${Math.abs(trend).toFixed(0)}%`
+            ? `${trend >= 0 ? '↑' : '↓'} ${Math.abs(trend).toFixed(0)}% bln lalu`
             : (badge || 'Belum ada pembanding')}
         </span>
       </div>

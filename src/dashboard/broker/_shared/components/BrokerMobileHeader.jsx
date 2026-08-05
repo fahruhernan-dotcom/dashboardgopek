@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { Menu, RefreshCw } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useAuth, getBrokerBasePath } from '@/lib/hooks/useAuth'
 import { useTheme } from '@/lib/hooks/useTheme'
 import NotificationBell from '@/dashboard/_shared/components/NotificationBell'
@@ -25,6 +27,8 @@ export function BrokerMobileHeader({
   const { profile, tenant } = useAuth()
   const { accentColor } = useTheme()
   const navigate = useNavigate()
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const queryClient = useQueryClient()
 
   const initial = profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'B'
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Broker'
@@ -43,8 +47,28 @@ export function BrokerMobileHeader({
     window.dispatchEvent(new CustomEvent('open-mobile-sidebar'))
   })
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await queryClient.invalidateQueries()
+      await queryClient.refetchQueries()
+      toast.success('Data berhasil diperbarui!')
+    } catch {
+      // ignore
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500)
+    }
+  }
+
   const rightButtons = rightElement || (
     <>
+      <button
+        onClick={handleRefresh}
+        title="Refresh Data"
+        className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:text-white active:scale-95 transition-transform"
+      >
+        <RefreshCw size={18} className={isRefreshing ? 'animate-spin text-orange-500' : ''} />
+      </button>
       <NotificationBell />
       <button
         onClick={handleProfileClick}
@@ -65,7 +89,7 @@ export function BrokerMobileHeader({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#06090F] via-transparent to-transparent" />
 
-        <div className="relative px-5 pt-16 pb-5 flex items-center justify-between">
+        <div className="relative px-5 pt-[calc(env(safe-area-inset-top,24px)+16px)] pb-5 flex items-center justify-between">
           <div>
             {businessLabel && (
               <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style={{ color: `${color}99` }}>
@@ -84,7 +108,7 @@ export function BrokerMobileHeader({
   }
 
   return (
-    <header className="px-5 pt-8 pb-4 flex items-center justify-between sticky top-0 bg-[#06090F] z-50 border-b border-white/5 min-h-[64px] lg:hidden">
+    <header className="px-5 pt-[calc(env(safe-area-inset-top,24px)+12px)] pb-4 flex items-center justify-between sticky top-0 bg-[#06090F] z-50 border-b border-white/5 min-h-[calc(64px+env(safe-area-inset-top,24px))] lg:hidden">
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <button
           onClick={handleMenuClick}

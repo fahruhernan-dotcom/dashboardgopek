@@ -6,8 +6,11 @@ import { formatIDR } from '@/lib/format'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { C, sBtn, DetailRow, generateWAMessage, toWaLink } from './sembakoSaleUtils'
 
+import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
+
 export function SembakoSuccessCard({ isOpen, onClose, data, onPrint }) {
   const { tenant } = useAuth()
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
   const handleSheetClose = useCallback((v) => { if (!v) onClose() }, [onClose])
   if (!data) return null
 
@@ -19,7 +22,22 @@ export function SembakoSuccessCard({ isOpen, onClose, data, onPrint }) {
 
   return (
     <Sheet open={isOpen} onOpenChange={handleSheetClose}>
-      <SheetContent side="bottom" style={{ background: C.bg, maxWidth: '100%', height: 'auto', maxHeight: '90vh', padding: '0', borderRadius: '24px 24px 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <SheetContent
+        side={isDesktop ? 'right' : 'bottom'}
+        className="hide-scrollbar"
+        style={{
+          background: C.bg,
+          width: isDesktop ? '480px' : '100%',
+          height: isDesktop ? '100vh' : 'auto',
+          maxHeight: isDesktop ? '100vh' : '90vh',
+          padding: '0',
+          borderLeft: isDesktop ? `1px solid ${C.border}` : 'none',
+          borderRadius: isDesktop ? '0' : '24px 24px 0 0',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
         <SheetHeader className="sr-only">
           <SheetTitle>Penjualan Berhasil</SheetTitle>
           <SheetDescription>Ringkasan transaksi penjualan sembako yang baru saja disimpan.</SheetDescription>
@@ -56,14 +74,21 @@ export function SembakoSuccessCard({ isOpen, onClose, data, onPrint }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-            <button onClick={() => onPrint('invoice')} style={{ ...sBtn(false), height: '48px', fontSize: '11px', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}`, color: C.text }}>
-              <FileText size={16} /> INVOICE
+          {/* Tombol Cetak / Surat Jalan */}
+          {data.hasDelivery && data.deliveryStatus === 'pending' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+              <button onClick={() => onPrint('invoice')} style={{ ...sBtn(false), height: '48px', fontSize: '11px', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}`, color: C.text }}>
+                <FileText size={16} /> INVOICE
+              </button>
+              <button onClick={() => onPrint('delivery')} style={{ ...sBtn(false), height: '48px', fontSize: '11px', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}`, color: C.text }}>
+                <Truck size={16} /> SURAT JALAN
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => onPrint('invoice')} style={{ ...sBtn(false), width: '100%', height: '48px', fontSize: '12px', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}`, color: C.text, marginBottom: '12px' }}>
+              <FileText size={16} /> CETAK INVOICE
             </button>
-            <button onClick={() => onPrint('delivery')} style={{ ...sBtn(false), height: '48px', fontSize: '11px', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}`, color: C.text }}>
-              <Truck size={16} /> SURAT JALAN
-            </button>
-          </div>
+          )}
 
           <button
             onClick={handleWA}
