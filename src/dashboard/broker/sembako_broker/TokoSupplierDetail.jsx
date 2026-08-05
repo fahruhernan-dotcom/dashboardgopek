@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  ArrowLeft, Phone, MapPin, Star, Building2, Store, Package, 
-  ChevronRight, Calculator, CheckCircle2, 
+import {
+  ArrowLeft, Phone, MapPin, Star, Building2, Store, Package,
+  ChevronRight, Calculator, CheckCircle2,
   Calendar, Info, AlertCircle, Trash2, Edit,
   Wallet, Receipt, ChevronDown, Check, Plus, Filter,
   TrendingDown, TrendingUp, History, MessageCircle, ExternalLink, ShieldCheck, CreditCard, Sparkles
@@ -16,7 +16,7 @@ import {
   useSembakoSupplierPayments, useRecordSembakoSupplierPayment,
   useUpdateSembakoCustomer, useUpdateSembakoSupplier
 } from '@/lib/hooks/useSembakoData'
-import { 
+import {
   formatIDR, formatDate,
   formatIDRShort
 } from '@/lib/format'
@@ -48,9 +48,9 @@ const staggerContainer = {
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
-  visible: { 
+  visible: {
     opacity: 1, y: 0,
-    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] } 
+    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }
   }
 }
 
@@ -60,11 +60,11 @@ export default function SembakoTokoSupplierDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   useAuth()
-  
+
   // Data Queries
   const { data: allCustomers, isLoading: loadingCustomers } = useSembakoCustomers()
   const { data: allSuppliers, isLoading: loadingSuppliers } = useSembakoSuppliers()
-  
+
   const profileData = useMemo(() => {
     if (isCustomer) return allCustomers?.find(c => c.id === id)
     return allSuppliers?.find(s => s.id === id)
@@ -88,9 +88,9 @@ export default function SembakoTokoSupplierDetail() {
   if (!profileData && !loadingCustomers && !loadingSuppliers && !loadingCInvoices && !loadingSInvoices) {
     return (
       <div className="bg-[#06090F] min-h-screen flex items-center justify-center p-6 text-slate-100">
-        <EmptyState 
-          icon={AlertCircle} 
-          title="Data Tidak Ditemukan" 
+        <EmptyState
+          icon={AlertCircle}
+          title="Data Tidak Ditemukan"
           description="Link mungkin sudah kedaluwarsa atau data telah dihapus."
           action={<Button onClick={() => navigate('../')} className="bg-[#EA580C] hover:bg-[#D44E0A] rounded-xl font-bold">Kembali</Button>}
         />
@@ -98,11 +98,13 @@ export default function SembakoTokoSupplierDetail() {
     )
   }
 
-  const outstanding = isCustomer ? profileData?.total_outstanding : 0
-  const activeCount = isCustomer ? customerInvoices?.filter(i => i.payment_status !== 'lunas').length : 0
+  const outstanding = isCustomer 
+    ? (customerInvoices || []).reduce((sum, inv) => sum + (Number(inv.remaining_amount) || 0), 0)
+    : 0
+  const activeCount = isCustomer ? customerInvoices?.filter(i => i.remaining_amount > 0).length : 0
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="bg-[#06090F] min-h-screen pb-24 text-slate-100 selection:bg-[#EA580C]/30 selection:text-orange-200"
     >
@@ -115,8 +117,8 @@ export default function SembakoTokoSupplierDetail() {
       {/* Header Bar */}
       <header className="px-4 sm:px-8 py-5 flex items-center justify-between sticky top-0 bg-[#06090F] z-40 border-b border-white/5 shadow-lg">
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="w-10 h-10 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all active:scale-95 group"
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
@@ -134,10 +136,10 @@ export default function SembakoTokoSupplierDetail() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setOpenModal('edit')} 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setOpenModal('edit')}
             className="bg-white/5 hover:bg-white/10 border-white/10 text-slate-200 hover:text-white rounded-xl font-bold text-xs gap-2 px-3.5 h-10 shadow-sm"
           >
             <Edit size={14} className="text-[#EA580C]" />
@@ -149,14 +151,14 @@ export default function SembakoTokoSupplierDetail() {
       {/* Main Content Layout */}
       <main className="px-4 sm:px-8 pt-6 max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
+
           {/* Left Column: Profile Card & Actions */}
           <div className="lg:col-span-5 space-y-6">
-            
+
             {/* Main Profile Card */}
             <Card className="bg-[#0F172A] border border-slate-800 rounded-[28px] p-6 shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#EA580C]/10 to-transparent rounded-bl-full pointer-events-none" />
-              
+
               <div className="flex items-start gap-4">
                 <Avatar className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#EA580C] to-amber-600 border border-white/20 shadow-lg shrink-0">
                   <AvatarFallback className="bg-transparent text-white font-display font-black text-2xl tracking-wider">
@@ -242,8 +244,8 @@ export default function SembakoTokoSupplierDetail() {
 
               {/* Action Buttons */}
               <div className="mt-6 pt-2">
-                <Button 
-                  asChild 
+                <Button
+                  asChild
                   className="w-full bg-gradient-to-r from-[#EA580C] to-orange-600 hover:from-orange-600 hover:to-orange-700 h-13 rounded-2xl font-black text-xs uppercase tracking-widest gap-2.5 shadow-xl shadow-orange-950/40 active:scale-[0.98] transition-all"
                 >
                   <a href={toWaLink(profileData?.phone) || '#'} target="_blank" rel="noreferrer">
@@ -259,13 +261,13 @@ export default function SembakoTokoSupplierDetail() {
 
           {/* Right Column: Financial Summary & Transaction Logs */}
           <div className="lg:col-span-7 space-y-6">
-            
+
             {/* Financial Summary Card */}
             {isCustomer ? (
               <Card className={cn(
                 "rounded-[28px] p-6 border-none shadow-2xl relative overflow-hidden backdrop-blur-xl transition-all duration-300",
-                outstanding > 0 
-                  ? "bg-gradient-to-br from-rose-950/40 via-[#111C24] to-[#06090F] ring-1 ring-rose-500/30" 
+                outstanding > 0
+                  ? "bg-gradient-to-br from-rose-950/40 via-[#111C24] to-[#06090F] ring-1 ring-rose-500/30"
                   : "bg-gradient-to-br from-emerald-950/40 via-[#111C24] to-[#06090F] ring-1 ring-emerald-500/30"
               )}>
                 <div className="flex justify-between items-start">
@@ -294,8 +296,8 @@ export default function SembakoTokoSupplierDetail() {
                     "p-4 rounded-2xl border shadow-inner shrink-0",
                     outstanding > 0 ? "bg-rose-500/10 border-rose-500/20" : "bg-emerald-500/10 border-emerald-500/20"
                   )}>
-                    {outstanding > 0 
-                      ? <TrendingDown size={28} className="text-rose-400" /> 
+                    {outstanding > 0
+                      ? <TrendingDown size={28} className="text-rose-400" />
                       : <TrendingUp size={28} className="text-emerald-400" />
                     }
                   </div>
@@ -358,9 +360,9 @@ export default function SembakoTokoSupplierDetail() {
 
                 <TabsContent value="log" className="mt-0 space-y-4">
                   {isCustomer ? (
-                    <CustomerInvoiceList 
-                      invoices={customerInvoices} 
-                      onPay={(inv) => { setSelectedInvoice(inv); setOpenModal('bayar') }} 
+                    <CustomerInvoiceList
+                      invoices={customerInvoices}
+                      onPay={(inv) => { setSelectedInvoice(inv); setOpenModal('bayar') }}
                     />
                   ) : (
                     <SupplierBatchList batches={supplierInvoices} />
@@ -369,8 +371,8 @@ export default function SembakoTokoSupplierDetail() {
 
                 <TabsContent value="pembayaran" className="mt-0 space-y-4">
                   <div className="mb-4">
-                    <Button 
-                      onClick={() => setOpenModal('bayar')} 
+                    <Button
+                      onClick={() => setOpenModal('bayar')}
                       className={cn(
                         "w-full h-12 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg transition-all active:scale-[0.98]",
                         isCustomer ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-rose-600 hover:bg-rose-500 text-white"
@@ -400,13 +402,13 @@ export default function SembakoTokoSupplierDetail() {
             <SheetDescription className="sr-only">Form untuk mencatat pembayaran sembako.</SheetDescription>
           </SheetHeader>
           {selectedInvoice || !isCustomer ? (
-            <PaymentForm 
+            <PaymentForm
               key={selectedInvoice?.id || 'supplier'}
-              invoice={selectedInvoice} 
+              invoice={selectedInvoice}
               isCustomer={isCustomer}
               parentId={id}
               maxAmount={isCustomer ? selectedInvoice?.remaining_amount : supplierTotalHutang}
-              onClose={() => { setOpenModal(null); setSelectedInvoice(null); queryClient.invalidateQueries() }} 
+              onClose={() => { setOpenModal(null); setSelectedInvoice(null); queryClient.invalidateQueries() }}
             />
           ) : (
             <div className="text-center py-12 space-y-3">
@@ -426,11 +428,11 @@ export default function SembakoTokoSupplierDetail() {
             </SheetTitle>
             <SheetDescription className="sr-only">Form untuk memperbarui profil customer atau supplier sembako.</SheetDescription>
           </SheetHeader>
-          <EditProfileForm 
+          <EditProfileForm
             key={profileData?.id || 'edit'}
-            profile={profileData} 
-            isCustomer={isCustomer} 
-            onClose={() => { setOpenModal(null); queryClient.invalidateQueries() }} 
+            profile={profileData}
+            isCustomer={isCustomer}
+            onClose={() => { setOpenModal(null); queryClient.invalidateQueries() }}
           />
         </SheetContent>
       </Sheet>
@@ -441,59 +443,78 @@ export default function SembakoTokoSupplierDetail() {
 function CustomerInvoiceList({ invoices, onPay }) {
   if (!invoices?.length) {
     return (
-      <EmptyState 
-        icon={Receipt} 
-        title="Belum ada transaksi" 
-        description="Transaksi penjualan dengan toko ini akan tercatat otomatis di sini." 
+      <EmptyState
+        icon={Receipt}
+        title="Belum ada transaksi"
+        description="Transaksi penjualan dengan toko ini akan tercatat otomatis di sini."
       />
     )
   }
-  
+
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-3">
-      {invoices.map(inv => (
-        <motion.div key={inv.id} variants={fadeUp}>
-          <Card className="bg-[#111C24]/80 border-white/5 hover:border-white/10 rounded-2xl p-4.5 flex flex-col gap-3 shadow-md hover:shadow-xl transition-all duration-200">
-            <div className="flex justify-between items-start">
-              <div className="space-y-0.5">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatDate(inv.transaction_date)}</p>
-                <p className="text-base font-black text-white uppercase tracking-tight">{inv.invoice_number}</p>
+      {invoices.map(inv => {
+        const telahDibayar = inv.total_amount - inv.remaining_amount
+        return (
+          <motion.div key={inv.id} variants={fadeUp}>
+            <Card className="bg-[#111C24]/80 border-white/5 hover:border-white/10 rounded-2xl p-5 flex flex-col gap-4 shadow-md hover:shadow-xl transition-all duration-300">
+              {/* Header: Date, Invoice number & Status Badge */}
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C]" />
+                    <p className="text-sm font-black text-white uppercase tracking-tight">{inv.invoice_number}</p>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-3.5">
+                    {formatDate(inv.transaction_date)}
+                  </p>
+                </div>
+                <Badge className={cn(
+                  "border-none rounded-lg text-[10px] font-black uppercase px-2.5 py-1 tracking-wider",
+                  inv.payment_status === 'lunas' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                  inv.payment_status === 'sebagian' ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
+                  "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                )}>
+                  {inv.payment_status?.replace('_', ' ')}
+                </Badge>
               </div>
-              <Badge className={cn(
-                "border-none rounded-lg text-[10px] font-black uppercase px-2.5 py-1",
-                inv.payment_status === 'lunas' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-              )}>
-                {inv.payment_status}
-              </Badge>
-            </div>
 
-            <div className="flex justify-between items-end pt-1">
-              <div className="space-y-0.5">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Total Tagihan</p>
-                <p className="font-black text-lg text-white tabular-nums leading-none">
-                  {formatIDR(inv.total_amount)}
-                </p>
+              {/* Financial Details Box */}
+              <div className="bg-[#0A1015]/60 border border-white/5 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-slate-400">Total Tagihan</span>
+                  <span className="font-black text-slate-200 tabular-nums">{formatIDR(inv.total_amount)}</span>
+                </div>
+                
+                {telahDibayar > 0 && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-slate-400">Telah Dibayar</span>
+                    <span className="font-bold text-emerald-400 tabular-nums">{formatIDR(telahDibayar)}</span>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-white/5 flex justify-between items-center text-xs">
+                  <span className="font-black text-slate-300">Sisa Piutang</span>
+                  <span className={cn("font-black text-sm tabular-nums", inv.remaining_amount > 0 ? "text-rose-400" : "text-emerald-400")}>
+                    {formatIDR(inv.remaining_amount)}
+                  </span>
+                </div>
               </div>
+
+              {/* Pay Action Button */}
               {inv.payment_status !== 'lunas' && (
                 <Button 
                   onClick={() => onPay(inv)} 
-                  size="sm" 
-                  className="bg-[#EA580C] hover:bg-[#D44E0A] text-white text-xs font-extrabold h-9 px-4 rounded-xl shadow-md active:scale-95 transition-all"
+                  className="w-full bg-gradient-to-r from-[#EA580C] to-[#D44E0A] hover:from-[#F06313] hover:to-[#EB5505] text-white text-xs font-black h-10 rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
                 >
+                  <CreditCard size={14} />
                   BAYAR PIUTANG
                 </Button>
               )}
-            </div>
-
-            {inv.remaining_amount > 0 && inv.remaining_amount !== inv.total_amount && (
-              <div className="pt-2.5 border-t border-white/5 flex justify-between items-center text-xs">
-                <span className="font-bold text-slate-400 uppercase text-[10px]">Sisa Piutang:</span>
-                <span className="font-black text-rose-400 tabular-nums">{formatIDR(inv.remaining_amount)}</span>
-              </div>
-            )}
-          </Card>
-        </motion.div>
-      ))}
+            </Card>
+          </motion.div>
+        )
+      })}
     </motion.div>
   )
 }
@@ -501,14 +522,14 @@ function CustomerInvoiceList({ invoices, onPay }) {
 function SupplierBatchList({ batches }) {
   if (!batches?.length) {
     return (
-      <EmptyState 
-        icon={History} 
-        title="Belum ada stok masuk" 
-        description="Riwayat pembelian dari supplier akan muncul di sini." 
+      <EmptyState
+        icon={History}
+        title="Belum ada stok masuk"
+        description="Riwayat pembelian dari supplier akan muncul di sini."
       />
     )
   }
-  
+
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-3">
       {batches.map(batch => (
@@ -546,10 +567,10 @@ function SupplierBatchList({ batches }) {
 function PaymentHistory({ payments, isCustomer }) {
   if (!payments?.length) {
     return (
-      <EmptyState 
-        icon={Wallet} 
-        title="Belum ada riwayat bayar" 
-        description="Semua cicilan dan pelunasan akan tercatat di sini." 
+      <EmptyState
+        icon={Wallet}
+        title="Belum ada riwayat bayar"
+        description="Semua cicilan dan pelunasan akan tercatat di sini."
       />
     )
   }
@@ -577,7 +598,7 @@ function PaymentHistory({ payments, isCustomer }) {
 function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
   const recordCustomerPayment = useRecordSembakoPayment()
   const recordSupplierPayment = useRecordSembakoSupplierPayment()
-  
+
   const safeMax = maxAmount ?? Infinity
   const [amount, setAmount] = useState(() => Math.min(maxAmount || 0, safeMax))
   const [method, setMethod] = useState('transfer')
@@ -631,7 +652,7 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
   return (
     <div className="space-y-6 pt-2">
       <div className={cn(
-        "text-center space-y-1 p-5 rounded-2xl border", 
+        "text-center space-y-1 p-5 rounded-2xl border",
         isCustomer ? "bg-rose-500/10 border-rose-500/20 text-rose-300" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
       )}>
         <p className="text-[10px] font-black uppercase tracking-widest">
@@ -648,8 +669,8 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
       <div className="space-y-5">
         <div className="space-y-2">
           <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Jumlah Pembayaran (Rp)</Label>
-          <InputRupiah 
-            value={amount} 
+          <InputRupiah
+            value={amount}
             onChange={setAmount}
             className={cn(
               "bg-[#111C24] h-14 text-xl font-black text-white rounded-2xl transition-all",
@@ -674,14 +695,14 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
           <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Metode Pembayaran</Label>
           <div className="flex gap-2">
             {['transfer', 'cash', 'qris'].map(m => (
-              <button 
-                key={m} 
+              <button
+                key={m}
                 type="button"
                 onClick={() => setMethod(m)}
                 className={cn(
                   "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95",
-                  method === m 
-                    ? (isCustomer ? "bg-[#EA580C]" : "bg-rose-600") + " text-white shadow-lg" 
+                  method === m
+                    ? (isCustomer ? "bg-[#EA580C]" : "bg-rose-600") + " text-white shadow-lg"
                     : "bg-white/5 text-slate-400 border border-white/5 hover:text-white"
                 )}
               >
@@ -693,8 +714,8 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
 
         <div className="space-y-2">
           <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">No. Referensi (Opsional)</Label>
-          <input 
-            value={refNo} 
+          <input
+            value={refNo}
             onChange={e => setRefNo(e.target.value)}
             placeholder="Contoh: REF123..."
             className="w-full bg-[#111C24] border-white/10 h-12 px-4 text-sm font-bold text-white rounded-2xl focus:ring-[#EA580C]/20 border focus:border-[#EA580C]/40 outline-none transition-all"
@@ -702,8 +723,8 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
         </div>
 
         <div className="pt-3">
-          <Button 
-            onClick={handlePay} 
+          <Button
+            onClick={handlePay}
             disabled={loading || isOverpay || isZeroDebt || amount <= 0}
             className={cn(
               "w-full h-14 rounded-2xl text-xs font-black border-none shadow-xl uppercase tracking-widest transition-all active:scale-95 text-white",
@@ -777,7 +798,7 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
         <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">
           {isCustomer ? 'Nama Toko / Pelanggan' : 'Nama Supplier / Pemasok'}
         </Label>
-        <Input 
+        <Input
           value={isCustomer ? form.customer_name : form.supplier_name}
           onChange={e => setForm(f => ({ ...f, [isCustomer ? 'customer_name' : 'supplier_name']: e.target.value }))}
           required
@@ -788,8 +809,8 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
       {isCustomer && (
         <div className="space-y-1.5">
           <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Jenis Toko</Label>
-          <Select 
-            value={form.customer_type} 
+          <Select
+            value={form.customer_type}
             onValueChange={v => setForm(f => ({ ...f, customer_type: v }))}
           >
             <SelectTrigger className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl">
@@ -808,7 +829,7 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">No. Handphone / WA</Label>
-          <Input 
+          <Input
             value={form.phone}
             onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
             placeholder="0812..."
@@ -818,7 +839,7 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
 
         <div className="space-y-1.5">
           <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Area / Wilayah</Label>
-          <Input 
+          <Input
             value={form.area}
             onChange={e => setForm(f => ({ ...f, area: e.target.value }))}
             placeholder="Contoh: Utamakan"
@@ -831,8 +852,8 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Termin Bayar</Label>
-            <Select 
-              value={form.payment_terms} 
+            <Select
+              value={form.payment_terms}
               onValueChange={v => setForm(f => ({ ...f, payment_terms: v }))}
             >
               <SelectTrigger className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl">
@@ -849,7 +870,7 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
 
           <div className="space-y-1.5">
             <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Limit Kredit (Rp)</Label>
-            <InputRupiah 
+            <InputRupiah
               value={form.credit_limit}
               onChange={v => setForm(f => ({ ...f, credit_limit: v }))}
               className="bg-[#111C24] border-white/10 h-12 text-sm font-bold text-white rounded-xl"
@@ -869,8 +890,8 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
                 onClick={() => setForm(f => ({ ...f, reliability_score: star }))}
                 className={cn(
                   "flex-1 h-10 rounded-xl font-black text-xs flex items-center justify-center gap-1 transition-all active:scale-95",
-                  form.reliability_score === star 
-                    ? "bg-amber-500 text-slate-950 font-extrabold shadow-lg" 
+                  form.reliability_score === star
+                    ? "bg-amber-500 text-slate-950 font-extrabold shadow-lg"
                     : "bg-white/5 text-slate-400 border border-white/5 hover:text-white"
                 )}
               >
@@ -884,7 +905,7 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
 
       <div className="space-y-1.5">
         <Label className="uppercase text-[10px] font-black tracking-widest text-slate-400 ml-1">Alamat Lengkap</Label>
-        <Textarea 
+        <Textarea
           value={form.address}
           onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
           rows={3}
@@ -894,8 +915,8 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
       </div>
 
       <div className="pt-3">
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={loading}
           className="w-full bg-[#EA580C] hover:bg-[#D44E0A] h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl shadow-orange-950/30 transition-all active:scale-95"
         >

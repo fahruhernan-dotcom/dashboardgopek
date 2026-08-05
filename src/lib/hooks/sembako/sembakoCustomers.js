@@ -22,9 +22,9 @@ export const useSembakoCustomers = () => {
           .order('customer_name')
         if (custError) { console.warn('[useSembakoCustomers]', custError.message); return [] }
 
-        // Fetch sales to calculate outstanding balance
+        // Fetch sales, items, and payments to calculate outstanding balance
         const { data: sales, error: salesError } = await supabase.from('sembako_sales')
-          .select('customer_id, remaining_amount')
+          .select('*, sembako_sale_items(*), sembako_payments(*)')
           .eq('tenant_id', tenant.id)
           .eq('is_deleted', false)
         
@@ -33,7 +33,44 @@ export const useSembakoCustomers = () => {
           return customers || []
         }
 
-        const outstandingMap = (sales || []).reduce((acc, sale) => {
+        // Fetch returns to calculate correct processed values
+        const { data: dbReturns } = await supabase.from('sembako_returns')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .eq('is_deleted', false)
+
+        let localReturns = []
+        try {
+          const saved = localStorage.getItem('gopek_retur_list')
+          if (saved) localReturns = JSON.parse(saved)
+        } catch (e) { }
+
+        // Deduplicate returns by ID to prevent double subtraction of synced records
+        const returnsMap = {}
+        const returnsData = []
+        if (dbReturns) {
+          dbReturns.forEach(r => {
+            if (r.id) {
+              returnsMap[r.id] = r
+              returnsData.push(r)
+            }
+          })
+        }
+        localReturns.forEach(r => {
+          if (r.id) {
+            if (!returnsMap[r.id]) {
+              returnsMap[r.id] = r
+              returnsData.push(r)
+            }
+          } else {
+            returnsData.push(r)
+          }
+        })
+
+        // Process each sale with returns and payments
+        const processedSales = (sales || []).map(sale => processSaleRow(sale, returnsData))
+
+        const outstandingMap = processedSales.reduce((acc, sale) => {
           if (!sale.customer_id) return acc
           acc[sale.customer_id] = (acc[sale.customer_id] || 0) + (Number(sale.remaining_amount) || 0)
           return acc
@@ -136,7 +173,27 @@ export const useSembakoCustomerInvoices = (customerId) => useQuery({
       if (saved) localReturns = JSON.parse(saved)
     } catch (e) { }
 
-    const returnsData = [...(dbReturns || []), ...localReturns]
+    // Deduplicate returns by ID to prevent double subtraction of synced records
+    const returnsMap = {}
+    const returnsData = []
+    if (dbReturns) {
+      dbReturns.forEach(r => {
+        if (r.id) {
+          returnsMap[r.id] = r
+          returnsData.push(r)
+        }
+      })
+    }
+    localReturns.forEach(r => {
+      if (r.id) {
+        if (!returnsMap[r.id]) {
+          returnsMap[r.id] = r
+          returnsData.push(r)
+        }
+      } else {
+        returnsData.push(r)
+      }
+    })
 
     return (data || []).map(sale => processSaleRow(sale, returnsData))
   }

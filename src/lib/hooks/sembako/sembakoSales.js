@@ -134,7 +134,27 @@ export const useSembakoSales = () => {
           if (saved) localReturns = JSON.parse(saved)
         } catch (e) { }
 
-        const returnsData = [...(dbReturns || []), ...localReturns]
+        // Deduplicate returns by ID to prevent double subtraction of synced records
+        const returnsMap = {}
+        const returnsData = []
+        if (dbReturns) {
+          dbReturns.forEach(r => {
+            if (r.id) {
+              returnsMap[r.id] = r
+              returnsData.push(r)
+            }
+          })
+        }
+        localReturns.forEach(r => {
+          if (r.id) {
+            if (!returnsMap[r.id]) {
+              returnsMap[r.id] = r
+              returnsData.push(r)
+            }
+          } else {
+            returnsData.push(r)
+          }
+        })
 
         return (data || []).map(sale => processSaleRow(sale, returnsData, itemsBySaleId))
       } catch (e) { console.warn('[useSembakoSales]', e); return [] }
