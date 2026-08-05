@@ -61,22 +61,28 @@ export default function SembakoBeranda() {
         const isFuture = curr > today
         const daySales = isFuture ? [] : sales.filter(s => s.transaction_date?.slice(0, 10) === dStr)
         const isWeekly = (end - start) / 86400000 < 8
+        const grossProfit = isFuture ? 0 : daySales.reduce((s, sale) => {
+          // Derive gross = net_profit + ops costs (avoids processSaleRow return-deduction side effects)
+          const net = Number(sale.net_profit) || 0
+          const ops = Number(sale.delivery_cost || 0) + Number(sale.other_cost || 0)
+          return s + (net + ops)
+        }, 0)
+        const netProfit = isFuture ? 0 : daySales.reduce((s, sale) => {
+          return s + (Number(sale.net_profit) || 0)
+        }, 0)
         days.push({
           name: isWeekly
             ? format(curr, 'EEE', { locale: idLocale })
             : format(curr, 'd'),
           fullDate: format(curr, 'EEEE, d MMMM yyyy', { locale: idLocale }),
-          profit: isFuture ? 0 : daySales.reduce((s, sale) => {
-            const rev  = Number(sale.total_amount || 0)
-            const cogs = Number(sale.total_cogs   || 0)
-            const del  = Number(sale.delivery_cost || 0)
-            const oth  = Number(sale.other_cost    || 0)
-            return s + (rev - cogs - del - oth)
-          }, 0),
+          grossProfit,
+          netProfit,
           txs: daySales.map(s => ({
             id: s.id,
             label: s.sembako_customers?.customer_name || s.customer_name || `Invoice #${s.id?.slice(0, 4)}`,
-            value: Number(s.net_profit || 0),
+            amount: Number(s.total_amount || 0),
+            grossProfit: (Number(s.net_profit) || 0) + (Number(s.delivery_cost || 0)) + (Number(s.other_cost || 0)),
+            netProfit: Number(s.net_profit) || 0,
           })),
         })
         curr = addDays(curr, 1)
@@ -93,7 +99,7 @@ export default function SembakoBeranda() {
     const w1Start = addDays(w1End, -6)
     const getProfit = (from, to) => sales
       .filter(s => { const d = new Date(s.transaction_date); return d >= from && d <= to })
-      .reduce((sum, s) => sum + Number(s.net_profit || 0), 0)
+      .reduce((sum, s) => sum + (Number(s.net_profit) > 0 ? Number(s.net_profit) : Math.max(0, Number(s.total_amount||0) - Number(s.total_cogs||0) - Number(s.delivery_cost||0) - Number(s.other_cost||0))), 0)
     const w0 = getProfit(w0Start, today)
     const w1 = getProfit(w1Start, w1End)
     let insight = null

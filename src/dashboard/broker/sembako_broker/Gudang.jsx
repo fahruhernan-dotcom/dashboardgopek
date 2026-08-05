@@ -43,11 +43,9 @@ const inputSt = {
 
 // ── Tab: Stok Saat Ini ────────────────────────────────────────────────────────
 
-function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
+function StokSaatIni({ products, allBatches = [], onTambah, onAdjust, onShowHistory }) {
   const [expanded, setExpanded] = useState(null)
   const [search, setSearch] = useState('')
-
-  const { data: allBatches = [], isError: batchesIsError, error: batchesError, refetch: batchesRefetch } = useSembakoAllBatches()
 
   const filtered = useMemo(() => {
     if (!search) return products.filter(p => p.is_active && !p.is_deleted)
@@ -59,10 +57,6 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
 
   const batchesForProduct = (productId) =>
     allBatches.filter(b => b.product_id === productId && b.qty_sisa > 0)
-
-  if (batchesIsError) {
-    return <SembakoErrorState error={batchesError} onRetry={batchesRefetch} />
-  }
 
   return (
     <div>
@@ -95,10 +89,16 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
         const batches = batchesForProduct(product.id)
         const batchSum = batches.reduce((sum, b) => sum + Number(b.qty_sisa ?? b.qty_masuk ?? 0), 0)
         const displayStock = (product.current_stock !== undefined && product.current_stock !== null) ? Number(product.current_stock) : batchSum
-        const productValuation = batches.length > 0
-          ? batches.reduce((sum, b) => sum + (Number(b.qty_sisa || 0) * Number(b.buy_price || 0)), 0)
-          : displayStock * (product.avg_buy_price || 0)
-        const productAvgBuyPrice = displayStock > 0 ? Math.round(productValuation / displayStock) : (product.avg_buy_price || 0)
+        // Find latest buy price for fallback
+        const pAllBatches = allBatches.filter(b => b.product_id === product.id)
+        const latestBatch = [...pAllBatches].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+        const fallbackPrice = latestBatch?.buy_price || product.avg_buy_price || 0
+
+        let productValuation = batches.reduce((sum, b) => sum + (Number(b.qty_sisa || 0) * Number(b.buy_price || 0)), 0)
+        if (displayStock > batchSum) {
+          productValuation += (displayStock - batchSum) * fallbackPrice
+        }
+        const productAvgBuyPrice = displayStock > 0 ? Math.round(productValuation / displayStock) : fallbackPrice
         const isOpen = expanded === product.id
         const isLow = product.min_stock_alert > 0 && displayStock <= product.min_stock_alert
 
@@ -233,8 +233,7 @@ function StokSaatIni({ products, onTambah, onAdjust, onShowHistory }) {
 
 // ── Tab: Riwayat Masuk ────────────────────────────────────────────────────────
 
-function RiwayatMasuk() {
-  const { data: batches = [], isLoading, isError, error, refetch } = useSembakoAllBatches()
+function RiwayatMasuk({ batches = [], isLoading, isError, error, refetch }) {
   const { data: returnsList = [] } = useSembakoReturns()
 
   if (isLoading) return <LoadingRow />
@@ -253,8 +252,10 @@ function RiwayatMasuk() {
     raw_return: r
   }))
 
+  const filteredBatches = batches.filter(b => !b.batch_code?.startsWith('BTC-RET') && !b.notes?.includes('Retur'))
+
   const combined = [
-    ...batches.map(b => ({
+    ...filteredBatches.map(b => ({
       ...b,
       is_retur: false,
       product_name: b.sembako_products?.product_name || '-',
@@ -604,6 +605,7 @@ export default function Gudang() {
 
   const { data: products = [], isLoading: productsLoading, isError: productsIsError, error: productsError, refetch: productsRefetch } = useSembakoProducts()
   const { data: suppliers = [], isError: supErr, error: supError, refetch: supRefetch } = useSembakoSuppliers()
+  const { data: allBatches = [], isLoading: batchesLoading, isError: batchesIsError, error: batchesError, refetch: batchesRefetch } = useSembakoAllBatches()
 
   const [activeTab, setActiveTab] = useState(0)
   const [showTambahSheet, setShowTambahSheet] = useState(!!preProductId || searchParams.get('action') === 'add-stock')
@@ -633,11 +635,24 @@ export default function Gudang() {
     setShowAdjustSheet(true)
   }
 
-  const totalStokNilai = useMemo(() =>
-    products.filter(p => p.is_active && !p.is_deleted)
-      .reduce((s, p) => s + (Number(p.current_stock || 0) * (Number(p.avg_buy_price) || 0)), 0),
-    [products]
-  )
+  const totalStokNilai = useMemo(() => {
+    return products.filter(p => p.is_active && !p.is_deleted).reduce((sum, p) => {
+      const pBatches = allBatches.filter(b => b.product_id === p.id && b.qty_sisa > 0)
+      const pAllBatches = allBatches.filter(b => b.product_id === p.id)
+      const latestBatch = [...pAllBatches].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+      const fallbackPrice = latestBatch?.buy_price || p.avg_buy_price || 0
+      
+      const batchSum = pBatches.reduce((s, b) => s + Number(b.qty_sisa || 0), 0)
+      const displayStock = (p.current_stock !== undefined && p.current_stock !== null) ? Number(p.current_stock) : batchSum
+      
+      let valuation = pBatches.reduce((s, b) => s + (Number(b.qty_sisa || 0) * Number(b.buy_price || 0)), 0)
+      if (displayStock > batchSum) {
+        valuation += (displayStock - batchSum) * fallbackPrice
+      }
+      return sum + valuation
+    }, 0)
+  }, [products, allBatches])
+
   const lowStockCount = useMemo(() =>
     products.filter(p => p.is_active && !p.is_deleted && p.min_stock_alert > 0 && p.current_stock <= p.min_stock_alert).length,
     [products]
@@ -692,18 +707,27 @@ export default function Gudang() {
         {/* Tab content */}
         <div className="px-4 sm:px-6 pt-4">
           {activeTab === 0 && (
-            productsLoading
+            productsLoading || batchesLoading
               ? <ProductSkeleton />
-              : productsIsError || supErr
-                ? <SembakoErrorState error={productsError || supError} onRetry={() => { productsRefetch(); supRefetch(); }} />
+              : productsIsError || batchesIsError || supErr
+                ? <SembakoErrorState error={productsError || batchesError || supError} onRetry={() => { productsRefetch(); batchesRefetch(); supRefetch(); }} />
                 : <StokSaatIni
                   products={products}
+                  allBatches={allBatches}
                   onTambah={openTambah}
                   onAdjust={openAdjust}
                   onShowHistory={p => { setHistoryProduct(p); setShowHistorySheet(true) }}
                 />
           )}
-          {activeTab === 1 && <RiwayatMasuk />}
+          {activeTab === 1 && (
+            <RiwayatMasuk
+              batches={allBatches}
+              isLoading={batchesLoading}
+              isError={batchesIsError}
+              error={batchesError}
+              refetch={batchesRefetch}
+            />
+          )}
           {activeTab === 2 && <RiwayatKeluar />}
           {activeTab === 3 && <ReturGudangTab />}
           {activeTab === 4 && <AuditLogTab />}
@@ -750,10 +774,11 @@ function KartuStokSheet({ product, onClose }) {
   useBackHandler(true, onClose)
   const { data: batches = [], isLoading: bLoad, isError: bErr, error: bError, refetch: bRefetch } = useSembakoAllBatches()
   const { data: stockOuts = [], isLoading: sLoad, isError: sErr, error: sError, refetch: sRefetch } = useSembakoStockOut()
+  const { data: returnsList = [], isLoading: rLoad } = useSembakoReturns()
 
   const isError = bErr || sErr
   const error = bError || sError
-  const isLoading = bLoad || sLoad
+  const isLoading = bLoad || sLoad || rLoad
   const refetch = () => { bRefetch(); sRefetch() }
 
   const movements = useMemo(() => {
@@ -761,20 +786,37 @@ function KartuStokSheet({ product, onClose }) {
 
     const logs = []
 
-    // 1. Stock In (Batches)
-    batches.filter(b => b.product_id === product.id).forEach(b => {
-      logs.push({
-        id: `in-${b.id}`,
-        date: b.purchase_date || b.created_at,
-        type: 'IN',
-        qty: b.qty_masuk,
-        ref: b.batch_code,
-        notes: b.sembako_suppliers?.supplier_name || 'Stok Masuk',
-        color: 'text-emerald-500'
+    // 1. Stock In (Batches, excluding BTC-RET)
+    batches
+      .filter(b => b.product_id === product.id && !b.batch_code?.startsWith('BTC-RET') && !b.notes?.includes('Retur'))
+      .forEach(b => {
+        logs.push({
+          id: `in-${b.id}`,
+          date: b.purchase_date || b.created_at,
+          type: 'IN',
+          qty: b.qty_masuk,
+          ref: b.batch_code,
+          notes: b.sembako_suppliers?.supplier_name || 'Stok Masuk',
+          color: 'text-emerald-500'
+        })
       })
-    })
 
-    // 2. Stock Out (Sales & Adjustments)
+    // 2. Stock In from Returns (completed)
+    returnsList
+      .filter(r => r.product_id === product.id && r.status === 'completed' && !r.is_deleted)
+      .forEach(r => {
+        logs.push({
+          id: `ret-${r.id}`,
+          date: r.created_at,
+          type: 'RET',
+          qty: r.quantity,
+          ref: r.return_number || `RET-${r.id.slice(0, 6).toUpperCase()}`,
+          notes: `Retur Toko: ${r.party_name || '-'}`,
+          color: 'text-amber-400'
+        })
+      })
+
+    // 3. Stock Out (Sales & Adjustments)
     stockOuts.filter(s => s.product_id === product.id).forEach(s => {
       logs.push({
         id: `out-${s.id}`,
@@ -788,7 +830,7 @@ function KartuStokSheet({ product, onClose }) {
     })
 
     return logs.sort((a, b) => new Date(b.date) - new Date(a.date))
-  }, [product, batches, stockOuts])
+  }, [product, batches, stockOuts, returnsList])
 
   return (
     <motion.div

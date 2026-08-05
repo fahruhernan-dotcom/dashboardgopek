@@ -349,9 +349,15 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
           <div style={{ background: 'rgba(234,88,12,0.04)', border: '1px solid rgba(234,88,12,0.15)', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <SField label={`Jumlah Masuk${selectedProduct ? ` (${selectedProduct.unit})` : ''} *`}>
               <input
-                id="stok-qty" name="qty_masuk" type="number" min="0.01" step="0.01"
+                id="stok-qty" name="qty_masuk" type="text" inputMode="decimal"
                 value={form.qty_masuk}
-                onChange={e => set('qty_masuk', e.target.value)}
+                onChange={e => {
+                  const val = e.target.value
+                  // Allow digits and a single dot or comma
+                  if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                    set('qty_masuk', val.replace(',', '.'))
+                  }
+                }}
                 placeholder="0"
                 style={inputSt}
               />

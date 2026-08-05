@@ -70,6 +70,12 @@ class SyncEngine {
         await db.sales.bulkPut(sales)
       }
 
+      // Pull Audit Logs
+      const { data: auditLogs } = await supabase.from('sembako_audit_logs').select('*').eq('tenant_id', tenantId).order('timestamp', { ascending: false }).limit(100)
+      if (auditLogs && auditLogs.length > 0) {
+        await db.audit_logs.bulkPut(auditLogs)
+      }
+
       await db.app_metadata.put({ key: 'last_sync_timestamp', value: new Date().toISOString() })
     } catch (err) {
       console.warn('[SyncEngine] Failed to pull initial data:', err)
@@ -107,6 +113,11 @@ class SyncEngine {
           } else if (item.entity === 'returns') {
             if (item.action === 'CREATE') {
               const { error } = await supabase.from('sembako_returns').insert(item.payload)
+              if (error) throw error
+            }
+          } else if (item.entity === 'audit_logs') {
+            if (item.action === 'CREATE') {
+              const { error } = await supabase.from('sembako_audit_logs').insert(item.payload)
               if (error) throw error
             }
           }

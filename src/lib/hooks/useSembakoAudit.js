@@ -1,8 +1,9 @@
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabase'
 import { useAuth } from './useAuth'
-
-const STORAGE_KEY = 'sembako_audit_logs_local'
+import { db } from '../offline/db'
+import { syncEngine } from '../offline/syncEngine'
 
 // Helper to record an audit log entry (persisted locally and synced with DB if available)
 export async function recordAuditLog({ action_type, product_name, old_value, new_value, notes, profile, tenant_id }) {
@@ -19,20 +20,36 @@ export async function recordAuditLog({ action_type, product_name, old_value, new
     notes: notes || '',
   }
 
-  // 1. Store in localStorage for client-side audit history
+  // 1. Store in Dexie IndexedDB for client-side audit history
   try {
-    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-    const updated = [logEntry, ...existing].slice(0, 100) // Keep last 100 logs
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    await db.audit_logs.put(logEntry)
+    const count = await db.audit_logs.count()
+    if (count > 100) {
+      const keysToDelete = await db.audit_logs.orderBy('timestamp').limit(count - 100).keys()
+      await db.audit_logs.bulkDelete(keysToDelete)
+    }
   } catch (e) {
-    console.warn('[recordAuditLog] localStorage failed', e)
+    console.warn('[recordAuditLog] Dexie put failed', e)
   }
 
-  // 2. Try inserting into Supabase audit logs table if present
+  // 2. Queue for background synchronization to Supabase
   try {
-    await supabase.from('sembako_audit_logs').insert([logEntry])
-  } catch {
-    /* table may not exist yet; fail silently */
+    await db.sync_queue.add({
+      action: 'CREATE',
+      entity: 'audit_logs',
+      payload: logEntry,
+      created_at: new Date().toISOString(),
+      status: 'pending'
+    })
+  } catch (qErr) {
+    console.warn('[recordAuditLog] Sync queue addition failed:', qErr)
+  }
+
+  // 3. Trigger sync in background if online
+  if (navigator.onLine) {
+    syncEngine.syncNow().catch(err => {
+      console.warn('[recordAuditLog] Background sync trigger failed:', err)
+    })
   }
 
   return logEntry
@@ -42,44 +59,38 @@ export function useSembakoAuditLogs() {
   const { tenant } = useAuth()
   const tenantId = tenant?.id
 
+  // Background pull from Supabase to Dexie when online
+  useEffect(() => {
+    if (tenantId && navigator.onLine) {
+      supabase
+        .from('sembako_audit_logs')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('timestamp', { ascending: false })
+        .limit(100)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            db.audit_logs.bulkPut(data)
+          }
+        })
+        .catch(err => console.warn('[useSembakoAuditLogs] Background pull failed:', err))
+    }
+  }, [tenantId])
+
   return useQuery({
     queryKey: ['sembako-audit-logs', tenantId],
     queryFn: async () => {
       const logs = []
 
-      // 1. Fetch explicit audit logs from DB table if any
+      // 1. Fetch explicit audit logs strictly from local Dexie database
       try {
-        let q = supabase
-          .from('sembako_audit_logs')
-          .select('*')
-          .order('timestamp', { ascending: false })
-          .limit(50)
-
-        if (tenantId) {
-          q = q.eq('tenant_id', tenantId)
-        }
-
-        const { data: dbLogs } = await q
-        if (dbLogs && dbLogs.length > 0) {
-          logs.push(...dbLogs)
-        }
-      } catch {
-        /* fail silently */
+        const localLogs = await db.audit_logs.toArray()
+        logs.push(...localLogs)
+      } catch (e) {
+        console.warn('[useSembakoAuditLogs] Dexie read failed', e)
       }
 
-      // 2. Fetch local storage logs if any
-      try {
-        const localLogs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-        localLogs.forEach(l => {
-          if (!logs.some(existing => existing.id === l.id)) {
-            logs.push(l)
-          }
-        })
-      } catch {
-        /* ok */
-      }
-
-      // 3. Synthesize from DB tables: sembako_stock_batches & sembako_stock_outs
+      // 3. Synthesize from DB tables: sembako_stock_batches & sembako_stock_out
       try {
         let batchQ = supabase
           .from('sembako_stock_batches')
@@ -88,7 +99,7 @@ export function useSembakoAuditLogs() {
           .limit(30)
 
         let outQ = supabase
-          .from('sembako_stock_outs')
+          .from('sembako_stock_out')
           .select('*, sembako_products(product_name, unit), sembako_sales(invoice_number)')
           .order('created_at', { ascending: false })
           .limit(30)

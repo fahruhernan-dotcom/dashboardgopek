@@ -187,7 +187,7 @@ export default function SembakoLaporan() {
                   badge={`${s.netMarginPct}%`}
                   color={s.netProfit >= 0 ? C.green : C.red} />
                 <KPICard icon={Receipt} label="Total Pengeluaran"
-                  value={formatIDR(s.totalExpenses + s.totalPayroll)}
+                  value={formatIDR(s.totalCOGS + s.totalDeliveryCost + s.totalOtherCost + s.totalExpenses + s.totalPayroll)}
                   color={C.red} />
               </div>
 

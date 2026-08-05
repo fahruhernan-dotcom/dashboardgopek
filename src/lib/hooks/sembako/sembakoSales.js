@@ -67,10 +67,14 @@ export function processSaleRow(sale, returnsData = [], itemsBySaleId = {}) {
     return s + Math.round((Number(r.quantity) || 0) * cogs)
   }, 0)
   const effectiveCogs = Math.max(0, totalCogs - returnCogs)
+  // gross_profit = Revenue (after returns) - COGS (after returns) — valid metric, not an estimate
   const grossProfit = Math.max(0, (itemsSubtotal - totalReturnAmount) - effectiveCogs)
   const totalExpenses = deliveryCost + otherCost
   const computedNetProfit = Math.max(0, grossProfit - totalExpenses)
-  const net_profit = (Number(sale.net_profit) > 0) ? Number(sale.net_profit) : (computedNetProfit || Math.round(total_amount * 0.2))
+  // Fallback: use DB net_profit if > 0, otherwise compute from transaction data
+  const net_profit = (Number(sale.net_profit) > 0)
+    ? Number(sale.net_profit)
+    : computedNetProfit
 
   return {
     ...sale,
@@ -80,7 +84,7 @@ export function processSaleRow(sale, returnsData = [], itemsBySaleId = {}) {
     other_cost: otherCost,
     total_cogs: totalCogs,
     net_profit,
-    gross_profit: grossProfit,
+    gross_profit: grossProfit,   // Revenue - COGS (pre-ops deduction)
     total_amount,
     paid_amount,
     raw_paid_amount: raw_paid,
@@ -206,11 +210,15 @@ export const useCreateSembakoSale = () => {
       const total_amount = items.reduce((s, i) => s + Math.round(i.quantity * i.price_per_unit), 0)
       const total_cogs = items.reduce((s, i) => s + Math.round(i.quantity * (i.product_id ? (itemFifoCogs[i.product_id] ?? i.cogs_per_unit ?? 0) : (i.cogs_per_unit || 0))), 0)
 
+      // Compute net_profit at insert time so DB always has an accurate value
+      const net_profit_insert = Math.max(0, total_amount - total_cogs - (delivery_cost || 0) - (other_cost || 0))
+
       const { data: sale, error: saleErr } = await supabase
         .from('sembako_sales').insert({
           tenant_id, customer_id, customer_name, invoice_number,
           transaction_date, due_date,
           total_amount, total_cogs,
+          net_profit: net_profit_insert,
           delivery_cost: delivery_cost || 0,
           other_cost: other_cost || 0,
           payment_status: 'belum_lunas',
@@ -225,26 +233,20 @@ export const useCreateSembakoSale = () => {
       const itemsToInsert = items.map(item => {
         const p = item.price_per_unit || item.sell_price || item.unit_price || 0
         const c = item.product_id ? (itemFifoCogs[item.product_id] ?? item.cogs_per_unit ?? 0) : (item.cogs_per_unit || 0)
+        const qty = item.quantity || 0
         return {
           sale_id: sale.id,
           product_id: item.product_id || null,
           product_name: item.product_name,
           unit: item.unit,
-          quantity: item.quantity,
-          price_per_unit: p,
-          sell_price: p,
+          quantity: qty,
+          sell_price: p,                         // only valid column (no price_per_unit in DB)
+          subtotal: Math.round(qty * p),
           cogs_per_unit: c,
+          cogs_total: Math.round(qty * c),
         }
       })
       let { error: itemErr } = await supabase.from('sembako_sale_items').insert(itemsToInsert)
-      if (itemErr && (itemErr.message?.includes('price_per_unit') || itemErr.message?.includes('tenant_id') || itemErr.code === 'PGRST204')) {
-        const fallbackItems = itemsToInsert.map(({ price_per_unit, tenant_id: _tid, ...rest }) => ({
-          ...rest,
-          sell_price: price_per_unit,
-        }))
-        const res = await supabase.from('sembako_sale_items').insert(fallbackItems)
-        itemErr = res.error
-      }
       if (itemErr) {
         logError({
           level: 'error', source: 'supabase', component: 'useSembakoData',
@@ -432,26 +434,20 @@ export const useUpdateSembakoSale = () => {
         const itemsToInsert = items.map(item => {
           const p = item.price_per_unit || item.sell_price || item.unit_price || 0
           const c = item.product_id ? (editFifoCogs[item.product_id] ?? item.cogs_per_unit ?? 0) : (item.cogs_per_unit || 0)
+          const qty = item.quantity || 0
           return {
             sale_id: id,
             product_id: item.product_id || null,
             product_name: item.product_name,
             unit: item.unit,
-            quantity: item.quantity,
-            price_per_unit: p,
-            sell_price: p,
+            quantity: qty,
+            sell_price: p,                       // only valid column (no price_per_unit in DB)
+            subtotal: Math.round(qty * p),
             cogs_per_unit: c,
+            cogs_total: Math.round(qty * c),
           }
         })
         let { error: itemErr } = await supabase.from('sembako_sale_items').insert(itemsToInsert)
-        if (itemErr && (itemErr.message?.includes('price_per_unit') || itemErr.message?.includes('tenant_id') || itemErr.code === 'PGRST204')) {
-          const fallbackItems = itemsToInsert.map(({ price_per_unit, tenant_id: _tid, ...rest }) => ({
-            ...rest,
-            sell_price: price_per_unit,
-          }))
-          const res = await supabase.from('sembako_sale_items').insert(fallbackItems)
-          itemErr = res.error
-        }
         if (itemErr) {
           logError({
             level: 'error', source: 'supabase', component: 'useSembakoData',
@@ -657,12 +653,28 @@ export const useRecordSembakoPayment = () => {
         throw payErr
       }
       const { data: sale } = await supabase.from('sembako_sales').select('total_amount, paid_amount, remaining_amount').eq('id', sale_id).single()
+      
+      // Fetch returns to calculate net tagihan (total_amount minus returns)
+      const { data: returnsData } = await supabase
+        .from('sembako_returns')
+        .select('total_amount')
+        .eq('sale_id', sale_id)
+        .eq('is_deleted', false)
+        
+      const totalReturnAmt = (returnsData || []).reduce((s, r) => s + Number(r.total_amount || 0), 0)
       const totAmt = Number(sale?.total_amount || 0)
+      const netTotal = Math.max(0, totAmt - totalReturnAmt)
+      
       const rawPaid = (Number(sale?.paid_amount) || 0) + (Number(amount) || 0)
-      const newPaid = Math.min(totAmt, rawPaid)
-      const newRemaining = Math.max(0, totAmt - newPaid)
+      const newPaid = Math.min(netTotal, rawPaid)
+      const newRemaining = Math.max(0, netTotal - newPaid)
       const newStatus = newRemaining <= 0 ? 'lunas' : (newPaid > 0 ? 'sebagian' : 'belum_lunas')
-      const { error: saleSyncErr } = await supabase.from('sembako_sales').update({ paid_amount: newPaid, remaining_amount: newRemaining, payment_status: newStatus }).eq('id', sale_id)
+      
+      const { error: saleSyncErr } = await supabase.from('sembako_sales').update({ 
+        paid_amount: newPaid, 
+        remaining_amount: newRemaining, 
+        payment_status: newStatus 
+      }).eq('id', sale_id)
       if (saleSyncErr) {
         logError({
           level: 'error', source: 'supabase', component: 'useSembakoData',
@@ -671,6 +683,7 @@ export const useRecordSembakoPayment = () => {
           metadata: { table: 'sembako_sales', operation: 'update', partial: true, step: 'sale_paid_amount_sync', sale_id },
         })
       }
+
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sembako-sales'] })

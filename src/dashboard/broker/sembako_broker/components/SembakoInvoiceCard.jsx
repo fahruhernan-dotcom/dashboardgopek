@@ -15,7 +15,11 @@ import {
   useCreateSembakoDelivery,
 } from '@/lib/hooks/useSembakoData'
 import { toast } from 'sonner'
-import { C, sBtn, fmtDate, calculateSaleFinancials } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
+import { C, sBtn, sInput, sLabel, fmtDate, calculateSaleFinancials, CustomSelect } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { DatePicker } from '@/components/ui/DatePicker'
+import { Loader2 } from 'lucide-react'
+
 
 function getDeliveryBadge(deliveries) {
   if (!deliveries || deliveries.length === 0) {
@@ -52,7 +56,9 @@ function MiniDeliveryRow({ delivery, onStart, onComplete, onNavigate }) {
   }
   const meta = statusMeta[delivery.status] || statusMeta.pending
   const emp = delivery.sembako_employees
-  const vehicle = [delivery.vehicle_type, delivery.vehicle_plate].filter(Boolean).join(' ') || '—'
+  const driverName = emp?.full_name || delivery.driver_name
+  const vehicleName = [delivery.vehicle_type, delivery.vehicle_plate].filter(v => v && v !== '-').join(' ')
+  const isDirect = !driverName && !vehicleName
 
   return (
     <div
@@ -93,12 +99,14 @@ function MiniDeliveryRow({ delivery, onStart, onComplete, onNavigate }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }}>
           <User size={10} color="#94A3B8" style={{ flexShrink: 0 }} />
           <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {emp?.full_name || delivery.driver_name || '—'}
+            {isDirect ? 'Diserahkan Langsung' : (driverName || '—')}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
           <Truck size={10} color="#94A3B8" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700 }}>{vehicle}</span>
+          <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700 }}>
+            {isDirect ? 'Tanpa Kurir' : (vehicleName || '—')}
+          </span>
         </div>
       </div>
 
@@ -124,6 +132,153 @@ function MiniDeliveryRow({ delivery, onStart, onComplete, onNavigate }) {
   )
 }
 
+
+// ── Tambah Trip Sheet ────────────────────────────────────────────────────────
+export function TambahTripSheet({ open, onClose, prefillSale, employees = [] }) {
+  const createDelivery = useCreateSembakoDelivery()
+  const [driverId, setDriverId] = useState('')
+  const [vehicleType, setVehicleType] = useState('Mobil Box')
+  const [vehiclePlate, setVehiclePlate] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().slice(0, 10))
+  const [notes, setNotes] = useState('')
+
+  // Filter employees to only show drivers/sopir/kurir if available, otherwise show all
+  const driverOptions = React.useMemo(() => {
+    const list = employees.filter(e => !e.is_deleted && e.is_active !== false)
+    return [
+      { value: '', label: 'Kirim Langsung (Tanpa Driver)' },
+      ...list.map(e => ({ value: e.id, label: e.full_name }))
+    ]
+  }, [employees])
+
+  const handleClose = React.useCallback((v) => {
+    if (!v) {
+      createDelivery.reset()
+      onClose()
+    }
+  }, [onClose, createDelivery])
+
+  async function handleSubmit() {
+    if (!prefillSale) return
+    const selectedEmp = employees.find(e => e.id === driverId)
+    const driverName = selectedEmp ? selectedEmp.full_name : 'Langsung'
+
+    try {
+      await createDelivery.mutateAsync({
+        sale_id: prefillSale.id,
+        employee_id: driverId || null,
+        driver_name: driverName,
+        vehicle_type: vehicleType,
+        vehicle_plate: vehiclePlate || '-',
+        delivery_date: deliveryDate,
+        status: 'pending',
+        notes: notes || `Pengiriman nota ${prefillSale.invoice_number || prefillSale.id}`,
+      })
+      
+      // Reset form
+      setDriverId('')
+      setVehicleType('Mobil Box')
+      setVehiclePlate('')
+      setNotes('')
+      onClose()
+    } catch (err) {
+      // toast shown by hook
+    }
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={handleClose}>
+      <SheetContent side="right" style={{ background: C.bg, borderLeft: `1px solid ${C.border}`, width: '100%', maxWidth: '420px', padding: '24px', overflowY: 'auto' }}>
+        <SheetHeader>
+          <SheetTitle style={{ color: C.text, fontWeight: 900 }}>Buat Pengiriman</SheetTitle>
+          <SheetDescription className="sr-only">Form untuk menjadwalkan pengiriman barang nota sembako.</SheetDescription>
+        </SheetHeader>
+
+        {prefillSale && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '20px', paddingBottom: '100px' }}>
+            <div style={{ background: C.card, borderRadius: '10px', padding: '12px', border: `1px solid ${C.border}` }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{prefillSale.invoice_number}</p>
+              <p style={{ fontSize: '11px', color: C.muted }}>{prefillSale.sembako_customers?.customer_name || prefillSale.customer_name || 'Umum'}</p>
+              <p style={{ fontSize: '11px', color: C.accent, fontWeight: 800 }}>Tujuan: {prefillSale.sembako_customers?.address || 'Kirim Langsung'}</p>
+            </div>
+
+            <div>
+              <p style={sLabel}>DRIVER / SOPIR</p>
+              <CustomSelect
+                value={driverId}
+                onChange={setDriverId}
+                options={driverOptions}
+                placeholder="Pilih driver"
+              />
+            </div>
+
+            <div>
+              <p style={sLabel}>KENDARAAN</p>
+              <CustomSelect
+                value={vehicleType}
+                onChange={setVehicleType}
+                options={[
+                  { value: 'Mobil Box', label: 'Mobil Box' },
+                  { value: 'Mobil Pickup', label: 'Mobil Pickup' },
+                  { value: 'Motor', label: 'Motor / Kurir' },
+                  { value: 'Truk', label: 'Truk' },
+                  { value: 'Langsung', label: 'Diambil Sendiri (Langsung)' },
+                ]}
+                placeholder="Pilih kendaraan"
+              />
+            </div>
+
+            <div>
+              <p style={sLabel}>PLAT NOMOR</p>
+              <input
+                style={sInput}
+                value={vehiclePlate}
+                onChange={e => setVehiclePlate(e.target.value)}
+                placeholder="Contoh: B 1234 CD (Opsional)"
+              />
+            </div>
+
+            <div>
+              <p style={sLabel}>TANGGAL KIRIM</p>
+              <DatePicker value={deliveryDate} onChange={setDeliveryDate} placeholder="Pilih tanggal" />
+            </div>
+
+            <div>
+              <p style={sLabel}>CATATAN TRIP</p>
+              <textarea
+                style={{ ...sInput, height: '70px', resize: 'none', paddingTop: '8px' }}
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Petunjuk jalan, cuaca, dll (Opsional)"
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={createDelivery.isPending}
+              style={{
+                ...sBtn(true),
+                width: '100%', padding: '14px',
+                marginTop: '10px'
+              }}
+            >
+              {createDelivery.isPending ? (
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <Loader2 size={16} className="animate-spin" />
+                  Menjadwalkan...
+                </span>
+              ) : (
+                'Jadwalkan Pengiriman'
+              )}
+            </button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+
 // ── Sale delivery panel (shown in mobile expand) ──────────────────────────────
 function SaleDeliveryPanel({ sale, onOpenDetail, onEdit }) {
   const { data: allDeliveries = [] } = useSembakoDeliveries()
@@ -144,6 +299,12 @@ function SaleDeliveryPanel({ sale, onOpenDetail, onEdit }) {
     navigate(`${pengirimanPath}?highlightDelivery=${deliveryId}`)
   }
 
+  const isDirectSale = saleDeliveries.length > 0 && saleDeliveries.every(d => {
+    const driver = d.sembako_employees?.full_name || d.driver_name
+    const vehicle = [d.vehicle_type, d.vehicle_plate].filter(v => v && v !== '-').join(' ')
+    return !driver && !vehicle
+  })
+
   return (
     <div style={{
       background: '#0F1A10',
@@ -158,8 +319,9 @@ function SaleDeliveryPanel({ sale, onOpenDetail, onEdit }) {
         color: '#94A3B8', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px',
       }}>
         <Truck size={11} color="#94A3B8" />
-        Pengiriman ({saleDeliveries.length})
+        {isDirectSale ? `Penyerahan Barang (${saleDeliveries.length})` : `Pengiriman (${saleDeliveries.length})`}
       </p>
+
 
       {/* Delivery list */}
       {saleDeliveries.length === 0 ? (

@@ -114,23 +114,101 @@ export const useCreateSembakoReturn = () => {
 
             // Add batch entry for FIFO if sale return
             if (return_type === 'sale_return' && qty > 0) {
-              const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-              const randStr = Math.random().toString(36).slice(2, 6).toUpperCase()
-              const generatedBatchCode = `BTC-RET-${dateStr}-${randStr}`
+              let returnedToOriginalBatches = false
 
-              const batchPayload = {
-                tenant_id: tenantId,
-                product_id: product_id,
-                batch_code: generatedBatchCode,
-                qty_masuk: qty,
-                qty_awal: qty,
-                qty_sisa: qty,
-                buy_price: Number(unit_price || 0),
-                total_cost: qty * Number(unit_price || 0),
-                notes: `Retur Penjualan (${party_name}) - FIFO Reversal`,
+              if (sale_id) {
+                // 1. Fetch stock out records for this sale & product (FIFO order)
+                const { data: stockOuts, error: outErr } = await supabase
+                  .from('sembako_stock_out')
+                  .select('batch_id, qty_keluar')
+                  .eq('sale_id', sale_id)
+                  .eq('product_id', product_id)
+                  .eq('is_deleted', false)
+                  .order('created_at', { ascending: true })
+
+                // 2. Fetch all other returns for this sale & product (excluding this one)
+                const { data: existingReturns } = await supabase
+                  .from('sembako_returns')
+                  .select('quantity')
+                  .eq('sale_id', sale_id)
+                  .eq('product_id', product_id)
+                  .eq('is_deleted', false)
+
+                if (!outErr && stockOuts && stockOuts.length > 0) {
+                  const totalAlreadyReturned = (existingReturns || []).reduce((sum, r) => sum + Number(r.quantity || 0), 0)
+                  let remainingAlreadyReturned = totalAlreadyReturned
+                  let remainingToReturn = qty
+
+                  for (const out of stockOuts) {
+                    if (remainingToReturn <= 0) break
+                    const soldQty = Number(out.qty_keluar || 0)
+                    if (soldQty <= 0) continue
+
+                    // How much of the previous returns belong to this stock out?
+                    const prevReturnedForThisOut = Math.min(soldQty, remainingAlreadyReturned)
+                    remainingAlreadyReturned -= prevReturnedForThisOut
+
+                    // How much of the cumulative (prev + current) returns belong to this stock out?
+                    const maxCumulativeReturn = soldQty
+                    const cumulativeReturnedForThisOut = Math.min(maxCumulativeReturn, prevReturnedForThisOut + remainingToReturn)
+                    const deltaToReturn = cumulativeReturnedForThisOut - prevReturnedForThisOut
+
+                    if (deltaToReturn > 0) {
+                      const { data: batch } = await supabase
+                        .from('sembako_stock_batches')
+                        .select('qty_sisa')
+                        .eq('id', out.batch_id)
+                        .single()
+
+                      if (batch) {
+                        await supabase
+                          .from('sembako_stock_batches')
+                          .update({ qty_sisa: (batch.qty_sisa || 0) + deltaToReturn })
+                          .eq('id', out.batch_id)
+                      }
+
+                      remainingToReturn -= deltaToReturn
+                      returnedToOriginalBatches = true
+                    }
+                  }
+
+                  // If there is still leftover return qty (excess of sold qty)
+                  if (remainingToReturn > 0) {
+                    const generatedBatchCode = `BTC-RET-${returnNumber}-EXCESS`
+                    const batchPayload = {
+                      tenant_id: tenantId,
+                      product_id: product_id,
+                      batch_code: generatedBatchCode,
+                      qty_masuk: remainingToReturn,
+                      qty_awal: remainingToReturn,
+                      qty_sisa: remainingToReturn,
+                      buy_price: Number(unit_price || 0),
+                      total_cost: remainingToReturn * Number(unit_price || 0),
+                      notes: `Retur Penjualan (${party_name}) - Sisa/Kelebihan FIFO Reversal`,
+                    }
+                    const cleanPayload = sanitizeDBPayload(batchPayload, 'sembako_stock_batches')
+                    await supabase.from('sembako_stock_batches').insert(cleanPayload)
+                  }
+                }
               }
-              const cleanPayload = sanitizeDBPayload(batchPayload, 'sembako_stock_batches')
-              await supabase.from('sembako_stock_batches').insert(cleanPayload)
+
+              if (!returnedToOriginalBatches) {
+                // Fallback: create a custom batch for the return
+                const generatedBatchCode = `BTC-RET-${returnNumber}`
+                const batchPayload = {
+                  tenant_id: tenantId,
+                  product_id: product_id,
+                  batch_code: generatedBatchCode,
+                  qty_masuk: qty,
+                  qty_awal: qty,
+                  qty_sisa: qty,
+                  buy_price: Number(unit_price || 0),
+                  total_cost: qty * Number(unit_price || 0),
+                  notes: `Retur Penjualan (${party_name}) - FIFO Reversal (Fallback)`,
+                }
+                const cleanPayload = sanitizeDBPayload(batchPayload, 'sembako_stock_batches')
+                await supabase.from('sembako_stock_batches').insert(cleanPayload)
+              }
             }
           }
         } catch (stkErr) {
@@ -338,17 +416,95 @@ export const useDeleteSembakoReturn = () => {
       if (typeof returnObj === 'object') {
         const retAmount = Number(returnObj.total_amount || returnObj.amount || 0)
 
-        // 2. Reverse Stock Adjustment
+        // 2. Reverse Stock Adjustment (Product & Batch level)
         if (returnObj.product_id && returnObj.action === 'fifo_stock') {
           try {
+            const qty = Number(returnObj.quantity || 0)
+            const rType = returnObj.return_type || returnObj.type
+            const saleId = returnObj.sale_id
+            const returnNumber = returnObj.return_number || id
+
+            // A. Product stock reversal
             const { data: prod } = await supabase.from('sembako_products').select('current_stock').eq('id', returnObj.product_id).single()
             if (prod) {
-              const qty = Number(returnObj.quantity || 0)
-              const rType = returnObj.return_type || returnObj.type
               const restoredStock = rType === 'sale_return'
                 ? Math.max(0, (prod.current_stock || 0) - qty)
                 : (prod.current_stock || 0) + qty
               await supabase.from('sembako_products').update({ current_stock: restoredStock }).eq('id', returnObj.product_id)
+            }
+
+            // B. Batch stock reversal
+            if (rType === 'sale_return') {
+              if (saleId) {
+                // Fetch stock outs
+                const { data: stockOuts } = await supabase
+                  .from('sembako_stock_out')
+                  .select('batch_id, qty_keluar')
+                  .eq('sale_id', saleId)
+                  .eq('product_id', returnObj.product_id)
+                  .eq('is_deleted', false)
+                  .order('created_at', { ascending: true })
+
+                // Fetch other returns excluding this one
+                const { data: otherReturns } = await supabase
+                  .from('sembako_returns')
+                  .select('quantity')
+                  .eq('sale_id', saleId)
+                  .eq('product_id', returnObj.product_id)
+                  .eq('is_deleted', false)
+                  .neq('id', id)
+
+                if (stockOuts && stockOuts.length > 0) {
+                  const totalWithoutCurrent = (otherReturns || []).reduce((sum, r) => sum + Number(r.quantity || 0), 0)
+                  const totalWithCurrent = totalWithoutCurrent + qty
+                  let remWithout = totalWithoutCurrent
+                  let remWith = totalWithCurrent
+
+                  for (const out of stockOuts) {
+                    const soldQty = Number(out.qty_keluar || 0)
+                    if (soldQty <= 0) continue
+
+                    const prevReturnedForThisOut = Math.min(soldQty, remWithout)
+                    remWithout -= prevReturnedForThisOut
+
+                    const cumulativeReturnedForThisOut = Math.min(soldQty, remWith)
+                    remWith -= cumulativeReturnedForThisOut
+
+                    const deltaToSubtract = cumulativeReturnedForThisOut - prevReturnedForThisOut
+
+                    if (deltaToSubtract > 0) {
+                      const { data: batch } = await supabase
+                        .from('sembako_stock_batches')
+                        .select('qty_sisa')
+                        .eq('id', out.batch_id)
+                        .single()
+
+                      if (batch) {
+                        await supabase
+                          .from('sembako_stock_batches')
+                          .update({ qty_sisa: Math.max(0, (batch.qty_sisa || 0) - deltaToSubtract) })
+                          .eq('id', out.batch_id)
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Also check and clean up any fallback batches created with this return number
+              const { data: fallbackBatches } = await supabase
+                .from('sembako_stock_batches')
+                .select('id, qty_sisa')
+                .ilike('batch_code', `%${returnNumber}%`)
+                .eq('is_deleted', false)
+
+              if (fallbackBatches && fallbackBatches.length > 0) {
+                for (const fb of fallbackBatches) {
+                  await supabase
+                    .from('sembako_stock_batches')
+                    .update({ qty_sisa: 0, is_deleted: true })
+                    .eq('id', fb.id)
+                }
+              }
             }
           } catch (stkErr) {
             console.warn('[useDeleteSembakoReturn] Stock reversal warning:', stkErr)

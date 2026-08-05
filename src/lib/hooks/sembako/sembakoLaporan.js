@@ -12,7 +12,7 @@ export const useSembakoDashboardStats = () => {
     staleTime: STALE_5M,
     queryFn: async () => {
       try {
-        const [productsRes, salesRes, expensesRes, payrollRes, returnsRes] =
+        const [productsRes, salesRes, expensesRes, payrollRes, returnsRes, batchesRes] =
           await Promise.all([
             supabase.from('sembako_products')
               .select('id, product_name, current_stock, avg_buy_price, sell_price, min_stock_alert')
@@ -31,9 +31,14 @@ export const useSembakoDashboardStats = () => {
               .eq('tenant_id', tenant.id)
               .eq('is_deleted', false),
             supabase.from('sembako_returns')
-              .select('quantity, unit_price, total_amount, amount, created_at')
+              .select('quantity, unit_price, total_amount, created_at')
               .eq('tenant_id', tenant.id)
               .eq('is_deleted', false),
+            supabase.from('sembako_stock_batches')
+              .select('product_id, qty_sisa, buy_price')
+              .eq('tenant_id', tenant.id)
+              .eq('is_deleted', false)
+              .gt('qty_sisa', 0),
           ])
 
         if (productsRes.error) console.error('Sembako Stats (Products):', productsRes.error)
@@ -46,6 +51,7 @@ export const useSembakoDashboardStats = () => {
         const expenses = expensesRes.data || []
         const payroll = payrollRes.data || []
         const returnsList = returnsRes.data || []
+        const activeBatches = batchesRes.data || []
         const now = new Date()
         const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000)
 
@@ -72,9 +78,11 @@ export const useSembakoDashboardStats = () => {
             lowStock: products.filter(p =>
               p.min_stock_alert > 0 && p.current_stock <= p.min_stock_alert
             ),
-            nilaiStok: products.reduce((s, p) =>
-              s + (p.current_stock * p.avg_buy_price), 0
-            ),
+            // Accurate valuation: SUM(qty_sisa × buy_price) from active batches
+            // Falls back to avg_buy_price × current_stock if no batch data
+            nilaiStok: activeBatches.length > 0
+              ? activeBatches.reduce((s, b) => s + (Number(b.qty_sisa || 0) * Number(b.buy_price || 0)), 0)
+              : products.reduce((s, p) => s + (p.current_stock * p.avg_buy_price), 0),
           },
           penjualan: {
             totalRevenue: Math.max(0, sales.reduce((s, i) => s + (i.total_amount || 0), 0) - returOverall),
@@ -159,12 +167,16 @@ export const useSembakoLaporan = (startDate, endDate) => {
 
         const byProduct = {}
         sales.forEach(sale => {
-          ; (sale.sembako_sale_items || []).forEach(item => {
+          ;(sale.sembako_sale_items || []).forEach(item => {
             const key = item.product_name || 'Lainnya'
             if (!byProduct[key]) byProduct[key] = { revenue: 0, cogs: 0, qty: 0, unit: item.unit }
-            byProduct[key].revenue += item.subtotal || 0
-            byProduct[key].cogs += item.cogs_total || 0
-            byProduct[key].qty += item.quantity || 0
+            const qty = item.quantity || 0
+            const sellPrice = item.sell_price || 0
+            const cogsPerUnit = item.cogs_per_unit || 0
+            // Use stored subtotal/cogs_total if available; fall back to computed values for old data
+            byProduct[key].revenue += (item.subtotal > 0 ? item.subtotal : Math.round(qty * sellPrice))
+            byProduct[key].cogs    += (item.cogs_total > 0 ? item.cogs_total : Math.round(qty * cogsPerUnit))
+            byProduct[key].qty     += qty
           })
         })
 

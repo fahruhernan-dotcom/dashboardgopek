@@ -2,7 +2,7 @@ import Dexie from 'dexie'
 
 export const db = new Dexie('TernakOS_Gopek_OfflineDB')
 
-db.version(1).stores({
+db.version(2).stores({
   products: 'id, product_name, category, is_active, is_deleted, min_stock_alert',
   customers: 'id, customer_name, phone, area, is_deleted',
   suppliers: 'id, supplier_name, phone, is_deleted',
@@ -11,7 +11,8 @@ db.version(1).stores({
   stock_outs: 'id, product_id, sale_id, created_at',
   returns: 'id, type, party_name, product_id, status, created_at, sync_status',
   sync_queue: '++id, action, entity, payload, created_at, status', // status: 'pending' | 'syncing' | 'failed'
-  app_metadata: 'key, value'
+  app_metadata: 'key, value',
+  audit_logs: 'id, tenant_id, timestamp'
 })
 
 // Initialize default app metadata if empty

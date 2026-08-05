@@ -110,24 +110,27 @@ export function KPICard({ icon: Icon, label, value, sub, accentColor = C.accent,
         )}
       </div>
 
-      <div style={{ paddingTop: '8px', borderTop: `1px solid ${C.border}60`, marginTop: 'auto' }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: '4px',
-          background: trend != null
-            ? (trend >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)')
-            : 'rgba(148, 163, 184, 0.12)',
-          color: trend != null ? (trend >= 0 ? '#34D399' : '#F87171') : '#94A3B8',
-          fontSize: '10px', fontWeight: 800, padding: '3px 8px',
-          borderRadius: '6px', letterSpacing: '0.02em', whiteSpace: 'nowrap',
-          border: trend != null
-            ? (trend >= 0 ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)')
-            : '1px solid rgba(148, 163, 184, 0.25)',
-        }}>
-          {trend != null
-            ? `${trend >= 0 ? '↑' : '↓'} ${Math.abs(trend).toFixed(0)}% bln lalu`
-            : (badge || 'Belum ada pembanding')}
-        </span>
-      </div>
+      {(trend != null || !!badge) && (
+        <div style={{ paddingTop: '8px', borderTop: `1px solid ${C.border}60`, marginTop: 'auto' }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '4px',
+            background: trend != null
+              ? (trend >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)')
+              : 'rgba(248, 150, 30, 0.12)', // Subtle amber/orange for custom badges
+            color: trend != null ? (trend >= 0 ? '#34D399' : '#F87171') : '#F59E0B',
+            fontSize: '10px', fontWeight: 800, padding: '3px 8px',
+            borderRadius: '6px', letterSpacing: '0.02em', whiteSpace: 'nowrap',
+            border: trend != null
+              ? (trend >= 0 ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)')
+              : '1px solid rgba(248, 150, 30, 0.25)',
+          }}>
+            {trend != null
+              ? `${trend >= 0 ? '↑' : '↓'} ${Math.abs(trend).toFixed(0)}% bln lalu`
+              : badge}
+          </span>
+        </div>
+      )}
+
     </motion.div>
   )
 }
@@ -175,27 +178,97 @@ export function QuickStatRow({ label, value }) {
   )
 }
 
-// ── Chart Tooltip ──────────────────────────────────────────────────────────────
+// ── Chart Tooltip (Profit Chart) ─────────────────────────────────────────────
 export function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
+  const grossProfit = d.grossProfit || 0
+  const netProfit   = d.netProfit   || 0
   return (
     <div style={{
-      background: '#130C06', border: `1px solid ${C.border}`, borderRadius: '12px',
-      padding: '12px 14px', minWidth: '180px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+      background: '#130C06', border: `1px solid ${C.border}`, borderRadius: '14px',
+      padding: '12px 14px', minWidth: '210px', boxShadow: '0 8px 24px rgba(0,0,0,0.55)',
     }}>
-      <p style={{ fontSize: '10px', color: C.muted, fontWeight: 700, marginBottom: '6px' }}>{d.fullDate}</p>
-      <p style={{ fontSize: '13px', fontWeight: 800, color: C.accent, marginBottom: '6px' }}>{formatIDR(d.profit)}</p>
+      <p style={{ fontSize: '10px', color: C.muted, fontWeight: 700, marginBottom: '8px', letterSpacing: '0.05em' }}>{d.fullDate}</p>
+
+      {/* Gross Profit */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+          <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600 }}>Gross Profit</span>
+        </div>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981' }}>{formatIDR(grossProfit)}</span>
+      </div>
+
+      {/* Net Profit */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
+          <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600 }}>Net Profit</span>
+        </div>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: C.accent }}>{formatIDR(netProfit)}</span>
+      </div>
+
+      {/* Ops Cost = Gross - Net */}
+      {grossProfit > 0 && grossProfit !== netProfit && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600, paddingLeft: '13px' }}>Biaya Ops</span>
+          <span style={{ fontSize: '11px', color: '#F87171', fontWeight: 700 }}>− {formatIDR(grossProfit - netProfit)}</span>
+        </div>
+      )}
+
+      {/* Per-transaction breakdown */}
       {d.txs?.length > 0 && (
-        <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {d.txs.map(tx => (
-            <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '11px' }}>
-              <span style={{ color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '110px' }}>{tx.label}</span>
-              <span style={{ color: C.text, fontWeight: 700, whiteSpace: 'nowrap' }}>{formatIDR(tx.value)}</span>
+        <div style={{ borderTop: `1px solid rgba(255,255,255,0.07)`, paddingTop: '7px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <p style={{ fontSize: '9px', color: C.muted, fontWeight: 700, letterSpacing: '0.05em', marginBottom: '2px' }}>TRANSAKSI ({d.txs.length})</p>
+          {d.txs.map((tx, i) => (
+            <div key={tx.id || i} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '11px', alignItems: 'flex-start' }}>
+              <span style={{ color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{tx.label}</span>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <p style={{ color: C.text, fontWeight: 700, whiteSpace: 'nowrap', fontSize: '11px' }}>{formatIDR(tx.amount)}</p>
+                <p style={{ color: '#10B981', fontWeight: 600, whiteSpace: 'nowrap', fontSize: '9px' }}>net {formatIDR(tx.netProfit)}</p>
+              </div>
             </div>
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Stock Chart Tooltip ────────────────────────────────────────────────────────
+export function StockChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0]?.payload || {}
+  const stok     = d.stok     || 0
+  const minAlert = d.minAlert || 0
+  const nilaiStok = d.nilaiStok || 0
+  const isLow = stok <= minAlert && minAlert > 0
+  return (
+    <div style={{
+      background: '#130C06', border: `1px solid rgba(245,158,11,0.2)`, borderRadius: '12px',
+      padding: '10px 14px', minWidth: '170px', boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+    }}>
+      <p style={{ fontSize: '11px', fontWeight: 800, color: C.text, marginBottom: '6px' }}>{d.fullName || label}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
+          <span style={{ color: '#94A3B8' }}>Stok Fisik</span>
+          <span style={{ color: isLow ? '#F59E0B' : C.accent, fontWeight: 700 }}>{stok} unit</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
+          <span style={{ color: '#94A3B8' }}>Min Alert</span>
+          <span style={{ color: '#F59E0B', fontWeight: 700 }}>{minAlert} unit</span>
+        </div>
+        {nilaiStok > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '2px' }}>
+            <span style={{ color: '#94A3B8' }}>Nilai Stok (est)</span>
+            <span style={{ color: C.text, fontWeight: 700 }}>{formatIDR(nilaiStok)}</span>
+          </div>
+        )}
+        {isLow && (
+          <p style={{ fontSize: '9px', fontWeight: 800, color: '#F59E0B', marginTop: '2px', textAlign: 'right' }}>⚠ STOK MENIPIS</p>
+        )}
+      </div>
     </div>
   )
 }

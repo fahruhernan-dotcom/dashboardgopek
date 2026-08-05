@@ -10,6 +10,7 @@ import {
   useSembakoProducts, useSembakoCustomers, useSembakoSales, useSembakoEmployees, useSembakoDeliveries,
   useCreateSembakoProduct, useUpdateSembakoProduct, useCreateSembakoSale, useCreateSembakoDelivery,
   useRecordSembakoPayment, useUpdateSembakoSale, useCreateSembakoCustomer, useCreateSembakoEmployee,
+  useSembakoAllBatches,
 } from '@/lib/hooks/useSembakoData'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { useBackHandler } from '@/lib/hooks/useBackHandler'
@@ -214,11 +215,51 @@ function QuickAddProduct({ form, onChange, onSave, onCancel, saving }) {
 }
 
 // ─── Product Item Row ─────────────────────────────────────────────────────────
-function ProductItemRow({ item, idx, products: _products, productOptions, total: _total, overStock, onChangeItem, onRemove, onAddNew, isOnly }) {
+function ProductItemRow({ item, idx, products: _products, productOptions, total: _total, overStock, onChangeItem, onRemove, onAddNew, isOnly, allBatches = [] }) {
+  const prod = useMemo(() => _products.find(p => p.id === item.product_id), [item.product_id, _products])
   const subtotal = Math.round((item.quantity || 0) * (item.price_per_unit || 0))
   const hpp = item.cogs_per_unit || 0
   const isBelowHpp = hpp > 0 && item.price_per_unit > 0 && item.price_per_unit < hpp
   const marginPerUnit = item.price_per_unit > 0 && hpp > 0 ? item.price_per_unit - hpp : null
+
+  // Calculate local FIFO breakdown for UI suggestion
+  const prodBatches = useMemo(() => {
+    if (!item.product_id || !allBatches.length) return []
+    return allBatches
+      .filter(b => b.product_id === item.product_id && !b.is_deleted && (b.qty_sisa || 0) > 0)
+      .sort((a, b) => new Date(a.created_at || a.purchase_date) - new Date(b.created_at || b.purchase_date))
+  }, [item.product_id, allBatches])
+
+  const fifoBreakdown = useMemo(() => {
+    const qty = Number(item.quantity) || 0
+    if (qty <= 0 || prodBatches.length === 0) return []
+
+    let remaining = qty
+    const breakdown = []
+    
+    for (const batch of prodBatches) {
+      if (remaining <= 0) break
+      const take = Math.min(batch.qty_sisa, remaining)
+      breakdown.push({
+        batch_code: batch.batch_code,
+        qty: take,
+        buy_price: batch.buy_price,
+        supplier_name: batch.sembako_suppliers?.supplier_name || 'Tanpa Supplier'
+      })
+      remaining -= take
+    }
+    
+    if (remaining > 0) {
+      breakdown.push({
+        batch_code: 'Fallback (Stok Kurang)',
+        qty: remaining,
+        buy_price: prod?.avg_buy_price || 0,
+        supplier_name: 'System Default'
+      })
+    }
+    
+    return breakdown
+  }, [item.quantity, prodBatches, _products, item.product_id])
 
   return (
     <div
@@ -257,10 +298,15 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
         <div>
           <label className={labelCn}>QTY ({item.unit || '…'})</label>
           <input
-            type="number"
+            type="text"
             inputMode="decimal"
             value={item.quantity || ''}
-            onChange={e => onChangeItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
+            onChange={e => {
+              const val = e.target.value
+              if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                onChangeItem(idx, 'quantity', val.replace(',', '.'))
+              }
+            }}
             className={inputCn}
             placeholder="0"
           />
@@ -271,25 +317,108 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
         <div>
           <label className={labelCn}>Harga / Unit</label>
           <InputRupiah value={item.price_per_unit} onChange={v => onChangeItem(idx, 'price_per_unit', v)} />
-          {/* HPP hint dari batch */}
+        </div>
+      </div>
+
+      {/* Full-width suggestions and metadata section */}
+      {prod && (
+        <div className="space-y-3 pt-1 border-t border-[#ea580c]/10 mt-1">
+          {/* Price Suggestions Row */}
+          <div className="flex flex-wrap gap-1.5 items-center bg-[#1D140A]/60 border border-orange-500/15 rounded-xl p-2.5">
+            <span className="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider mr-1 select-none">
+              Saran Harga:
+            </span>
+            
+            {/* Standard Price */}
+            {prod.sell_price > 0 && prod.sell_price !== Number(item.price_per_unit) && (
+              <button
+                type="button"
+                onClick={() => onChangeItem(idx, 'price_per_unit', prod.sell_price)}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/25 text-amber-400 border border-amber-500/20 active:scale-95 transition-all cursor-pointer"
+              >
+                Std: {formatIDR(prod.sell_price)}
+              </button>
+            )}
+            
+            {/* HPP Markups */}
+            {hpp > 0 && [1.00, 1.10, 1.15, 1.20].map((multiplier, mIdx) => {
+              const markupPrice = Math.round(hpp * multiplier)
+              const label = multiplier === 1.00 ? 'HPP (Modal)' : `+${Math.round((multiplier - 1) * 100)}%`
+              if (markupPrice === Number(item.price_per_unit)) return null
+              return (
+                <button
+                  key={mIdx}
+                  type="button"
+                  onClick={() => onChangeItem(idx, 'price_per_unit', markupPrice)}
+                  className={`text-[10px] font-bold px-2 py-1 rounded-lg border active:scale-95 transition-all cursor-pointer font-mono ${
+                    multiplier === 1.00 
+                      ? 'bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border-rose-500/20' 
+                      : 'bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border-emerald-500/20'
+                  }`}
+                >
+                  {label}: {formatIDR(markupPrice)}
+                </button>
+              )
+            })}
+          </div>
+          
+          {/* HPP Summary Row */}
           {hpp > 0 && (
-            <div className="flex items-center justify-between mt-1.5">
-              <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: isBelowHpp ? '#EF4444' : '#92400E' }}>
-                {isBelowHpp ? '⚠️ HPP' : 'HPP'}
-              </span>
-              <span className="text-[9px] font-bold tabular-nums" style={{ color: isBelowHpp ? '#EF4444' : '#92400E' }}>
-                {formatIDR(hpp)}/unit
-              </span>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="font-bold uppercase tracking-wider text-muted-foreground text-[10px]">
+                  HPP Terbobot (FIFO)
+                </span>
+                <span className="font-black text-amber-400 font-mono text-xs">
+                  {formatIDR(hpp)} / {item.unit || 'slop'}
+                </span>
+              </div>
+
+              {/* FIFO Breakdown Info Box */}
+              {fifoBreakdown.length > 0 && (
+                <div style={{ background: 'rgba(234, 88, 12, 0.03)', border: '1px dashed rgba(234, 88, 12, 0.2)', borderRadius: 12, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', color: '#FDBA74', letterSpacing: '0.04em', marginBottom: 4 }}>
+                    Alokasi FIFO Batch:
+                  </div>
+                  <div className="space-y-1.5">
+                    {fifoBreakdown.map((b, bIdx) => (
+                      <div key={bIdx} className="flex justify-between items-center text-[10px] font-mono leading-tight">
+                        <span className="text-amber-200 font-bold truncate max-w-[220px]">
+                          {b.qty} {item.unit || 'slop'} @ {formatIDR(b.buy_price)}
+                        </span>
+                        <span className="text-muted-foreground text-[9px] truncate max-w-[150px]" title={b.batch_code}>
+                          ({b.batch_code.includes('Fallback') ? 'Fallback' : b.batch_code.replace('BATCH-', '')})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Warning / Explanation note */}
+                  {fifoBreakdown.length > 1 && !fifoBreakdown.some(b => b.batch_code.includes('Fallback')) && (
+                    <div className="text-[9px] text-amber-500/90 font-medium mt-2 leading-normal flex items-start gap-1">
+                      <span>ℹ️</span>
+                      <span>Kuantitas mencakup lebih dari 1 batch karena sisa batch sebelumnya telah habis.</span>
+                    </div>
+                  )}
+                  {fifoBreakdown.some(b => b.batch_code.includes('Fallback')) && (
+                    <div className="text-[9px] text-red-400 font-bold mt-2 leading-normal flex items-start gap-1">
+                      <span>⚠️</span>
+                      <span>Stok batch aktif tidak mencukupi pesanan ini. Sisa menggunakan estimasi default.</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
+
           {marginPerUnit !== null && !isBelowHpp && (
-            <div className="flex items-center justify-between mt-0.5">
-              <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: '#22C55E' }}>Margin</span>
-              <span className="text-[9px] font-bold tabular-nums" style={{ color: '#22C55E' }}>+{formatIDR(marginPerUnit)}/unit</span>
+            <div className="flex items-center justify-between text-xs px-1 border-t border-[#ea580c]/5 pt-2">
+              <span className="font-bold uppercase tracking-wider text-emerald-400 text-[10px]">Estimasi Margin Keuntungan</span>
+              <span className="font-black text-emerald-400 font-mono text-xs">+{formatIDR(marginPerUnit)} / {item.unit || 'slop'}</span>
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Subtotal pill */}
       {subtotal > 0 && (
@@ -342,6 +471,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   const { data: employees = [] } = useSembakoEmployees()
   const { data: allSales = [] } = useSembakoSales()
   const { data: allDeliveries = [] } = useSembakoDeliveries()
+  const { data: allBatches = [] } = useSembakoAllBatches()
 
   const createSale     = useCreateSembakoSale()
   const updateSale     = useUpdateSembakoSale()
@@ -495,35 +625,58 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   function handleItemChange(idx, field, val) {
     const next = [...items]
     next[idx] = { ...next[idx], [field]: val }
-    if (field === 'product_id') {
-      const p = products.find(x => x.id === val)
+    
+    const item = next[idx]
+    if (field === 'product_id' || field === 'quantity') {
+      const pId = item.product_id
+      const qty = Number(item.quantity) || 0
+      const p = products.find(x => x.id === pId)
+      
       if (p) {
-        next[idx].product_name  = p.product_name
-        next[idx].unit          = p.unit
-        
-        // --- Smart Prefill ---
-        // 1. Coba cari harga terakhir ke CUSTOMER ini
-        let lastPrice = 0
-        if (custId) {
-          const lastSale = allSales.find(s => 
-            s.customer_id === custId && 
-            s.sembako_sale_items?.some(it => it.product_id === val)
-          )
-          if (lastSale) {
-            const lastItem = lastSale.sembako_sale_items.find(it => it.product_id === val)
-            lastPrice = lastItem?.price_per_unit
+        if (field === 'product_id') {
+          next[idx].product_name = p.product_name
+          next[idx].unit         = p.unit
+          
+          let lastPrice = 0
+          if (custId) {
+            const lastSale = allSales.find(s => 
+              s.customer_id === custId && 
+              s.sembako_sale_items?.some(it => it.product_id === pId)
+            )
+            if (lastSale) {
+              const lastItem = lastSale.sembako_sale_items.find(it => it.product_id === pId)
+              lastPrice = lastItem?.price_per_unit
+            }
           }
+          next[idx].price_per_unit = lastPrice || p.sell_price || 0
         }
         
-        next[idx].price_per_unit = lastPrice || p.sell_price || 0
-        next[idx].cogs_per_unit  = p.avg_buy_price || 0
+        // Calculate dynamic FIFO HPP
+        const prodBatches = allBatches
+          .filter(b => b.product_id === pId && !b.is_deleted && (b.qty_sisa || 0) > 0)
+          .sort((a, b) => new Date(a.created_at || a.purchase_date) - new Date(b.created_at || b.purchase_date))
+          
+        let remaining = qty
+        let totalCost = 0
+        for (const batch of prodBatches) {
+          if (remaining <= 0) break
+          const take = Math.min(batch.qty_sisa, remaining)
+          totalCost += take * (batch.buy_price || 0)
+          remaining -= take
+        }
+        if (remaining > 0) {
+          totalCost += remaining * (p.avg_buy_price || 0)
+        }
+        next[idx].cogs_per_unit = qty > 0 ? Math.round(totalCost / qty) : (p.avg_buy_price || 0)
       }
     }
     setItems(next)
   }
 
   async function handleSubmit() {
-    const validItems = items.filter(i => i.product_id && i.quantity > 0)
+    const validItems = items
+      .filter(i => i.product_id && Number(i.quantity) > 0)
+      .map(i => ({ ...i, quantity: Number(i.quantity) }))
     if (!validItems.length) { toast.error('Tambahkan minimal 1 produk'); return }
 
     try {
@@ -720,7 +873,9 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       toast.error('Pilih toko / customer dulu sebelum lanjut'); return
     }
     if (step === 1) {
-      const validItems = items.filter(i => i.product_id && i.quantity > 0)
+      const validItems = items
+        .filter(i => i.product_id && Number(i.quantity) > 0)
+        .map(i => ({ ...i, quantity: Number(i.quantity) }))
       if (validItems.length === 0) {
         toast.error('Tambahkan minimal 1 produk'); return
       }
@@ -1035,6 +1190,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                             onRemove={idx => setItems(items.filter((_, i) => i !== idx))}
                             onAddNew={() => setQuickAddProd(true)}
                             isOnly={items.length === 1}
+                            allBatches={allBatches}
                           />
                         )
                       })}

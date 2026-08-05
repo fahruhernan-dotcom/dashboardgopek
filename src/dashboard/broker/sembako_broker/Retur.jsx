@@ -584,10 +584,15 @@ export default function SembakoRetur() {
                   <div>
                     <label className="block text-muted-foreground font-bold mb-1.5">Jumlah (Qty)</label>
                     <input
-                      type="number"
-                      min="1"
+                      type="text"
+                      inputMode="decimal"
                       value={form.quantity}
-                      onChange={e => setForm({ ...form, quantity: e.target.value })}
+                      onChange={e => {
+                        const val = e.target.value
+                        if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                          setForm({ ...form, quantity: val.replace(',', '.') })
+                        }
+                      }}
                       className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 font-bold"
                     />
                   </div>
