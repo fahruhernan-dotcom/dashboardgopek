@@ -114,14 +114,23 @@ export const useCreateSembakoReturn = () => {
 
             // Add batch entry for FIFO if sale return
             if (return_type === 'sale_return' && qty > 0) {
-              await supabase.from('sembako_stock_batches').insert({
+              const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+              const randStr = Math.random().toString(36).slice(2, 6).toUpperCase()
+              const generatedBatchCode = `BTC-RET-${dateStr}-${randStr}`
+
+              const batchPayload = {
                 tenant_id: tenantId,
                 product_id: product_id,
-                qty_in: qty,
-                qty_remaining: qty,
-                buy_price_per_unit: Number(unit_price || 0),
+                batch_code: generatedBatchCode,
+                qty_masuk: qty,
+                qty_awal: qty,
+                qty_sisa: qty,
+                buy_price: Number(unit_price || 0),
+                total_cost: qty * Number(unit_price || 0),
                 notes: `Retur Penjualan (${party_name}) - FIFO Reversal`,
-              })
+              }
+              const cleanPayload = sanitizeDBPayload(batchPayload, 'sembako_stock_batches')
+              await supabase.from('sembako_stock_batches').insert(cleanPayload)
             }
           }
         } catch (stkErr) {
