@@ -19,6 +19,16 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import SembakoRecycleBin from '@/dashboard/broker/sembako_broker/components/SembakoRecycleBin'
 import KelolaAkunPage from '@/dashboard/broker/sembako_broker/KelolaAkunPage'
 import { cn } from '@/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function DevAdminHubPage() {
   const { user, profile, tenant } = useAuth()
@@ -28,6 +38,14 @@ export default function DevAdminHubPage() {
   const [dbLatency, setDbLatency] = useState(null)
   const [isCheckingPing, setIsCheckingPing] = useState(false)
   const [copiedLogId, setCopiedLogId] = useState(null)
+
+  // Reset database states
+  const [wipeTransactions] = useState(true)
+  const [wipeCatalog, setWipeCatalog] = useState(false)
+  const [showConfirm1, setShowConfirm1] = useState(false)
+  const [showConfirm2, setShowConfirm2] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
 
   // System Logs State (mocked + localStorage captured errors)
   const [logFilter, setLogFilter] = useState('ALL')
@@ -82,6 +100,80 @@ export default function DevAdminHubPage() {
     setSystemLogs([])
     localStorage.removeItem('ternakos_dev_logs')
     toast.success('Logs konsol berhasil dibersihkan')
+  }
+
+  const handleResetDatabase = async () => {
+    if (confirmText !== 'RESET GOPEK') {
+      toast.error('Konfirmasi kata kunci salah')
+      return
+    }
+    setIsResetting(true)
+    const toastId = toast.loading('Sedang mereset database bisnis...')
+    try {
+      const tenantId = tenant.id
+
+      // 1. Delete transactional data in correct order of dependency
+      const { error: errDeliv } = await supabase.from('sembako_deliveries').delete().eq('tenant_id', tenantId)
+      if (errDeliv) throw errDeliv
+
+      const { error: errPay } = await supabase.from('sembako_payroll').delete().eq('tenant_id', tenantId)
+      if (errPay) throw errPay
+
+      const { error: errPaym } = await supabase.from('sembako_payments').delete().eq('tenant_id', tenantId)
+      if (errPaym) throw errPaym
+
+      const { error: errSaleItems } = await supabase.from('sembako_sale_items').delete().eq('tenant_id', tenantId)
+      if (errSaleItems) throw errSaleItems
+
+      const { error: errSales } = await supabase.from('sembako_sales').delete().eq('tenant_id', tenantId)
+      if (errSales) throw errSales
+
+      const { error: errStockOut } = await supabase.from('sembako_stock_out').delete().eq('tenant_id', tenantId)
+      if (errStockOut) throw errStockOut
+
+      const { error: errReturns } = await supabase.from('sembako_returns').delete().eq('tenant_id', tenantId)
+      if (errReturns) throw errReturns
+
+      const { error: errSupPay } = await supabase.from('sembako_supplier_payments').delete().eq('tenant_id', tenantId)
+      if (errSupPay) throw errSupPay
+
+      const { error: errBatches } = await supabase.from('sembako_stock_batches').delete().eq('tenant_id', tenantId)
+      if (errBatches) throw errBatches
+
+      const { error: errAudit } = await supabase.from('sembako_audit_logs').delete().eq('tenant_id', tenantId)
+      if (errAudit) throw errAudit
+
+      // 2. Conditional wipe of catalog/master files
+      if (wipeCatalog) {
+        const { error: errProd } = await supabase.from('sembako_products').delete().eq('tenant_id', tenantId)
+        if (errProd) throw errProd
+
+        const { error: errCust } = await supabase.from('sembako_customers').delete().eq('tenant_id', tenantId)
+        if (errCust) throw errCust
+
+        const { error: errSupp } = await supabase.from('sembako_suppliers').delete().eq('tenant_id', tenantId)
+        if (errSupp) throw errSupp
+
+        const { error: errEmp } = await supabase.from('sembako_employees').delete().eq('tenant_id', tenantId)
+        if (errEmp) throw errEmp
+      } else {
+        // Reset current_stock and avg_buy_price in sembako_products to 0
+        const { error: errProdReset } = await supabase.from('sembako_products')
+          .update({ current_stock: 0, avg_buy_price: 0 })
+          .eq('tenant_id', tenantId)
+        if (errProdReset) throw errProdReset
+      }
+
+      toast.success('Database bisnis berhasil di-reset!', { id: toastId })
+      queryClient.invalidateQueries()
+      
+      setShowConfirm2(false)
+      setConfirmText('')
+    } catch (e) {
+      toast.error('Gagal melakukan reset database: ' + e.message, { id: toastId })
+    } finally {
+      setIsResetting(false)
+    }
   }
 
   const handleFlushCache = () => {
@@ -369,6 +461,72 @@ export default function DevAdminHubPage() {
               </Card>
 
             </div>
+
+            {/* Danger Zone: Reset Data Bisnis */}
+            <Card className="bg-red-950/10 border border-red-500/30 rounded-[28px] p-6 shadow-2xl space-y-4 mt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20">
+                  <ShieldAlert size={22} />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-red-400 text-lg tracking-tight uppercase leading-none">Zona Bahaya: Reset Database Bisnis</h3>
+                  <p className="text-[11px] text-red-500/80 font-bold uppercase tracking-wider mt-1">Hanya untuk Owner / Dev Superadmin</p>
+                </div>
+              </div>
+
+              <Separator className="bg-red-500/20 my-2" />
+
+              <div className="bg-black/30 p-4 rounded-2xl border border-red-500/10 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-slate-300">
+                    Pilih cakupan data bisnis yang ingin dihapus/dibersihkan dari database:
+                  </p>
+                  
+                  <div className="space-y-2.5 pt-2 text-xs">
+                    <label className="flex items-start gap-2.5 cursor-pointer text-slate-300 hover:text-white">
+                      <input 
+                        type="checkbox" 
+                        checked={wipeTransactions} 
+                        disabled 
+                        className="mt-0.5 rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-not-allowed" 
+                      />
+                      <div>
+                        <strong>Reset Transaksi & Operasional (Wajib)</strong>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Menghapus Nota Penjualan, Pembayaran, Trip Kirim Barang, Kas Masuk/Keluar, Retur Toko, Payroll, dan Logs.</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-2.5 cursor-pointer text-slate-300 hover:text-white">
+                      <input 
+                        type="checkbox" 
+                        checked={wipeCatalog} 
+                        onChange={e => setWipeCatalog(e.target.checked)} 
+                        className="mt-0.5 rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500" 
+                      />
+                      <div>
+                        <strong>Reset Katalog & Kontak (Opsional)</strong>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Menghapus Produk Katalog, Daftar Toko (Pelanggan), Supplier (Pabrik), dan Pegawai.</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl flex items-start gap-3">
+                  <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5 animate-pulse" />
+                  <p className="text-[10px] font-black text-red-400 leading-relaxed uppercase tracking-wider">
+                    PENTING: Akun Login Owner/Superadmin, Hak Akses Akun, Tenant Bisnis, dan Info Langganan TIDAK akan dihapus. Anda tidak akan terkunci keluar dari sistem.
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={() => setShowConfirm1(true)}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl h-12 font-black uppercase tracking-widest text-xs shadow-lg shadow-red-950/20 transition-all active:scale-[0.98]"
+                >
+                  Mulai Reset Data Bisnis
+                </Button>
+              </div>
+            </Card>
+
           </TabsContent>
 
           {/* TAB 4: RECYCLE BIN DATA RECOVERY */}
@@ -378,6 +536,79 @@ export default function DevAdminHubPage() {
 
         </Tabs>
       </main>
+
+      {/* Modals Konfirmasi Reset Database */}
+      {/* Konfirmasi 1 */}
+      <AlertDialog open={showConfirm1} onOpenChange={setShowConfirm1}>
+        <AlertDialogContent className="bg-[#0C1319] border-white/10 rounded-[32px] p-8 max-w-md text-left">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white font-display font-black tracking-tight uppercase text-xl flex items-center gap-2">
+              <ShieldAlert size={24} className="text-red-500" />
+              Reset Database (Konfirmasi 1 dari 2)
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400 font-bold mt-3 leading-relaxed">
+              Apakah Anda benar-benar yakin ingin melakukan reset data bisnis Anda? Tindakan ini akan menghapus semua data operasional yang dipilih. Ini bersifat permanen dan tidak dapat dibatalkan di masa depan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 mt-8">
+            <AlertDialogCancel className="bg-white/5 border-none hover:bg-white/10 text-slate-400 rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] cursor-pointer">
+              Batal
+            </AlertDialogCancel>
+            <Button 
+              onClick={() => {
+                setShowConfirm1(false)
+                setTimeout(() => setShowConfirm2(true), 300)
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] border-none cursor-pointer flex-1"
+            >
+              Lanjutkan ke Konfirmasi Akhir
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Konfirmasi 2 */}
+      <AlertDialog open={showConfirm2} onOpenChange={(v) => { if (!v && !isResetting) { setShowConfirm2(false); setConfirmText(''); } }}>
+        <AlertDialogContent className="bg-[#0C1319] border-white/10 rounded-[32px] p-8 max-w-md text-left">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-500 font-display font-black tracking-tight uppercase text-xl flex items-center gap-2">
+              <AlertTriangle size={24} className="text-red-500 animate-bounce" />
+              PERINGATAN KERAS! (Konfirmasi 2 dari 2)
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-300 font-bold mt-3 leading-relaxed">
+              Ini adalah langkah terakhir. Seluruh transaksi operasional, sisa hutang/piutang, serta riwayat stok akan bersih total. 
+              <br /><br />
+              Ketik kata kunci <strong className="text-red-400 font-black">"RESET GOPEK"</strong> di bawah untuk mengonfirmasi:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="mt-4">
+            <Input 
+              value={confirmText}
+              onChange={e => setConfirmText(e.target.value)}
+              placeholder="Ketik RESET GOPEK di sini..."
+              disabled={isResetting}
+              className="bg-[#111C24] border-white/10 h-14 text-sm font-black text-white rounded-2xl focus:border-red-500 focus:ring-red-500/20"
+            />
+          </div>
+
+          <AlertDialogFooter className="gap-3 mt-8">
+            <AlertDialogCancel 
+              disabled={isResetting}
+              className="bg-white/5 border-none hover:bg-white/10 text-slate-400 rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] cursor-pointer"
+            >
+              Batal
+            </AlertDialogCancel>
+            <Button 
+              disabled={isResetting || confirmText !== 'RESET GOPEK'}
+              onClick={handleResetDatabase}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] border-none cursor-pointer flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isResetting ? 'Mereset Database...' : 'Ya, Reset Seluruh Database Sekarang!'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   )
