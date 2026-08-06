@@ -74,9 +74,27 @@ const PAYMENT_TERMS = [
 export default function SembakoTokoSupplier() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const autoOpenToko = searchParams.get('action') === 'new'
-  const [sub, setSub] = useState('toko')
+  const [sub, setSub] = useState(() => searchParams.get('tab') || 'toko')
+
+  // Sync URL search params tab to state when search params change (e.g. going back/forward)
+  const tabParam = searchParams.get('tab') || 'toko'
+  React.useEffect(() => {
+    if (tabParam !== sub) {
+      setSub(tabParam)
+    }
+  }, [tabParam])
+
+  const handleTabChange = (newTab) => {
+    setSub(newTab)
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('tab', newTab)
+      return next
+    }, { replace: true })
+  }
+
   const [search, setSearch] = useState('')
   const [selectedArea, setSelectedArea] = useState('Semua Area')
   const [onlyHutang, setOnlyHutang] = useState(false)
@@ -231,7 +249,7 @@ export default function SembakoTokoSupplier() {
           actionButton={
             isDesktop ? (
               <div className="flex items-center gap-2">
-                <SegmentSwitch sub={sub} setSub={setSub} />
+                <SegmentSwitch sub={sub} setSub={handleTabChange} />
                 {sub === 'toko' ? <TokoActions compact autoOpen={autoOpenToko} /> : <SupplierActions compact />}
               </div>
             ) : (
@@ -242,7 +260,7 @@ export default function SembakoTokoSupplier() {
 
         {!isDesktop && (
           <div className="px-4 sm:px-6 pt-4">
-            <SegmentSwitch sub={sub} setSub={setSub} />
+            <SegmentSwitch sub={sub} setSub={handleTabChange} />
           </div>
         )}
 
