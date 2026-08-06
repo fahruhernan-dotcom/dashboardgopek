@@ -3,6 +3,7 @@ import { supabase } from '../../supabase'
 import { useAuth } from '../useAuth'
 import { normalizeSupabaseError } from '../../supabaseErrorHandler'
 import { STALE_5M } from './sembakoCommon'
+import { processSaleRow } from './sembakoSales'
 
 export const useSembakoDashboardStats = () => {
   const { tenant } = useAuth()
@@ -19,7 +20,7 @@ export const useSembakoDashboardStats = () => {
               .eq('tenant_id', tenant.id)
               .eq('is_deleted', false).eq('is_active', true),
             supabase.from('sembako_sales')
-              .select('id, total_amount, total_cogs, net_profit, payment_status, remaining_amount, transaction_date, due_date')
+              .select('*, sembako_sale_items(*), sembako_payments(*)')
               .eq('tenant_id', tenant.id)
               .eq('is_deleted', false),
             supabase.from('sembako_expenses')
@@ -47,11 +48,14 @@ export const useSembakoDashboardStats = () => {
         if (payrollRes.error) console.error('Sembako Stats (Payroll):', payrollRes.error)
 
         const products = productsRes.data || []
-        const sales = salesRes.data || []
+        const rawSales = salesRes.data || []
         const expenses = expensesRes.data || []
         const payroll = payrollRes.data || []
         const returnsList = returnsRes.data || []
         const activeBatches = batchesRes.data || []
+
+        const sales = rawSales.map(sale => processSaleRow(sale, returnsList))
+
         const now = new Date()
         const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000)
 
@@ -62,15 +66,12 @@ export const useSembakoDashboardStats = () => {
           .filter(p => new Date(p.period_date) > thirtyDaysAgo)
           .reduce((s, p) => s + (p.total_pay || 0), 0)
 
-        const returThisMonth = returnsList
-          .filter(r => new Date(r.created_at || r.transaction_date) > thirtyDaysAgo)
-          .reduce((s, r) => s + (Number(r.total_amount || r.amount) || (Number(r.quantity || 0) * Number(r.unit_price || 0))), 0)
-        const returOverall = returnsList
-          .reduce((s, r) => s + (Number(r.total_amount || r.amount) || (Number(r.quantity || 0) * Number(r.unit_price || 0))), 0)
+        const salesThisMonth = sales.filter(s => new Date(s.transaction_date) > thirtyDaysAgo)
 
-        const saleNetProfitThisMonth = sales
-          .filter(s => new Date(s.transaction_date) > thirtyDaysAgo)
-          .reduce((s, i) => s + (i.net_profit || 0), 0)
+        const revenueThisMonth = salesThisMonth.reduce((s, i) => s + (i.total_amount || 0), 0)
+        const saleNetProfitThisMonth = salesThisMonth.reduce((s, i) => s + (i.net_profit || 0), 0)
+        const netProfitThisMonth = Math.max(0, saleNetProfitThisMonth - expenseThisMonth - payrollThisMonth)
+        const grossProfitThisMonth = salesThisMonth.reduce((s, i) => s + (i.gross_profit || 0), 0)
 
         return {
           stok: {
@@ -78,21 +79,16 @@ export const useSembakoDashboardStats = () => {
             lowStock: products.filter(p =>
               p.min_stock_alert > 0 && p.current_stock <= p.min_stock_alert
             ),
-            // Accurate valuation: SUM(qty_sisa × buy_price) from active batches
-            // Falls back to avg_buy_price × current_stock if no batch data
             nilaiStok: activeBatches.length > 0
               ? activeBatches.reduce((s, b) => s + (Number(b.qty_sisa || 0) * Number(b.buy_price || 0)), 0)
               : products.reduce((s, p) => s + (p.current_stock * p.avg_buy_price), 0),
           },
           penjualan: {
-            totalRevenue: Math.max(0, sales.reduce((s, i) => s + (i.total_amount || 0), 0) - returOverall),
-            revenueThisMonth: Math.max(0, sales
-              .filter(s => new Date(s.transaction_date) > thirtyDaysAgo)
-              .reduce((s, i) => s + (i.total_amount || 0), 0) - returThisMonth),
-            netProfitThisMonth: Math.max(0, saleNetProfitThisMonth - returThisMonth - expenseThisMonth - payrollThisMonth),
-            grossProfitThisMonth: Math.max(0, saleNetProfitThisMonth - returThisMonth),
-            totalOutstanding: sales
-              .reduce((s, i) => s + (i.remaining_amount || 0), 0),
+            totalRevenue: sales.reduce((s, i) => s + (i.total_amount || 0), 0),
+            revenueThisMonth,
+            netProfitThisMonth,
+            grossProfitThisMonth,
+            totalOutstanding: sales.reduce((s, i) => s + (i.remaining_amount || 0), 0),
             overdueCount: sales.filter(s =>
               s.payment_status !== 'lunas' && s.due_date && new Date(s.due_date) < now
             ).length,
@@ -212,3 +208,42 @@ export const useSembakoLaporan = (startDate, endDate) => {
     }
   })
 }
+
+export const useSembakoExpenses = () => {
+  const { tenant } = useAuth()
+  return useQuery({
+    queryKey: ['sembako-expenses', tenant?.id],
+    enabled: !!tenant?.id,
+    staleTime: STALE_5M,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sembako_expenses')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .eq('is_deleted', false)
+        .order('expense_date', { ascending: true })
+      if (error) throw normalizeSupabaseError(error)
+      return data || []
+    }
+  })
+}
+
+export const useSembakoPayroll = () => {
+  const { tenant } = useAuth()
+  return useQuery({
+    queryKey: ['sembako-payroll', tenant?.id],
+    enabled: !!tenant?.id,
+    staleTime: STALE_5M,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sembako_payroll')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .eq('is_deleted', false)
+        .order('period_date', { ascending: true })
+      if (error) throw normalizeSupabaseError(error)
+      return data || []
+    }
+  })
+}
+

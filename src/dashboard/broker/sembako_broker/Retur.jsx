@@ -601,7 +601,7 @@ export default function SembakoRetur() {
                       <span>Satuan</span>
                       {!!form.product_id && <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1">🔒 Terkunci dari Transaksi</span>}
                     </label>
-                    {!!form.product_id ? (
+                    {form.product_id ? (
                       <div className="w-full bg-background/50 border border-amber-500/30 rounded-xl px-3.5 py-2.5 text-xs text-amber-400 font-bold flex items-center justify-between cursor-not-allowed select-none">
                         <span className="capitalize">{(form.unit || 'slop')}</span>
                         <span className="text-[10px] bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full text-amber-400 font-bold">🔒 Lock</span>

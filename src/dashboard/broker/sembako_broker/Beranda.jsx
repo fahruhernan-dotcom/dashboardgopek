@@ -9,7 +9,10 @@ import {
   useSembakoEmployees,
   useSembakoDeliveries,
   useSembakoProducts,
-  useSembakoSuppliers
+  useSembakoSuppliers,
+  useSembakoAllBatches,
+  useSembakoExpenses,
+  useSembakoPayroll
 } from '@/lib/hooks/useSembakoData'
 import {
   startOfWeek, startOfMonth, subMonths, addDays, format,
@@ -18,22 +21,25 @@ import { id as idLocale } from 'date-fns/locale'
 import { C } from './components/sembakoSaleUtils'
 import { SembakoTambahStokSheet } from './components/SembakoTambahStokSheet'
 import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/SembakoUiPrimitives'
-
+ 
 import { BerandaSkeleton } from './components/beranda/BerandaUtils'
 import { DesktopBeranda } from './components/beranda/DesktopBeranda'
 import { MobileBeranda } from './components/beranda/MobileBeranda'
-
+ 
 export default function SembakoBeranda() {
   const navigate    = useNavigate()
   const { profile, tenant, profiles, switchTenant } = useAuth()
   const isDesktop  = useMediaQuery('(min-width: 1024px)')
-
+ 
   const { data: stats, isLoading: statsLoading, isError: isStatsError, error: statsError, refetch: refetchStats } = useSembakoDashboardStats()
   const { data: sales = [],      isLoading: salesLoading } = useSembakoSales()
   const { data: employees = [] }                           = useSembakoEmployees()
   const { data: deliveries = [] }                          = useSembakoDeliveries()
   const { data: products = [] }                            = useSembakoProducts()
   const { data: suppliers = [] }                           = useSembakoSuppliers()
+  const { data: batches = [] }                             = useSembakoAllBatches()
+  const { data: expenses = [] }                            = useSembakoExpenses()
+  const { data: payroll = [] }                             = useSembakoPayroll()
 
   // Chart + insight state
   const [chartPeriod,   setChartPeriod]   = useState('weekly')
@@ -44,8 +50,8 @@ export default function SembakoBeranda() {
 
   const name = profile?.full_name?.split(' ')[0] || 'Pengguna'
 
-  // Build chart data
-  const { weeklyChartData, monthlyChartData, insight, kpiTrends } = useMemo(() => {
+  // Build chart data — Sales chart (invoice-date) + Cash summary (payment-date)
+  const { weeklyChartData, monthlyChartData, insight, kpiTrends, cashSummary, unrealizedProfitSnapshot } = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -53,6 +59,7 @@ export default function SembakoBeranda() {
     const monthStart  = startOfMonth(today)
     const m1Start     = startOfMonth(subMonths(today, 1))
 
+    // ── Sales Chart Data (pure invoice-date based) ──
     const buildData = (start, end) => {
       const days = []
       let curr = new Date(start)
@@ -61,15 +68,19 @@ export default function SembakoBeranda() {
         const isFuture = curr > today
         const daySales = isFuture ? [] : sales.filter(s => s.transaction_date?.slice(0, 10) === dStr)
         const isWeekly = (end - start) / 86400000 < 8
+
+        // Gross Profit = Revenue - COGS (before ops deduction)
         const grossProfit = isFuture ? 0 : daySales.reduce((s, sale) => {
-          // Derive gross = net_profit + ops costs (avoids processSaleRow return-deduction side effects)
           const net = Number(sale.net_profit) || 0
           const ops = Number(sale.delivery_cost || 0) + Number(sale.other_cost || 0)
           return s + (net + ops)
         }, 0)
+
+        // Net Profit = Revenue - COGS - Ops
         const netProfit = isFuture ? 0 : daySales.reduce((s, sale) => {
           return s + (Number(sale.net_profit) || 0)
         }, 0)
+
         days.push({
           name: isWeekly
             ? format(curr, 'EEE', { locale: idLocale })
@@ -77,13 +88,16 @@ export default function SembakoBeranda() {
           fullDate: format(curr, 'EEEE, d MMMM yyyy', { locale: idLocale }),
           grossProfit,
           netProfit,
-          txs: daySales.map(s => ({
+          txs: daySales.slice(0, 3).map(s => ({
             id: s.id,
             label: s.sembako_customers?.customer_name || s.customer_name || `Invoice #${s.id?.slice(0, 4)}`,
-            amount: Number(s.total_amount || 0),
-            grossProfit: (Number(s.net_profit) || 0) + (Number(s.delivery_cost || 0)) + (Number(s.other_cost || 0)),
+            amount: Number(s.total_amount) || 0,
+            paid: Number(s.paid_amount) || 0,
+            remaining: Number(s.remaining_amount) || 0,
             netProfit: Number(s.net_profit) || 0,
+            paymentStatus: s.payment_status || 'belum_lunas',
           })),
+          txCount: daySales.length,
         })
         curr = addDays(curr, 1)
       }
@@ -93,15 +107,66 @@ export default function SembakoBeranda() {
     const weeklyChartData  = buildData(mondayStart, addDays(mondayStart, 6))
     const monthlyChartData = buildData(monthStart, today)
 
-    // Smart insight: W0 vs W1
+    // ── Cash Summary (payment-date based, computed once for current state) ──
+    const INITIAL_CAPITAL = 0
+
+    // Cash In: all payments ever received (including negative refund payments to get net cash inflow)
+    const totalCashIn = sales.reduce((sum, s) => {
+      return sum + (s.sembako_payments || [])
+        .filter(p => !p.is_deleted)
+        .reduce((acc, p) => acc + (Number(p.amount || p.amount_paid || 0)), 0)
+    }, 0)
+
+    // Cash Out: purchases + expenses + payroll
+    const totalCashOutPurchases = batches.reduce((sum, b) => sum + (Number(b.total_cost) || 0), 0)
+    const totalCashOutExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
+    const totalCashOutPayroll = payroll.reduce((sum, p) => sum + (Number(p.total_pay) || 0), 0)
+    const totalCashOut = totalCashOutPurchases + totalCashOutExpenses + totalCashOutPayroll
+    const cashBalance = INITIAL_CAPITAL + totalCashIn - totalCashOut
+
+    // Realized & Unrealized Profit: computed per sale as clean integers with no rounding discrepancies
+    let totalRealizedProfit = 0
+    let totalUnrealizedProfit = 0
+
+    sales.forEach(s => {
+      const net = Number(s.net_profit) || 0
+      const total = Number(s.total_amount) || 0
+      const paid = Number(s.paid_amount) || 0
+      let realized = 0
+      if (total > 0) {
+        const ratio = Math.max(0, Math.min(1, paid / total))
+        realized = Math.round(net * ratio)
+      } else {
+        realized = net
+      }
+      const unrealized = net - realized
+      totalRealizedProfit += realized
+      totalUnrealizedProfit += unrealized
+    })
+
+    const cashSummary = {
+      totalCashIn,
+      totalCashOutPurchases,
+      totalCashOutExpenses,
+      totalCashOutPayroll,
+      totalCashOut,
+      cashBalance,
+      realizedProfit: totalRealizedProfit,
+    }
+
+    // ── Unrealized Profit Snapshot ──
+    const unrealizedProfitSnapshot = totalUnrealizedProfit
+
+    // ── Smart insight: W0 vs W1 (net profit based on invoice date — stable) ──
     const w0Start = addDays(today, -6)
     const w1End   = addDays(w0Start, -1)
     const w1Start = addDays(w1End, -6)
-    const getProfit = (from, to) => sales
+    const getNetProfit = (from, to) => sales
       .filter(s => { const d = new Date(s.transaction_date); return d >= from && d <= to })
-      .reduce((sum, s) => sum + (Number(s.net_profit) > 0 ? Number(s.net_profit) : Math.max(0, Number(s.total_amount||0) - Number(s.total_cogs||0) - Number(s.delivery_cost||0) - Number(s.other_cost||0))), 0)
-    const w0 = getProfit(w0Start, today)
-    const w1 = getProfit(w1Start, w1End)
+      .reduce((sum, s) => sum + (Number(s.net_profit) || 0), 0)
+
+    const w0 = getNetProfit(w0Start, today)
+    const w1 = getNetProfit(w1Start, w1End)
     let insight = null
     if (w1 !== 0) {
       const diff = ((w0 - w1) / Math.abs(w1)) * 100
@@ -122,8 +187,42 @@ export default function SembakoBeranda() {
     const piutangTrend = m1Outstanding !== 0 ? ((m0Outstanding - m1Outstanding) / m1Outstanding) * 100 : null
     const txTrend = m1Sales.length !== 0 ? ((m0Sales.length - m1Sales.length) / m1Sales.length) * 100 : null
 
-    return { weeklyChartData, monthlyChartData, insight, kpiTrends: { piutangTrend, txTrend } }
-  }, [sales])
+    // ── Diagnostic Logging for Verification ──
+    console.group('[Dashboard Audit Log]')
+    console.log('Total sales loaded:', sales.length)
+    let debugRevenue = 0, debugNetProfit = 0, debugPiutang = 0, debugPaid = 0, debugRealized = 0, debugUnrealized = 0
+    sales.forEach((s, i) => {
+      const net = Number(s.net_profit) || 0
+      const total = Number(s.total_amount) || 0
+      const paid = Number(s.paid_amount) || 0
+      const remaining = Number(s.remaining_amount) || 0
+      
+      const ratio = total > 0 ? Math.max(0, Math.min(1, paid / total)) : 1
+      const realized = Math.round(net * ratio)
+      const unrealized = net - realized
+
+      debugRevenue += total
+      debugNetProfit += net
+      debugPiutang += remaining
+      debugPaid += paid
+      debugRealized += realized
+      debugUnrealized += unrealized
+
+      console.log(`Invoice #${i+1} (ID: ${s.id?.slice(0,6)}) | Rev: ${total} | Paid: ${paid} | Outstanding: ${remaining} | Profit: ${net} | Realized: ${realized} | Unrealized: ${unrealized} | Status: ${s.payment_status}`)
+    })
+    console.log('----------------------------------------')
+    console.log(`Calculated Total Revenue:        Rp${debugRevenue}`)
+    console.log(`Calculated Total Net Profit:     Rp${debugNetProfit}`)
+    console.log(`Calculated Total Piutang:        Rp${debugPiutang}`)
+    console.log(`Calculated Total Paid (Invoices):Rp${debugPaid}`)
+    console.log(`Calculated Total Realized Profit:Rp${debugRealized}`)
+    console.log(`Calculated Total Unrealized:     Rp${debugUnrealized}`)
+    console.log(`Calculated Total Cash In (Net):  Rp${totalCashIn}`)
+    console.log(`Calculated Cash Balance:         Rp${cashBalance}`)
+    console.groupEnd()
+
+    return { weeklyChartData, monthlyChartData, insight, kpiTrends: { piutangTrend, txTrend }, cashSummary, unrealizedProfitSnapshot }
+  }, [sales, batches, expenses, payroll])
 
   if (statsLoading && !!tenant?.id) {
     return (
@@ -138,7 +237,7 @@ export default function SembakoBeranda() {
   const sharedProps = {
     profile, stats, sales, employees, deliveries, products, navigate, name, salesLoading,
     insight, kpiTrends, chartPeriod, setChartPeriod,
-    weeklyChartData, monthlyChartData,
+    weeklyChartData, monthlyChartData, cashSummary, unrealizedProfitSnapshot,
     selectedDate, setSelectedDate,
     currentMonth, setCurrentMonth,
     agendaFilter, setAgendaFilter,

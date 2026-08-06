@@ -12,7 +12,7 @@ import SmartInsight from '@/dashboard/_shared/components/SmartInsight'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
 import { C } from '../sembakoSaleUtils'
 import { InvoiceRow } from './BerandaUtils'
-import { ProfitChart } from './BerandaCharts'
+import { SalesChart, CashSummaryCard } from './BerandaCharts'
 import { AgendaSection } from './BerandaAgenda'
 import { CollectionReminders } from './CollectionReminders'
 import { SembakoOnboardingChecklist } from '../SembakoOnboardingChecklist'
@@ -38,6 +38,7 @@ function OnboardingWrapper({ setStokOpen }) {
 export function MobileBeranda({
   stats, sales, products = [], deliveries, navigate, tenant, insight,
   chartPeriod, setChartPeriod, weeklyChartData, monthlyChartData,
+  cashSummary, unrealizedProfitSnapshot,
   selectedDate, setSelectedDate, currentMonth, setCurrentMonth,
   agendaFilter, setAgendaFilter, setStokOpen, salesLoading,
 }) {
@@ -577,15 +578,17 @@ export function MobileBeranda({
           />
         </div>
 
-        {/* Profit Chart */}
+        {/* Sales Performance Chart + Cash Summary */}
         <div>
-          <ProfitChart
+          <SalesChart
             weeklyData={weeklyChartData}
             monthlyData={monthlyChartData}
             chartPeriod={chartPeriod}
             setChartPeriod={setChartPeriod}
             isDesktop={false}
+            unrealizedProfitSnapshot={unrealizedProfitSnapshot}
           />
+          <CashSummaryCard cashSummary={cashSummary} stats={stats} isDesktop={false} />
         </div>
 
         {/* Invoice Terbaru (Sliced to max 3 on mobile) */}

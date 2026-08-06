@@ -71,10 +71,10 @@ export function processSaleRow(sale, returnsData = [], itemsBySaleId = {}) {
   const grossProfit = Math.max(0, (itemsSubtotal - totalReturnAmount) - effectiveCogs)
   const totalExpenses = deliveryCost + otherCost
   const computedNetProfit = Math.max(0, grossProfit - totalExpenses)
-  // Fallback: use DB net_profit if > 0, otherwise compute from transaction data
-  const net_profit = (Number(sale.net_profit) > 0)
-    ? Number(sale.net_profit)
-    : computedNetProfit
+  // Fallback: use DB net_profit if > 0 and no returns, otherwise compute from transaction data
+  const net_profit = (totalReturnAmount > 0)
+    ? computedNetProfit
+    : ((Number(sale.net_profit) > 0) ? Number(sale.net_profit) : computedNetProfit)
 
   return {
     ...sale,

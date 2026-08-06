@@ -93,8 +93,9 @@ export const useRecordPayroll = () => {
       work_days, trip_count, sales_amount, base_amount,
       commission_amount, bonus, deduction, notes }) => {
       const tenant_id = await getTenantId()
+      const total_pay = (base_amount || 0) + (commission_amount || 0) + (bonus || 0) - (deduction || 0)
       const { error } = await supabase.from('sembako_payroll').insert({
-        tenant_id, employee_id, period_type, period_date, work_days, trip_count, sales_amount, base_amount, commission_amount, bonus, deduction, notes, payment_status: 'pending',
+        tenant_id, employee_id, period_type, period_date, work_days, trip_count, sales_amount, base_amount, commission_amount, bonus, deduction, total_pay, notes, payment_status: 'pending',
       })
       if (error) {
         logSupabaseError(error, { table: 'sembako_payroll', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.payroll.create' })

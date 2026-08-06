@@ -19,11 +19,11 @@ function LegendDot({ color, label }) {
   )
 }
 
-// ── Profit Chart ─────────────────────────────────────────────────────────────
-export function ProfitChart({ weeklyData, monthlyData, chartPeriod, setChartPeriod, isDesktop }) {
+// ── Sales Performance Chart ──────────────────────────────────────────────────
+export function SalesChart({ weeklyData, monthlyData, chartPeriod, setChartPeriod, isDesktop, unrealizedProfitSnapshot = 0 }) {
   const data = chartPeriod === 'weekly' ? weeklyData : monthlyData
-  const totalNetProfit   = data.reduce((s, d) => s + (d.netProfit   || 0), 0)
   const totalGrossProfit = data.reduce((s, d) => s + (d.grossProfit || 0), 0)
+  const totalNetProfit = data.reduce((s, d) => s + (d.netProfit || 0), 0)
 
   return (
     <div style={{
@@ -33,19 +33,26 @@ export function ProfitChart({ weeklyData, monthlyData, chartPeriod, setChartPeri
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '4px' }}>
         <div>
-          <span style={{ fontSize: '10px', fontWeight: 800, color: C.muted, letterSpacing: '0.1em' }}>GRAFIK PROFIT</span>
-          {/* Two profit KPI figures */}
-          <div style={{ display: 'flex', gap: '20px', marginTop: '4px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: C.muted, letterSpacing: '0.1em' }}>KINERJA PENJUALAN</span>
+          <p style={{ fontSize: '9px', color: '#64748B', marginTop: '1px', fontWeight: 500 }}>Berdasarkan tanggal penjualan</p>
+          {/* KPI figures */}
+          <div style={{ display: 'flex', gap: '16px', marginTop: '4px', flexWrap: 'wrap' }}>
             <div>
               <p style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600, marginBottom: '1px' }}>Gross Profit</p>
-              <p style={{ fontSize: '16px', fontWeight: 900, color: '#10B981', fontFamily: 'DM Sans', lineHeight: 1.1 }}>
+              <p style={{ fontSize: '15px', fontWeight: 900, color: '#10B981', fontFamily: 'DM Sans', lineHeight: 1.1 }}>
                 {formatIDR(totalGrossProfit)}
               </p>
             </div>
             <div>
               <p style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600, marginBottom: '1px' }}>Net Profit</p>
-              <p style={{ fontSize: '16px', fontWeight: 900, color: C.accent, fontFamily: 'DM Sans', lineHeight: 1.1 }}>
+              <p style={{ fontSize: '15px', fontWeight: 900, color: '#EA580C', fontFamily: 'DM Sans', lineHeight: 1.1 }}>
                 {formatIDR(totalNetProfit)}
+              </p>
+            </div>
+            <div>
+              <p style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600, marginBottom: '1px' }}>Belum Terrealisasi</p>
+              <p style={{ fontSize: '15px', fontWeight: 900, color: '#EF4444', fontFamily: 'DM Sans', lineHeight: 1.1 }}>
+                {formatIDR(unrealizedProfitSnapshot)}
               </p>
             </div>
           </div>
@@ -71,7 +78,7 @@ export function ProfitChart({ weeklyData, monthlyData, chartPeriod, setChartPeri
       {/* ── Legend ── */}
       <div style={{ display: 'flex', gap: '14px', marginBottom: '12px', marginTop: '6px', flexWrap: 'wrap' }}>
         <LegendDot color="#10B981" label="Gross Profit (Rev − COGS)" />
-        <LegendDot color={C.accent} label="Net Profit (setelah biaya ops)" />
+        <LegendDot color="#EA580C" label="Net Profit (setelah biaya ops)" />
       </div>
 
       {/* ── Chart Area ── */}
@@ -84,8 +91,8 @@ export function ProfitChart({ weeklyData, monthlyData, chartPeriod, setChartPeri
                 <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor={C.accent} stopOpacity={0.35}/>
-                <stop offset="95%" stopColor={C.accent} stopOpacity={0}/>
+                <stop offset="5%"  stopColor="#EA580C" stopOpacity={0.35}/>
+                <stop offset="95%" stopColor="#EA580C" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(234,88,12,0.12)" vertical={false} />
@@ -94,22 +101,106 @@ export function ProfitChart({ weeklyData, monthlyData, chartPeriod, setChartPeri
               tickFormatter={v => v >= 1000000 ? (v/1000000).toFixed(1)+'jt' : v >= 1000 ? (v/1000).toFixed(0)+'rb' : v}
             />
             <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'rgba(234,88,12,0.2)', strokeWidth: 1 }} />
-            {/* Gross Profit — rendered first so it appears behind Net Profit */}
+
+            {/* Gross Profit — dashed line */}
             <Area type="monotone" dataKey="grossProfit" name="Gross Profit"
               stroke="#10B981" strokeWidth={1.5} strokeDasharray="5 3"
               fillOpacity={1} fill="url(#grossGrad)"
               isAnimationActive={false}
               activeDot={{ r: 4, fill: '#10B981', stroke: C.card, strokeWidth: 2 }}
             />
-            {/* Net Profit — primary metric, solid line */}
+
+            {/* Net Profit — solid line, emphasis */}
             <Area type="monotone" dataKey="netProfit" name="Net Profit"
-              stroke={C.accent} strokeWidth={2.5}
+              stroke="#EA580C" strokeWidth={2.5}
               fillOpacity={1} fill="url(#netGrad)"
               isAnimationActive={false}
-              activeDot={{ r: 5, fill: C.accent, stroke: C.card, strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: '#EA580C', stroke: C.card, strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+// ── Cash Summary Card ────────────────────────────────────────────────────────
+export function CashSummaryCard({ cashSummary = {}, stats, isDesktop }) {
+  const {
+    totalCashIn = 0,
+    totalCashOut = 0,
+    totalCashOutPurchases = 0,
+    totalCashOutExpenses = 0,
+    totalCashOutPayroll = 0,
+    cashBalance = 0,
+    realizedProfit = 0,
+  } = cashSummary
+
+  const rowStyle = {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
+  }
+  const labelStyle = { fontSize: '11px', color: '#94A3B8', fontWeight: 600 }
+  const valueStyle = { fontSize: '13px', fontWeight: 800, color: C.text, fontFamily: 'DM Sans' }
+
+  return (
+    <div style={{
+      background: C.card, borderRadius: '16px', padding: '16px',
+      border: `1px solid ${C.border}`, width: '100%', marginBottom: '20px',
+    }}>
+      <div style={{ marginBottom: '12px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 800, color: C.muted, letterSpacing: '0.1em' }}>RINGKASAN KAS</span>
+        <p style={{ fontSize: '9px', color: '#64748B', marginTop: '1px', fontWeight: 500 }}>Berdasarkan tanggal pembayaran</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr', gap: '6px' }}>
+        {/* Kas Masuk */}
+        <div style={rowStyle}>
+          <span style={labelStyle}>Kas Masuk</span>
+          <span style={{ ...valueStyle, color: '#10B981' }}>{formatIDR(totalCashIn)}</span>
+        </div>
+
+        {/* Kas Keluar */}
+        <div style={rowStyle}>
+          <div>
+            <span style={labelStyle}>Kas Keluar</span>
+            {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0) && (
+              <div style={{ display: 'flex', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
+                {totalCashOutPurchases > 0 && <span style={{ fontSize: '9px', color: '#64748B' }}>Stok {formatIDR(totalCashOutPurchases)}</span>}
+                {totalCashOutExpenses > 0 && <span style={{ fontSize: '9px', color: '#64748B' }}>Ops {formatIDR(totalCashOutExpenses)}</span>}
+                {totalCashOutPayroll > 0 && <span style={{ fontSize: '9px', color: '#64748B' }}>Gaji {formatIDR(totalCashOutPayroll)}</span>}
+              </div>
+            )}
+          </div>
+          <span style={{ ...valueStyle, color: '#EF4444' }}>{formatIDR(totalCashOut)}</span>
+        </div>
+
+        {/* Saldo Kas */}
+        <div style={{
+          ...rowStyle,
+          background: cashBalance >= 0 ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
+          border: cashBalance >= 0 ? '1px solid rgba(16,185,129,0.15)' : '1px solid rgba(239,68,68,0.15)',
+        }}>
+          <span style={{ ...labelStyle, fontWeight: 700, color: cashBalance >= 0 ? '#10B981' : '#EF4444' }}>Saldo Kas</span>
+          <span style={{ ...valueStyle, fontSize: '15px', fontWeight: 900, color: cashBalance >= 0 ? '#10B981' : '#EF4444' }}>
+            {formatIDR(cashBalance)}
+          </span>
+        </div>
+
+        {/* Profit Direalisasi */}
+        <div style={{
+          ...rowStyle,
+          background: 'rgba(234,88,12,0.06)',
+          border: '1px solid rgba(234,88,12,0.15)',
+        }}>
+          <div>
+            <span style={{ ...labelStyle, fontWeight: 700, color: '#EA580C' }}>Profit Direalisasi</span>
+            <p style={{ fontSize: '9px', color: '#64748B', marginTop: '1px' }}>Dari pembayaran diterima</p>
+          </div>
+          <span style={{ ...valueStyle, fontSize: '15px', fontWeight: 900, color: '#EA580C' }}>
+            {formatIDR(realizedProfit)}
+          </span>
+        </div>
       </div>
     </div>
   )

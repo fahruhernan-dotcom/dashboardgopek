@@ -178,21 +178,34 @@ export function QuickStatRow({ label, value }) {
   )
 }
 
-// ── Chart Tooltip (Profit Chart) ─────────────────────────────────────────────
+// ── Chart Tooltip (Sales Performance Chart) ──────────────────────────────────
 export function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   const grossProfit = d.grossProfit || 0
-  const netProfit   = d.netProfit   || 0
+  const netProfit = d.netProfit || 0
+  const opsCost = grossProfit - netProfit
+
+  const statusColors = {
+    lunas: { bg: 'rgba(16,185,129,0.12)', color: '#34D399', label: 'Lunas' },
+    sebagian: { bg: 'rgba(245,158,11,0.12)', color: '#FBBF24', label: 'Sebagian' },
+    belum_lunas: { bg: 'rgba(239,68,68,0.12)', color: '#F87171', label: 'Belum Lunas' },
+  }
+
+  const hasUnpaid = d.txs?.some(tx => tx.paymentStatus !== 'lunas')
+
   return (
     <div style={{
       background: '#130C06', border: `1px solid ${C.border}`, borderRadius: '14px',
-      padding: '12px 14px', minWidth: '210px', boxShadow: '0 8px 24px rgba(0,0,0,0.55)',
+      padding: '12px 14px', minWidth: '220px', maxWidth: '280px', boxShadow: '0 8px 24px rgba(0,0,0,0.55)',
     }}>
       <p style={{ fontSize: '10px', color: C.muted, fontWeight: 700, marginBottom: '8px', letterSpacing: '0.05em' }}>{d.fullDate}</p>
 
+      {/* ── PENJUALAN section ── */}
+      <p style={{ fontSize: '9px', color: '#64748B', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '5px' }}>PENJUALAN</p>
+
       {/* Gross Profit */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
           <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600 }}>Gross Profit</span>
@@ -201,36 +214,69 @@ export function ChartTooltip({ active, payload }) {
       </div>
 
       {/* Net Profit */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EA580C', display: 'inline-block' }} />
           <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600 }}>Net Profit</span>
         </div>
-        <span style={{ fontSize: '12px', fontWeight: 800, color: C.accent }}>{formatIDR(netProfit)}</span>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: '#EA580C' }}>{formatIDR(netProfit)}</span>
       </div>
 
-      {/* Ops Cost = Gross - Net */}
-      {grossProfit > 0 && grossProfit !== netProfit && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+      {/* Ops Cost */}
+      {opsCost > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
           <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600, paddingLeft: '13px' }}>Biaya Ops</span>
-          <span style={{ fontSize: '11px', color: '#F87171', fontWeight: 700 }}>− {formatIDR(grossProfit - netProfit)}</span>
+          <span style={{ fontSize: '11px', color: '#F87171', fontWeight: 700 }}>− {formatIDR(opsCost)}</span>
         </div>
       )}
 
-      {/* Per-transaction breakdown */}
+      {/* ── TRANSAKSI section ── */}
       {d.txs?.length > 0 && (
-        <div style={{ borderTop: `1px solid rgba(255,255,255,0.07)`, paddingTop: '7px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <p style={{ fontSize: '9px', color: C.muted, fontWeight: 700, letterSpacing: '0.05em', marginBottom: '2px' }}>TRANSAKSI ({d.txs.length})</p>
-          {d.txs.map((tx, i) => (
-            <div key={tx.id || i} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '11px', alignItems: 'flex-start' }}>
-              <span style={{ color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{tx.label}</span>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <p style={{ color: C.text, fontWeight: 700, whiteSpace: 'nowrap', fontSize: '11px' }}>{formatIDR(tx.amount)}</p>
-                <p style={{ color: '#10B981', fontWeight: 600, whiteSpace: 'nowrap', fontSize: '9px' }}>net {formatIDR(tx.netProfit)}</p>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '7px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <p style={{ fontSize: '9px', color: '#64748B', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '2px' }}>
+            TRANSAKSI ({d.txCount || d.txs.length})
+          </p>
+          {d.txs.map((tx, i) => {
+            const st = statusColors[tx.paymentStatus] || statusColors.belum_lunas
+            return (
+              <div key={tx.id || i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '8px', padding: '6px 8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: C.text, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                    {tx.label}
+                  </span>
+                  <span style={{
+                    fontSize: '8px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px',
+                    background: st.bg, color: st.color,
+                  }}>{st.label}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginTop: '2px' }}>
+                  <span style={{ color: '#94A3B8' }}>Invoice {formatIDR(tx.amount)}</span>
+                  <span style={{ color: '#EA580C', fontWeight: 700 }}>Profit {formatIDR(tx.netProfit)}</span>
+                </div>
+                {tx.paymentStatus !== 'lunas' && (
+                  <div style={{ fontSize: '9px', color: '#64748B', marginTop: '1px' }}>
+                    Dibayar {formatIDR(tx.paid)} · Sisa {formatIDR(tx.remaining)}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
+          {(d.txCount || 0) > 3 && (
+            <p style={{ fontSize: '9px', color: '#64748B', textAlign: 'center', fontWeight: 600 }}>
+              +{d.txCount - 3} transaksi lagi
+            </p>
+          )}
         </div>
+      )}
+
+      {/* Contextual note for unpaid invoices */}
+      {hasUnpaid && grossProfit > 0 && (
+        <p style={{
+          fontSize: '9px', color: '#64748B', marginTop: '6px', fontStyle: 'italic',
+          borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '5px',
+        }}>
+          ℹ Profit akan terealisasi setelah pembayaran diterima
+        </p>
       )}
     </div>
   )

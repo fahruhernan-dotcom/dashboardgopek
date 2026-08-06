@@ -10,13 +10,14 @@ import { formatIDR } from '@/lib/format'
 import SmartInsight from '@/dashboard/_shared/components/SmartInsight'
 import { C } from '../sembakoSaleUtils'
 import { KPICard, InvoiceRow, QuickStatRow } from './BerandaUtils'
-import { ProfitChart, StockTrendChart } from './BerandaCharts'
+import { SalesChart, CashSummaryCard, StockTrendChart } from './BerandaCharts'
 import { AgendaSection } from './BerandaAgenda'
 import { CollectionReminders } from './CollectionReminders'
 
 export function DesktopBeranda({
   profile, products = [], stats, sales, employees, navigate, name, salesLoading,
   insight, kpiTrends, chartPeriod, setChartPeriod, weeklyChartData, monthlyChartData,
+  cashSummary, unrealizedProfitSnapshot,
   deliveries, selectedDate, setSelectedDate, currentMonth, setCurrentMonth,
   agendaFilter, setAgendaFilter, setStokOpen,
 }) {
@@ -105,13 +106,17 @@ export function DesktopBeranda({
         {/* LEFT COLUMN */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
           {showProfit && (
-            <ProfitChart 
-              weeklyData={weeklyChartData} 
-              monthlyData={monthlyChartData} 
-              chartPeriod={chartPeriod} 
-              setChartPeriod={setChartPeriod} 
-              isDesktop={true} 
-            />
+            <>
+              <SalesChart 
+                weeklyData={weeklyChartData} 
+                monthlyData={monthlyChartData} 
+                chartPeriod={chartPeriod} 
+                setChartPeriod={setChartPeriod} 
+                isDesktop={true}
+                unrealizedProfitSnapshot={unrealizedProfitSnapshot}
+              />
+              <CashSummaryCard cashSummary={cashSummary} stats={stats} isDesktop={true} />
+            </>
           )}
 
           {/* Grafik Stok Gudang */}
