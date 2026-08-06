@@ -272,7 +272,7 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
       } else if (doi > 30) {
         status = 'overstock'
         statusLabel = 'Overstock'
-        color = '#3B82F6' // Blue
+        color = '#06B6D4' // Teal/Cyan
       }
 
       return {
@@ -386,7 +386,7 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
         <LegendDot color="#EF4444" label="Kritis (≤ 2 hari)" />
         <LegendDot color="#F59E0B" label="Menipis (≤ 7 hari)" />
         <LegendDot color="#10B981" label="Aman" />
-        <LegendDot color="#3B82F6" label="Overstock (> 30 hari)" />
+        <LegendDot color="#06B6D4" label="Overstock (> 30 hari)" />
       </div>
 
       {stockChartData.length === 0 ? (
