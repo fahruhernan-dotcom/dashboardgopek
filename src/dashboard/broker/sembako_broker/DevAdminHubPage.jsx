@@ -122,11 +122,13 @@ export default function DevAdminHubPage() {
       const { error: errPaym } = await supabase.from('sembako_payments').delete().eq('tenant_id', tenantId)
       if (errPaym) throw errPaym
 
-      const { error: errSaleItems } = await supabase.from('sembako_sale_items').delete().eq('tenant_id', tenantId)
-      if (errSaleItems) throw errSaleItems
+      const { error: errExpenses } = await supabase.from('sembako_expenses').delete().eq('tenant_id', tenantId)
+      if (errExpenses) throw errExpenses
 
       const { error: errSales } = await supabase.from('sembako_sales').delete().eq('tenant_id', tenantId)
       if (errSales) throw errSales
+
+
 
       const { error: errStockOut } = await supabase.from('sembako_stock_out').delete().eq('tenant_id', tenantId)
       if (errStockOut) throw errStockOut
