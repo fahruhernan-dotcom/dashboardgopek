@@ -120,7 +120,8 @@ export default function SembakoTokoSupplier() {
         lastPurchaseDate: null,
       }
 
-      current.totalPurchaseValue += batch.total_cost || 0
+      const cost = Number(batch.total_cost) > 0 ? Number(batch.total_cost) : (Number(batch.qty_masuk || 0) * Number(batch.buy_price || 0))
+      current.totalPurchaseValue += cost
       current.batchCount += 1
 
       if (!current.lastPurchaseDate || (batch.purchase_date && batch.purchase_date > current.lastPurchaseDate)) {

@@ -152,6 +152,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.product_id) return toast.error('Pilih produk dulu')
+    if (!form.supplier_id) return toast.error('Pilih supplier dulu')
     if (!form.qty_masuk || Number(form.qty_masuk) <= 0) return toast.error('Jumlah harus > 0')
     
     const finalBuyPrice = Number(String(form.buy_price).replace(/\D/g, ''))
@@ -308,7 +309,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
               </AnimatePresence>
             </SField>
 
-            <SField label="Supplier">
+            <SField label="Supplier *">
               {showAddSup ? (
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
@@ -455,14 +456,14 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
             >
               Batal & Reset
             </button>
-            <button
+             <button
               type="submit"
-              disabled={!form.product_id || !form.qty_masuk || !form.buy_price || addBatch.isPending}
+              disabled={!form.product_id || !form.supplier_id || !form.qty_masuk || !form.buy_price || addBatch.isPending}
               style={{
                 flex: 1, height: 58, minHeight: 58, borderRadius: 16, background: C.accent, color: 'white',
                 fontFamily: 'Sora', fontSize: 16, fontWeight: 800, border: 'none', cursor: 'pointer',
                 boxShadow: '0 6px 20px rgba(234,88,12,0.4)',
-                opacity: (!form.product_id || !form.qty_masuk || !form.buy_price || addBatch.isPending) ? 0.6 : 1,
+                opacity: (!form.product_id || !form.supplier_id || !form.qty_masuk || !form.buy_price || addBatch.isPending) ? 0.6 : 1,
                 transition: 'all 0.2s',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 letterSpacing: '-0.01em',
