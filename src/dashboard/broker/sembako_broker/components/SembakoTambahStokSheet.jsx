@@ -15,6 +15,11 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { recordAuditLog } from '@/lib/hooks/useSembakoAudit'
 import { useBackHandler } from '@/lib/hooks/useBackHandler'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
+import {
+  getSupplierRecommendation,
+  getSupplierHistoryContext,
+  checkSupplierAnomalies
+} from '@/lib/hooks/sembako/sembakoSupplierAssistant'
 
 const TEXT_SEC = '#FDBA74'
 
@@ -75,6 +80,27 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
   const [newProdName, setNewProdName] = useState('')
   const [newProdUnit, setNewProdUnit] = useState('slop')
   const updateProduct = useUpdateSembakoProduct()
+
+  // 1. Get recommendation for the selected product
+  const recommendation = React.useMemo(() => {
+    return getSupplierRecommendation(form.product_id, allBatches, suppliers)
+  }, [form.product_id, allBatches, suppliers])
+
+  // 2. Get history context for the selected supplier
+  const historyContext = React.useMemo(() => {
+    return getSupplierHistoryContext(form.product_id, form.supplier_id, allBatches)
+  }, [form.product_id, form.supplier_id, allBatches])
+
+  // 3. Get anomalies
+  const anomalies = React.useMemo(() => {
+    return checkSupplierAnomalies(form.product_id, form.supplier_id, form.buy_price, allBatches, suppliers)
+  }, [form.product_id, form.supplier_id, form.buy_price, allBatches, suppliers])
+
+  const inputPrice = Number(String(form.buy_price).replace(/\D/g, ''))
+  const showPriceTrend = !!(form.supplier_id && historyContext && inputPrice > 0 && inputPrice !== historyContext.lastPrice)
+  const priceDiff = inputPrice - (historyContext?.lastPrice || 0)
+  const priceDiffPct = (historyContext?.lastPrice || 0) > 0 ? Math.round((priceDiff / (historyContext?.lastPrice || 1)) * 100) : 0
+  const isUp = priceDiff > 0
 
   const handleAddProduct = async () => {
     if (!newProdName.trim()) return toast.error('Nama produk wajib diisi')
@@ -328,19 +354,100 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <CustomSelect
-                    id="stok-supplier"
-                    value={form.supplier_id}
-                    onChange={val => set('supplier_id', val)}
-                    options={suppliers.map(s => ({ value: s.id, label: s.supplier_name }))}
-                    placeholder="-- Pilih supplier --"
-                    style={{ flex: 1 }}
-                  />
-                  <button type="button" onClick={() => setShowAddSup(true)}
-                    style={{ background: 'rgba(234,88,12,0.12)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '0 14px', height: 48, color: C.accent, fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans', cursor: 'pointer', flexShrink: 0 }}>
-                    + Baru
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <CustomSelect
+                      id="stok-supplier"
+                      value={form.supplier_id}
+                      onChange={val => {
+                        set('supplier_id', val)
+                        const ctx = getSupplierHistoryContext(form.product_id, val, allBatches)
+                        if (ctx?.lastPrice) {
+                          set('buy_price', ctx.lastPrice)
+                        }
+                      }}
+                      options={suppliers.map(s => ({ value: s.id, label: s.supplier_name }))}
+                      placeholder="-- Pilih supplier --"
+                      style={{ flex: 1 }}
+                    />
+                    <button type="button" onClick={() => setShowAddSup(true)}
+                      style={{ background: 'rgba(234,88,12,0.12)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '0 14px', height: 48, color: C.accent, fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans', cursor: 'pointer', flexShrink: 0 }}>
+                      + Baru
+                    </button>
+                  </div>
+
+                  {/* Recommendation Shortcut Badge */}
+                  {recommendation && form.supplier_id !== recommendation.supplierId && (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
+                      <span style={{ fontSize: 11, color: '#FDBA74', opacity: 0.8, fontFamily: 'DM Sans' }}>
+                        💡 Rekomendasi:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          set('supplier_id', recommendation.supplierId)
+                          if (recommendation.lastPrice) {
+                            set('buy_price', recommendation.lastPrice)
+                          }
+                        }}
+                        style={{
+                          background: 'rgba(234,88,12,0.15)',
+                          border: '1px solid rgba(234,88,12,0.3)',
+                          borderRadius: 6,
+                          padding: '2px 8px',
+                          color: '#EA580C',
+                          fontSize: 10,
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          fontFamily: 'DM Sans',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {recommendation.supplierName} ({recommendation.statusText})
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Selected Supplier Context History Info */}
+                  {form.supplier_id && historyContext && (
+                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '10px 12px', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, fontFamily: 'DM Sans' }}>
+                        <span style={{ color: '#FDBA74', fontWeight: 700 }}>Riwayat Supplier ini:</span>
+                        <span style={{ color: '#9CA3AF' }}>Terakhir: {new Date(historyContext.recentDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 10, fontFamily: 'DM Sans', color: '#FEF3C7', opacity: 0.8 }}>
+                        <div>• Transaksi: {historyContext.txCount} kali</div>
+                        <div>• Total Beli: {fmt(historyContext.totalQty)} {selectedProduct?.unit || ''}</div>
+                        <div>• Rerata Modal: Rp {fmt(historyContext.avgPrice)}</div>
+                        <div>• Modal Terakhir: Rp {fmt(historyContext.lastPrice)}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Warnings / Anomalies under Supplier Dropdown */}
+                  {anomalies.map((anom, idx) => {
+                    if (anom.type === 'high_warning') {
+                      return (
+                        <div key={idx} style={{ display: 'flex', gap: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', padding: '10px 12px', borderRadius: 10, marginTop: 4, alignItems: 'center' }}>
+                          <AlertCircle size={14} color="#EF4444" style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: '#FCA5A5', fontWeight: 600, fontFamily: 'DM Sans', lineHeight: '1.4' }}>
+                            {anom.message}
+                          </span>
+                        </div>
+                      )
+                    }
+                    if (anom.type === 'info') {
+                      return (
+                        <div key={idx} style={{ display: 'flex', gap: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', padding: '10px 12px', borderRadius: 10, marginTop: 4, alignItems: 'center' }}>
+                          <AlertCircle size={14} color="#3B82F6" style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: '#93C5FD', fontWeight: 600, fontFamily: 'DM Sans', lineHeight: '1.4' }}>
+                            {anom.message}
+                          </span>
+                        </div>
+                      )
+                    }
+                    return null
+                  })}
                 </div>
               )}
             </SField>
@@ -354,7 +461,6 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                 value={form.qty_masuk}
                 onChange={e => {
                   const val = e.target.value
-                  // Allow digits and a single dot or comma
                   if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
                     set('qty_masuk', val.replace(',', '.'))
                   }
@@ -371,7 +477,24 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                   onChange={val => set('buy_price', val)}
                   placeholder="Rp 0"
                 />
-                <p style={{ fontSize: 10, color: '#FDBA74', opacity: 0.7, marginTop: 4, fontFamily: 'DM Sans' }}>Modal dari supplier</p>
+                {showPriceTrend && (
+                  <p style={{ fontSize: 10, color: isUp ? '#EF4444' : '#10B981', fontWeight: 700, marginTop: 4, fontFamily: 'DM Sans' }}>
+                    {isUp ? '📈 Naik' : '📉 Turun'} {Math.abs(priceDiffPct)}% dari pembelian terakhir (Rp {fmt(historyContext.lastPrice)})
+                  </p>
+                )}
+                {anomalies.map((anom, idx) => {
+                  if (anom.type === 'price_warning') {
+                    return (
+                      <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
+                        <AlertCircle size={12} color="#EF4444" style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: 10, color: '#FCA5A5', fontWeight: 700, fontFamily: 'DM Sans' }}>
+                          {anom.message}
+                        </span>
+                      </div>
+                    )
+                  }
+                  return null
+                })}
               </SField>
               <SField label="Harga Jual / Satuan">
                 <InputRupiah
