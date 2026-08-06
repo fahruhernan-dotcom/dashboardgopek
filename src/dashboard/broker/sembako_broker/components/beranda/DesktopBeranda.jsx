@@ -20,6 +20,7 @@ export function DesktopBeranda({
   cashSummary, unrealizedProfitSnapshot,
   deliveries, selectedDate, setSelectedDate, currentMonth, setCurrentMonth,
   agendaFilter, setAgendaFilter, setStokOpen,
+  batches = [], suppliers = [],
 }) {
   const { brokerType } = useParams()
   const brokerBase = `/broker/${brokerType}`
@@ -120,7 +121,7 @@ export function DesktopBeranda({
           )}
 
           {/* Grafik Stok Gudang */}
-          <StockTrendChart products={products} isDesktop={true} />
+          <StockTrendChart products={products} sales={sales} batches={batches} suppliers={suppliers} isDesktop={true} />
 
           {lowStock.length > 0 && (
             <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 sm:p-5 space-y-3">

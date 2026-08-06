@@ -286,33 +286,63 @@ export function ChartTooltip({ active, payload }) {
 export function StockChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   const d = payload[0]?.payload || {}
-  const stok     = d.stok     || 0
-  const minAlert = d.minAlert || 0
-  const nilaiStok = d.nilaiStok || 0
-  const isLow = stok <= minAlert && minAlert > 0
+  const stok = d.stok || 0
+  const ads = Number(d.ads) || 0
+  const doi = d.doi
+  const statusLabel = d.statusLabel || 'Aman'
+  const color = d.color || '#10B981'
+  const modalTertahan = d.modalTertahan || 0
+  const potensiOmzet = d.potensiOmzet || 0
+  const recSupplierName = d.recSupplierName
+  const recStatusText = d.recStatusText
+  const reorderQty = d.reorderQty || 0
+  const unit = d.unit || 'unit'
+
   return (
     <div style={{
-      background: '#130C06', border: `1px solid rgba(245,158,11,0.2)`, borderRadius: '12px',
-      padding: '10px 14px', minWidth: '170px', boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+      background: '#130C06', border: `1px solid rgba(234,88,12,0.25)`, borderRadius: '12px',
+      padding: '12px 14px', minWidth: '220px', boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
+      fontFamily: 'DM Sans'
     }}>
-      <p style={{ fontSize: '11px', fontWeight: 800, color: C.text, marginBottom: '6px' }}>{d.fullName || label}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+      <p style={{ fontSize: '12px', fontWeight: 800, color: C.text, marginBottom: '6px' }}>{d.fullName || label}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
           <span style={{ color: '#94A3B8' }}>Stok Fisik</span>
-          <span style={{ color: isLow ? '#F59E0B' : C.accent, fontWeight: 700 }}>{stok} unit</span>
+          <span style={{ color: C.text, fontWeight: 700 }}>{stok} {unit}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
-          <span style={{ color: '#94A3B8' }}>Min Alert</span>
-          <span style={{ color: '#F59E0B', fontWeight: 700 }}>{minAlert} unit</span>
+          <span style={{ color: '#94A3B8' }}>Status</span>
+          <span style={{ color: color, fontWeight: 800 }}>{statusLabel}</span>
         </div>
-        {nilaiStok > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '2px' }}>
-            <span style={{ color: '#94A3B8' }}>Nilai Stok (est)</span>
-            <span style={{ color: C.text, fontWeight: 700 }}>{formatIDR(nilaiStok)}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
+          <span style={{ color: '#94A3B8' }}>Estimasi Habis</span>
+          <span style={{ color: color, fontWeight: 700 }}>
+            {doi === 999 ? '∞ Aman (Tidak Bergerak)' : `${doi.toFixed(1)} hari lagi`}
+          </span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
+          <span style={{ color: '#94A3B8' }}>Kecepatan Keluar</span>
+          <span style={{ color: '#FEF3C7', fontWeight: 600 }}>{ads.toFixed(1)} {unit}/hari</span>
+        </div>
+
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
+            <span style={{ color: '#94A3B8' }}>Modal Tertahan</span>
+            <span style={{ color: '#FDBA74', fontWeight: 700 }}>{formatIDR(modalTertahan)}</span>
           </div>
-        )}
-        {isLow && (
-          <p style={{ fontSize: '9px', fontWeight: 800, color: '#F59E0B', marginTop: '2px', textAlign: 'right' }}>⚠ STOK MENIPIS</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
+            <span style={{ color: '#94A3B8' }}>Potensi Omzet</span>
+            <span style={{ color: '#10B981', fontWeight: 700 }}>{formatIDR(potensiOmzet)}</span>
+          </div>
+        </div>
+
+        {reorderQty > 0 && recSupplierName && (
+          <div style={{ borderTop: '1px solid rgba(234,88,12,0.15)', paddingTop: '6px', marginTop: '4px', background: 'rgba(234,88,12,0.08)', borderRadius: '6px', padding: '6px 8px' }}>
+            <p style={{ fontSize: '9px', fontWeight: 800, color: '#FDBA74', textTransform: 'uppercase', marginBottom: '2px' }}>💡 REKOMENDASI PEMBELIAN</p>
+            <p style={{ fontSize: '10px', color: '#FEF3C7', lineHeight: '1.3', fontWeight: 500 }}>
+              Pesan <strong style={{ color: '#EA580C' }}>±{reorderQty} {unit}</strong> ke <strong style={{ color: '#EA580C' }}>{recSupplierName}</strong> ({recStatusText})
+            </p>
+          </div>
         )}
       </div>
     </div>

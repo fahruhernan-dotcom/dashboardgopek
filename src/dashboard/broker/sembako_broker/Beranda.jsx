@@ -242,6 +242,8 @@ export default function SembakoBeranda() {
     currentMonth, setCurrentMonth,
     agendaFilter, setAgendaFilter,
     setStokOpen,
+    batches,
+    suppliers
   }
 
   return (
