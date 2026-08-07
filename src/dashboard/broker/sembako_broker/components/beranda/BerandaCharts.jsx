@@ -1,13 +1,20 @@
 // ProfitChart.jsx + StockTrendChart.jsx — chart components
 import React, { useMemo, useState } from 'react'
 import {
-  AreaChart, Area, BarChart, Bar, Cell,
+  AreaChart, Area, BarChart, Bar, Cell, LabelList,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { formatIDR } from '@/lib/format'
 import { C } from '../sembakoSaleUtils'
 import { ChartTooltip, StockChartTooltip } from './BerandaUtils'
 import { getSupplierRecommendation } from '@/lib/hooks/sembako/sembakoSupplierAssistant'
+import { ChartContainer } from '@/components/ui/chart'
+
+const chartConfig = {
+  stok: {
+    label: "Stok Fisik",
+  },
+}
 
 // ── Legend Dot ───────────────────────────────────────────────────────────────
 function LegendDot({ color, label }) {
@@ -386,20 +393,52 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
           Tidak ada produk yang sesuai dengan filter ini.
         </div>
       ) : (
-        <div style={{ width: '100%', height: isDesktop ? '220px' : '180px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stockChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(245,158,11,0.12)" vertical={false} />
-              <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
-              <Tooltip content={<StockChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="stok" name="Stok Fisik" radius={[6, 6, 0, 0]} isAnimationActive={false}>
+        <div style={{ width: '100%', height: isDesktop ? '260px' : '220px' }}>
+          <ChartContainer config={chartConfig} style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}>
+            <BarChart
+              data={stockChartData}
+              layout="vertical"
+              margin={{ top: 5, right: 45, left: 0, bottom: 5 }}
+            >
+              <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.06)" />
+              <YAxis dataKey="name" type="category" tickLine={false} tickMargin={10} axisLine={false} hide />
+              <XAxis dataKey="stok" type="number" hide />
+              <Tooltip content={<StockChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
+              <Bar dataKey="stok" radius={6} isAnimationActive={false}>
                 {stockChartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
+                <LabelList
+                  dataKey="name"
+                  position="insideLeft"
+                  offset={10}
+                  style={{
+                    fill: '#FFFFFF',
+                    fontWeight: 900,
+                    fontSize: '10px',
+                    fontFamily: "'Sora', 'Inter', sans-serif",
+                    textShadow: '0 1px 2px rgba(0,0,0,0.6)'
+                  }}
+                />
+                <LabelList
+                  dataKey="stok"
+                  position="right"
+                  offset={8}
+                  style={{
+                    fill: '#94A3B8',
+                    fontWeight: 800,
+                    fontSize: '11px',
+                    fontFamily: "'Sora', 'Inter', sans-serif"
+                  }}
+                  formatter={(val, entry) => {
+                    const item = stockChartData.find(d => d.stok === val);
+                    const unit = item?.unit || 'slop';
+                    return `${val} ${unit}`;
+                  }}
+                />
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
       )}
     </div>
