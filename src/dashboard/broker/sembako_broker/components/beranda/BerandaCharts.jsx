@@ -196,9 +196,9 @@ export function SalesAndCashChart({
             />
             <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'rgba(234,88,12,0.2)', strokeWidth: 1 }} />
 
-            {/* Gross Profit — natural curve, dashed line */}
+            {/* Gross Profit — monotone curve, dashed line */}
             <Area
-              type="natural"
+              type="monotone"
               dataKey="grossProfit"
               name="Gross Profit"
               stroke="var(--color-grossProfit)"
@@ -210,9 +210,9 @@ export function SalesAndCashChart({
               activeDot={{ r: 4, fill: '#10B981', stroke: C.card, strokeWidth: 2 }}
             />
 
-            {/* Net Profit — natural curve, solid line */}
+            {/* Net Profit — monotone curve, solid line */}
             <Area
-              type="natural"
+              type="monotone"
               dataKey="netProfit"
               name="Net Profit"
               stroke="var(--color-netProfit)"
