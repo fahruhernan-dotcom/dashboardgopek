@@ -48,18 +48,21 @@ export function SalesAndCashChart({
   const kpiBoxStyle = {
     display: 'flex',
     flexDirection: 'column',
-    padding: '10px 12px',
+    justifyContent: 'center',
+    padding: '12px 14px',
     background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.05)',
     borderRadius: '12px',
+    fontFamily: 'inherit',
   }
-  const kpiLabelStyle = { fontSize: '10px', color: '#94A3B8', fontWeight: 600 }
-  const kpiValueStyle = { fontSize: '14px', fontWeight: 850, fontFamily: 'DM Sans', marginTop: '2px' }
+  const kpiLabelStyle = { fontSize: '10px', color: '#94A3B8', fontWeight: 600, fontFamily: 'inherit' }
+  const kpiValueStyle = { fontSize: '14px', fontWeight: 900, fontFamily: 'inherit', marginTop: '2px', lineHeight: '1.2' }
 
   return (
     <div style={{
       background: C.card, borderRadius: '18px', padding: '16px',
       border: `1px solid ${C.border}`, width: '100%', marginBottom: '20px',
+      fontFamily: 'inherit'
     }}>
       {/* ── Header ── */}
       <div style={{ display: 'flex', flexDirection: isDesktop ? 'row' : 'column', alignItems: isDesktop ? 'center' : 'stretch', justifyContent: 'space-between', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px', marginBottom: '16px' }}>
@@ -86,11 +89,12 @@ export function SalesAndCashChart({
       </div>
 
       {/* ── KPI Grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1.2fr' : '1fr', gap: '16px', marginBottom: '18px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '18px' }}>
+        
         {/* Kolom Penjualan */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.05em' }}>📊 PENJUALAN (AKRUAL)</span>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.08em' }}>📊 PENJUALAN (AKRUAL)</span>
+          <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr 1fr' : '1fr', gap: '10px' }}>
             <div style={kpiBoxStyle}>
               <span style={kpiLabelStyle}>Gross Profit</span>
               <span style={{ ...kpiValueStyle, color: '#10B981' }}>{formatIDR(totalGrossProfit)}</span>
@@ -99,33 +103,31 @@ export function SalesAndCashChart({
               <span style={kpiLabelStyle}>Net Profit</span>
               <span style={{ ...kpiValueStyle, color: '#EA580C' }}>{formatIDR(totalNetProfit)}</span>
             </div>
-          </div>
-          <div style={{ ...kpiBoxStyle, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '44px' }}>
-            <span style={kpiLabelStyle}>Belum Terealisasi (Piutang)</span>
-            <span style={{ ...kpiValueStyle, color: '#EF4444' }}>{formatIDR(unrealizedProfitSnapshot)}</span>
+            <div style={kpiBoxStyle}>
+              <span style={kpiLabelStyle}>Belum Terealisasi (Piutang)</span>
+              <span style={{ ...kpiValueStyle, color: '#EF4444' }}>{formatIDR(unrealizedProfitSnapshot)}</span>
+            </div>
           </div>
         </div>
 
         {/* Kolom Arus Kas */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.05em' }}>💸 ARUS KAS (RIIL)</span>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.08em' }}>💸 ARUS KAS (RIIL)</span>
+          <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr 1fr 1fr' : '1fr 1fr', gap: '10px' }}>
             <div style={kpiBoxStyle}>
               <span style={kpiLabelStyle}>Kas Masuk</span>
               <span style={{ ...kpiValueStyle, color: '#10B981' }}>{formatIDR(totalCashIn)}</span>
             </div>
-            <div style={{ ...kpiBoxStyle, minHeight: '64px', justifyContent: 'space-between' }}>
-              <div>
-                <span style={kpiLabelStyle}>Kas Keluar</span>
-                {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0) && (
-                  <div style={{ display: 'flex', gap: '4px', marginTop: '2px', flexWrap: 'wrap', fontSize: '8px', color: '#64748B', fontFamily: 'DM Sans' }}>
-                    {totalCashOutPurchases > 0 && <span>Stok {formatIDR(totalCashOutPurchases)}</span>}
-                    {totalCashOutExpenses > 0 && <span>Ops {formatIDR(totalCashOutExpenses)}</span>}
-                    {totalCashOutPayroll > 0 && <span>Gaji {formatIDR(totalCashOutPayroll)}</span>}
-                  </div>
-                )}
-              </div>
-              <span style={{ ...kpiValueStyle, color: '#EF4444', alignSelf: 'flex-end', marginTop: 0 }}>{formatIDR(totalCashOut)}</span>
+            <div style={kpiBoxStyle}>
+              <span style={kpiLabelStyle}>Kas Keluar</span>
+              <span style={{ ...kpiValueStyle, color: '#EF4444' }}>{formatIDR(totalCashOut)}</span>
+              {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0) && (
+                <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap', fontSize: '8px', color: '#64748B' }}>
+                  {totalCashOutPurchases > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px' }}>Stok {formatIDR(totalCashOutPurchases)}</span>}
+                  {totalCashOutExpenses > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px' }}>Ops {formatIDR(totalCashOutExpenses)}</span>}
+                  {totalCashOutPayroll > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px' }}>Gaji {formatIDR(totalCashOutPayroll)}</span>}
+                </div>
+              )}
             </div>
             <div style={{
               ...kpiBoxStyle,
