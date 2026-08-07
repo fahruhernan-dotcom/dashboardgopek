@@ -15,6 +15,9 @@ import BottomNav from './dashboard/_shared/components/BottomNav'
 import SuperadminLayout from './dashboard/_shared/layouts/SuperadminLayout'
 import { useMediaQuery } from './lib/hooks/useMediaQuery'
 import { useForceDarkMode } from './lib/hooks/useForceDarkMode'
+import { getSubscriptionStatus } from './lib/subscriptionUtils'
+import LockedServerPage from './pages/LockedServerPage'
+import LicenseBanner from './components/license/LicenseBanner'
 
 const SuperadminDashboard = React.lazy(() => import('./dashboard/superadmin/SuperadminDashboardPage'))
 
@@ -96,9 +99,18 @@ const ScrollToTop = () => {
 }
 
 function ProtectedRoute({ children }) {
-  const { loading, user } = useAuth()
+  const { loading, user, tenant, profile } = useAuth()
   if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
+
+  const sub = getSubscriptionStatus(tenant)
+  const isExpired = sub.status === 'expired'
+  const isDev = profile?.role === 'dev'
+
+  if (isExpired && !isDev) {
+    return <LockedServerPage />
+  }
+
   return children
 }
 
@@ -123,6 +135,7 @@ function SembakoLayout({ children }) {
     return (
       <DesktopSidebarLayout>
         {children}
+        <LicenseBanner />
       </DesktopSidebarLayout>
     )
   }
@@ -134,6 +147,7 @@ function SembakoLayout({ children }) {
       </SidebarProvider>
       {children}
       <BottomNav />
+      <LicenseBanner />
     </div>
   )
 }

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Terminal, ShieldCheck, Users, Activity, Trash2, RefreshCw, 
   Search, AlertTriangle, CheckCircle2, Cpu, Database, 
-  KeyRound, ShieldAlert, Layers, Zap, HardDrive, Wifi, Server,
+  KeyRound, ShieldAlert, HardDrive, Wifi, Server,
   Copy, Check, FileText, ArrowRight, CornerDownRight
 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -29,6 +29,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { useLicense } from '@/hooks/useLicense'
+import { LicenseStatusCard } from '@/components/license/LicenseStatusCard'
+import { LicenseTimeline } from '@/components/license/LicenseTimeline'
+import { LicenseActions } from '@/components/license/LicenseActions'
+import { LicenseHistory } from '@/components/license/LicenseHistory'
 
 export default function DevAdminHubPage() {
   const { user, profile, tenant } = useAuth()
@@ -46,6 +51,11 @@ export default function DevAdminHubPage() {
   const [showConfirm2, setShowConfirm2] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [isResetting, setIsResetting] = useState(false)
+
+  // License hook
+  const license = useLicense()
+
+  // (license actions are handled via useLicense hook)
 
   // System Logs State (mocked + localStorage captured errors)
   const [logFilter, setLogFilter] = useState('ALL')
@@ -94,7 +104,8 @@ export default function DevAdminHubPage() {
 
   useEffect(() => {
     checkHealth()
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenant?.id])
 
   const handleClearLogs = () => {
     setSystemLogs([])
@@ -464,6 +475,60 @@ export default function DevAdminHubPage() {
 
             </div>
 
+            {/* License Management Section */}
+            <Card className="bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-[28px] p-6 sm:p-8 shadow-2xl space-y-6 mt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Server size={22} />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-white text-lg tracking-tight uppercase">License Management</h3>
+                  <p className="text-xs text-slate-400">Atur dan perbarui masa aktif server klien distributor secara langsung. Semua tindakan perubahan memerlukan konfirmasi.</p>
+                </div>
+              </div>
+
+              <Separator className="bg-white/10 my-1" />
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Col 1: Status + Timeline */}
+                <div className="lg:col-span-4 space-y-5">
+                  <LicenseStatusCard
+                    statusInfo={license.statusInfo}
+                    licenseActivatedAt={license.licenseActivatedAt}
+                    licenseExpiresAt={license.licenseExpiresAt}
+                    loading={license.loading}
+                    formatLicenseDate={license.formatLicenseDate}
+                    getGraceDate={license.getGraceDate}
+                  />
+                  <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Alur Lisensi</h4>
+                    <LicenseTimeline statusInfo={license.statusInfo} loading={license.loading} />
+                  </div>
+                </div>
+
+                {/* Col 2: Actions + History */}
+                <div className="lg:col-span-8 space-y-6">
+                  <LicenseActions
+                    updating={license.updating}
+                    customDateInput={license.customDateInput}
+                    setCustomDateInput={license.setCustomDateInput}
+                    prepareLicenseUpdate={license.prepareLicenseUpdate}
+                    showConfirm={license.showConfirm}
+                    setShowConfirm={license.setShowConfirm}
+                    pendingAction={license.pendingAction}
+                    pendingExpiry={license.pendingExpiry}
+                    executeLicenseUpdate={license.executeLicenseUpdate}
+                  />
+                  <Separator className="bg-white/5" />
+                  <LicenseHistory
+                    history={license.history}
+                    loading={license.historyLoading}
+                    onRefresh={license.fetchHistory}
+                  />
+                </div>
+              </div>
+            </Card>
+
             {/* Danger Zone: Reset Data Bisnis */}
             <Card className="bg-red-950/10 border border-red-500/30 rounded-[28px] p-6 shadow-2xl space-y-4 mt-6">
               <div className="flex items-center gap-3">
@@ -611,6 +676,7 @@ export default function DevAdminHubPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
 
     </div>
   )
