@@ -65,46 +65,49 @@ export function KPICard({ icon: Icon, label, value, sub, accentColor = C.accent,
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{ display: 'flex', flex: 1 }}
+      whileHover={{ y: -4 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 22 }}
+      style={{ display: 'flex', flex: 1, cursor: 'default' }}
     >
       <Card
         style={{
-          background: C.card,
-          borderRadius: '14px',
-          padding: '12px 14px',
+          background: `linear-gradient(135deg, ${C.card} 0%, #0c0804 100%)`,
+          backgroundImage: `radial-gradient(circle at top right, ${accentColor}12, transparent 65%)`,
+          borderRadius: '16px',
+          padding: '14px 16px',
           border: `1px solid ${C.border}`,
           borderLeft: urgent ? `4px solid ${accentColor}` : `1px solid ${C.border}`,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          gap: '8px',
+          gap: '10px',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
           fontFamily: "'Sora', 'Inter', sans-serif",
           width: '100%',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <p style={{
-            fontSize: '10px', color: C.muted, fontWeight: 800,
-            letterSpacing: '0.06em', textTransform: 'uppercase',
+            fontSize: '11px', color: '#94A3B8', fontWeight: 700,
+            letterSpacing: '0.04em', textTransform: 'uppercase',
             lineHeight: 1.3,
             fontFamily: "'Sora', 'Inter', sans-serif"
           }}>{label}</p>
           <div style={{
-            width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+            width: '36px', height: '36px', borderRadius: '11px', flexShrink: 0,
             background: `${accentColor}18`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: `1px solid ${accentColor}30`,
+            border: `1px solid ${accentColor}28`,
           }}>
-            <Icon size={16} color={accentColor} />
+            <Icon size={18} color={accentColor} />
           </div>
         </div>
 
         <div>
           <p style={{
-            fontSize: '18px', fontWeight: 850, color: C.text,
+            fontSize: '22px', fontWeight: 900, color: '#FFFFFF',
             lineHeight: 1.2, fontFamily: "'Sora', 'Inter', sans-serif",
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             letterSpacing: '-0.02em',

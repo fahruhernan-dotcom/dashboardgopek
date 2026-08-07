@@ -69,13 +69,16 @@ export function SalesAndCashChart({
     flexDirection: 'column',
     justifyContent: 'center',
     padding: '12px 14px',
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.05)',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.005) 100%)',
+    border: '1px solid rgba(255,255,255,0.06)',
     borderRadius: '12px',
-    fontFamily: 'inherit',
+    fontFamily: "'Sora', 'Inter', sans-serif",
+    position: 'relative',
+    overflow: 'hidden',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
   }
-  const kpiLabelStyle = { fontSize: '10px', color: '#94A3B8', fontWeight: 600, fontFamily: 'inherit' }
-  const kpiValueStyle = { fontSize: '14px', fontWeight: 900, fontFamily: 'inherit', marginTop: '2px', lineHeight: '1.2' }
+  const kpiLabelStyle = { fontSize: '10px', color: '#94A3B8', fontWeight: 700, letterSpacing: '0.02em', fontFamily: "'Sora', 'Inter', sans-serif" }
+  const kpiValueStyle = { fontSize: '16px', fontWeight: 900, fontFamily: "'Sora', 'Inter', sans-serif", marginTop: '3px', lineHeight: '1.2' }
 
   return (
     <div style={{
@@ -120,15 +123,15 @@ export function SalesAndCashChart({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.08em' }}>📊 PENJUALAN (AKRUAL)</span>
           <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr 1fr' : '1fr', gap: '10px' }}>
-            <div style={kpiBoxStyle}>
+            <div style={{ ...kpiBoxStyle, borderLeft: '3.5px solid #10B981' }}>
               <span style={kpiLabelStyle}>Gross Profit</span>
               <span style={{ ...kpiValueStyle, color: '#10B981' }}>{formatIDR(totalGrossProfit)}</span>
             </div>
-            <div style={kpiBoxStyle}>
+            <div style={{ ...kpiBoxStyle, borderLeft: '3.5px solid #EA580C' }}>
               <span style={kpiLabelStyle}>Net Profit</span>
               <span style={{ ...kpiValueStyle, color: '#EA580C' }}>{formatIDR(totalNetProfit)}</span>
             </div>
-            <div style={kpiBoxStyle}>
+            <div style={{ ...kpiBoxStyle, borderLeft: '3.5px solid #EF4444' }}>
               <span style={kpiLabelStyle}>Belum Terealisasi (Piutang)</span>
               <span style={{ ...kpiValueStyle, color: '#EF4444' }}>{formatIDR(unrealizedProfitSnapshot)}</span>
             </div>
@@ -139,33 +142,35 @@ export function SalesAndCashChart({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.08em' }}>💸 ARUS KAS (RIIL)</span>
           <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr 1fr 1fr' : '1fr 1fr', gap: '10px' }}>
-            <div style={kpiBoxStyle}>
+            <div style={{ ...kpiBoxStyle, borderLeft: '3.5px solid #10B981' }}>
               <span style={kpiLabelStyle}>Kas Masuk</span>
               <span style={{ ...kpiValueStyle, color: '#10B981' }}>{formatIDR(totalCashIn)}</span>
             </div>
-            <div style={kpiBoxStyle}>
+            <div style={{ ...kpiBoxStyle, borderLeft: '3.5px solid #EF4444' }}>
               <span style={kpiLabelStyle}>Kas Keluar</span>
               <span style={{ ...kpiValueStyle, color: '#EF4444' }}>{formatIDR(totalCashOut)}</span>
               {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0) && (
-                <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap', fontSize: '8px', color: '#64748B' }}>
-                  {totalCashOutPurchases > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px' }}>Stok {formatIDR(totalCashOutPurchases)}</span>}
-                  {totalCashOutExpenses > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px' }}>Ops {formatIDR(totalCashOutExpenses)}</span>}
-                  {totalCashOutPayroll > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px' }}>Gaji {formatIDR(totalCashOutPayroll)}</span>}
+                <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap', fontSize: '8px', color: '#94A3B8', fontFamily: "'Sora', 'Inter', sans-serif" }}>
+                  {totalCashOutPurchases > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>Stok {formatIDR(totalCashOutPurchases)}</span>}
+                  {totalCashOutExpenses > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>Ops {formatIDR(totalCashOutExpenses)}</span>}
+                  {totalCashOutPayroll > 0 && <span style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 4px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>Gaji {formatIDR(totalCashOutPayroll)}</span>}
                 </div>
               )}
             </div>
             <div style={{
               ...kpiBoxStyle,
-              background: cashBalance >= 0 ? 'rgba(16,185,129,0.04)' : 'rgba(239,68,68,0.04)',
-              border: cashBalance >= 0 ? '1px solid rgba(16,185,129,0.12)' : '1px solid rgba(239,68,68,0.12)',
+              borderLeft: cashBalance >= 0 ? '3.5px solid #10B981' : '3.5px solid #EF4444',
+              background: cashBalance >= 0 
+                ? 'linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(255,255,255,0.005) 100%)' 
+                : 'linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(255,255,255,0.005) 100%)',
             }}>
               <span style={{ ...kpiLabelStyle, color: cashBalance >= 0 ? '#10B981' : '#EF4444' }}>Saldo Kas</span>
               <span style={{ ...kpiValueStyle, color: cashBalance >= 0 ? '#10B981' : '#EF4444' }}>{formatIDR(cashBalance)}</span>
             </div>
             <div style={{
               ...kpiBoxStyle,
-              background: 'rgba(234,88,12,0.04)',
-              border: '1px solid rgba(234,88,12,0.12)',
+              borderLeft: '3.5px solid #EA580C',
+              background: 'linear-gradient(135deg, rgba(234,88,12,0.05) 0%, rgba(255,255,255,0.005) 100%)',
             }}>
               <span style={{ ...kpiLabelStyle, color: '#EA580C' }}>Profit Direalisasi</span>
               <span style={{ ...kpiValueStyle, color: '#EA580C' }}>{formatIDR(realizedProfit)}</span>
