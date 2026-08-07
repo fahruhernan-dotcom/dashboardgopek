@@ -5,6 +5,20 @@ import { Clock, ChevronRight } from 'lucide-react'
 import { formatIDR } from '@/lib/format'
 import { C } from '../sembakoSaleUtils'
 
+const MC = {
+  bg: '#F8FAFC',
+  card: '#FFFFFF',
+  input: '#F1F5F9',
+  accent: '#0F172A',
+  amber: '#D97706',
+  green: '#16A34A',
+  red: '#DC2626',
+  text: '#0F172A',
+  muted: '#64748B',
+  border: '#E2E8F0',
+  borderAm: '#F1F5F9',
+}
+
 export function CollectionReminders({ sales, navigate, brokerBase, maxItems = 5, isMobile }) {
   const reminders = useMemo(() => {
     const now = new Date()
@@ -26,23 +40,24 @@ export function CollectionReminders({ sales, navigate, brokerBase, maxItems = 5,
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       style={{
-        background: 'rgba(239,68,68,0.04)',
-        border: `1px solid rgba(239,68,68,0.15)`,
+        background: '#FEF2F2',
+        border: '1px solid #FEE2E2',
         borderRadius: '16px',
         padding: '14px',
-        marginBottom: isMobile ? '12px' : '24px'
+        marginBottom: isMobile ? '12px' : '24px',
+        boxShadow: '0 1px 3px rgba(220,38,38,0.03)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Clock size={16} color="#EF4444" />
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444', letterSpacing: '0.1em' }}>PENAGIHAN JATUH TEMPO</span>
-          <span style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '5px' }}>{reminders.length}</span>
+          <Clock size={16} color={MC.red} />
+          <span style={{ fontSize: '11px', fontWeight: 800, color: MC.red, letterSpacing: '0.1em' }}>PENAGIHAN JATUH TEMPO</span>
+          <span style={{ background: '#FEE2E2', color: MC.red, fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '5px' }}>{reminders.length}</span>
         </div>
         {isMobile && reminders.length > maxItems && (
           <button
             onClick={() => navigate(`${brokerBase}/penjualan`)}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.accent, fontSize: '11px', fontWeight: 700, padding: 0 }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: MC.accent, fontSize: '11px', fontWeight: 700, padding: 0 }}
           >
             Lihat semua
           </button>
@@ -50,20 +65,20 @@ export function CollectionReminders({ sales, navigate, brokerBase, maxItems = 5,
       </div>
       <div style={isMobile ? { display: 'flex', flexDirection: 'column', gap: '8px' } : { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
         {visibleReminders.map(s => (
-          <div key={s.id} style={{ background: C.card, borderRadius: '12px', padding: '12px', border: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div key={s.id} style={{ background: MC.card, borderRadius: '12px', padding: '12px', border: '1px solid #FCA5A5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
              <div>
-               <p style={{ fontSize: '13px', fontWeight: 800, color: C.text }}>{s.sembako_customers?.customer_name || s.customer_name}</p>
-               <p style={{ fontSize: '11px', color: s.daysDiff < 0 ? '#EF4444' : '#F59E0B', fontWeight: 700 }}>
-                 {s.daysDiff < 0 ? `Telat ${Math.abs(s.daysDiff)} hari` : s.daysDiff === 0 ? 'Jatuh tempo HARI INI' : `H-${s.daysDiff} Jatuh tempo`}
-               </p>
+                <p style={{ fontSize: '13px', fontWeight: 800, color: MC.text }}>{s.sembako_customers?.customer_name || s.customer_name}</p>
+                <p style={{ fontSize: '11px', color: s.daysDiff < 0 ? MC.red : MC.amber, fontWeight: 750 }}>
+                  {s.daysDiff < 0 ? `Telat ${Math.abs(s.daysDiff)} hari` : s.daysDiff === 0 ? 'Jatuh tempo HARI INI' : `H-${s.daysDiff} Jatuh tempo`}
+                </p>
              </div>
              <div style={{ textAlign: 'right' }}>
-               <p style={{ fontSize: '14px', fontWeight: 900, color: C.text }}>{formatIDR(s.remaining_amount)}</p>
-               <button 
-                onClick={() => navigate(`${brokerBase}/penjualan?saleId=${s.id}`)}
-                style={{ fontSize: '10px', color: C.accent, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                  Detail <ChevronRight size={10} style={{ display: 'inline', verticalAlign: 'middle', marginTop: '-2px' }} />
-               </button>
+                <p style={{ fontSize: '14px', fontWeight: 850, color: MC.text }}>{formatIDR(s.remaining_amount)}</p>
+                <button 
+                 onClick={() => navigate(`${brokerBase}/penjualan?saleId=${s.id}`)}
+                 style={{ fontSize: '10px', color: MC.accent, fontWeight: 750, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                   Detail <ChevronRight size={10} style={{ display: 'inline', verticalAlign: 'middle', marginTop: '-2px' }} />
+                </button>
              </div>
           </div>
         ))}

@@ -23,8 +23,8 @@ export default function SmartInsight({ insight, className }) {
       className={cn(
         "inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border transition-all duration-300",
         isUp 
-          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(2, 26, 2,0.1)]" 
-          : "bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.1)]",
+          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-sm" 
+          : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400 shadow-sm",
         className
       )}
     >
@@ -62,7 +62,7 @@ export default function SmartInsight({ insight, className }) {
 
       <div className="h-3 w-px bg-current opacity-10 mx-0.5" />
 
-      <p className="text-[11px] font-semibold text-slate-200 whitespace-nowrap">
+      <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-200 whitespace-nowrap">
         dibanding minggu lalu
       </p>
 

@@ -9,6 +9,20 @@ import { id as idLocale } from 'date-fns/locale'
 import { formatIDR } from '@/lib/format'
 import { C } from '../sembakoSaleUtils'
 
+const MC = {
+  bg: '#F8FAFC',
+  card: '#FFFFFF',
+  input: '#F1F5F9',
+  accent: '#0F172A',
+  amber: '#D97706',
+  green: '#16A34A',
+  red: '#DC2626',
+  text: '#0F172A',
+  muted: '#64748B',
+  border: '#E2E8F0',
+  borderAm: '#F1F5F9',
+}
+
 // ── Calendar Heatmap ───────────────────────────────────────────────────────────
 function CalendarHeatmap({ currentMonth, selectedDate, setSelectedDate, piutangDates, deliveryDates }) {
   const monthStart = startOfMonth(currentMonth)
@@ -21,7 +35,7 @@ function CalendarHeatmap({ currentMonth, selectedDate, setSelectedDate, piutangD
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
         {DAY_LABELS.map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: '9px', fontWeight: 800, color: C.muted, padding: '2px 0' }}>{d}</div>
+          <div key={d} style={{ textAlign: 'center', fontSize: '9px', fontWeight: 800, color: MC.muted, padding: '2px 0' }}>{d}</div>
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
@@ -35,8 +49,8 @@ function CalendarHeatmap({ currentMonth, selectedDate, setSelectedDate, piutangD
           return (
             <button key={i} onClick={() => setSelectedDate(day)} style={{
               aspectRatio: '1', borderRadius: '8px', border: 'none', cursor: 'pointer',
-              background: isSelected ? C.accent : isToday ? 'rgba(234,88,12,0.15)' : 'transparent',
-              color: isSelected ? '#fff' : inMonth ? C.text : C.muted,
+              background: isSelected ? MC.accent : isToday ? 'rgba(217,119,6,0.12)' : 'transparent',
+              color: isSelected ? '#fff' : inMonth ? MC.text : MC.muted,
               fontSize: '11px', fontWeight: isSelected || isToday ? 800 : 400,
               opacity: inMonth ? 1 : 0.3,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -45,8 +59,8 @@ function CalendarHeatmap({ currentMonth, selectedDate, setSelectedDate, piutangD
               <span>{format(day, 'd')}</span>
               {inMonth && (hasPiutang || hasDelivery) && !isSelected && (
                 <div style={{ display: 'flex', gap: '2px' }}>
-                  {hasPiutang  && <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#EF4444' }} />}
-                  {hasDelivery && <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.amber }} />}
+                  {hasPiutang  && <div style={{ width: 4, height: 4, borderRadius: '50%', background: MC.red }} />}
+                  {hasDelivery && <div style={{ width: 4, height: 4, borderRadius: '50%', background: MC.amber }} />}
                 </div>
               )}
             </button>
@@ -63,12 +77,12 @@ export function AgendaSection({ sales, deliveries, selectedDate, setSelectedDate
 
   const piutangEvents = useMemo(() =>
     sales.filter(s => s.payment_status !== 'lunas' && s.due_date)
-      .map(s => ({ ...s, type: 'Piutang', date: s.due_date, icon: Wallet, color: '#EF4444' })),
+      .map(s => ({ ...s, type: 'Piutang', date: s.due_date, icon: Wallet, color: MC.red })),
     [sales]
   )
   const deliveryEvents = useMemo(() =>
     deliveries.filter(d => d.status !== 'delivered')
-      .map(d => ({ ...d, type: 'Pengiriman', date: d.created_at?.slice(0, 10), icon: Truck, color: C.amber })),
+      .map(d => ({ ...d, type: 'Pengiriman', date: d.created_at?.slice(0, 10), icon: Truck, color: MC.amber })),
     [deliveries]
   )
 
@@ -86,19 +100,19 @@ export function AgendaSection({ sales, deliveries, selectedDate, setSelectedDate
   const monthPiutang = piutangEvents.filter(e => e.date?.startsWith(mStr)).reduce((s, e) => s + (e.remaining_amount || 0), 0)
 
   return (
-    <div style={{ background: C.card, borderRadius: '16px', padding: '16px', border: `1px solid ${C.border}` }}>
+    <div style={{ background: MC.card, borderRadius: '16px', padding: '16px', border: `1px solid ${MC.border}`, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em' }}>AGENDA</span>
+        <span style={{ fontSize: '11px', fontWeight: 800, color: MC.accent, letterSpacing: '0.1em' }}>AGENDA</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex', padding: '4px' }}>
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: MC.muted, display: 'flex', padding: '4px' }}>
             <ChevronLeft size={14} />
           </button>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: C.text, minWidth: '80px', textAlign: 'center' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: MC.text, minWidth: '80px', textAlign: 'center' }}>
             {format(currentMonth, 'MMM yyyy', { locale: idLocale })}
           </span>
           <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex', padding: '4px' }}>
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: MC.muted, display: 'flex', padding: '4px' }}>
             <ChevronRight size={14} />
           </button>
         </div>
@@ -107,8 +121,8 @@ export function AgendaSection({ sales, deliveries, selectedDate, setSelectedDate
       {isMobile && (
         <button onClick={() => setShowCalendar(!showCalendar)} style={{
           width: '100%', height: '38px', borderRadius: '10px',
-          background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}`,
-          fontSize: '11px', fontWeight: 700, color: C.text,
+          background: MC.input, border: `1px solid ${MC.border}`,
+          fontSize: '11px', fontWeight: 700, color: MC.text,
           marginBottom: '12px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
           WebkitTapHighlightColor: 'transparent',
@@ -128,19 +142,19 @@ export function AgendaSection({ sales, deliveries, selectedDate, setSelectedDate
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', margin: '12px 0' }}>
-        <div style={{ background: C.input, borderRadius: '10px', padding: '8px 10px' }}>
-          <p style={{ fontSize: '9px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.08em', marginBottom: '2px' }}>PIUTANG BULAN INI</p>
-          <p style={{ fontSize: '13px', fontWeight: 800, color: '#EF4444' }}>{formatIDR(monthPiutang)}</p>
+        <div style={{ background: MC.input, borderRadius: '10px', padding: '8px 10px', border: `1px solid ${MC.border}` }}>
+          <p style={{ fontSize: '9px', fontWeight: 800, color: MC.muted, letterSpacing: '0.08em', marginBottom: '2px' }}>PIUTANG BULAN INI</p>
+          <p style={{ fontSize: '13px', fontWeight: 850, color: MC.red }}>{formatIDR(monthPiutang)}</p>
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
         {['Semua', 'Piutang'].map(tab => (
           <button key={tab} onClick={() => setAgendaFilter(tab)} style={{
-            padding: '4px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+            padding: '4px 10px', borderRadius: '8px', border: `1px solid ${MC.border}`, cursor: 'pointer',
             fontSize: '10px', fontWeight: 800,
-            background: agendaFilter === tab ? C.accent : 'rgba(255,255,255,0.04)',
-            color: agendaFilter === tab ? '#fff' : C.muted,
+            background: agendaFilter === tab ? MC.accent : MC.input,
+            color: agendaFilter === tab ? '#fff' : MC.muted,
             transition: 'all 0.15s',
           }}>{tab}</button>
         ))}
@@ -149,8 +163,8 @@ export function AgendaSection({ sales, deliveries, selectedDate, setSelectedDate
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '240px', overflowY: 'auto' }}>
         {filteredEvents.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
-            <CalendarX size={24} color="#94A3B8" style={{ margin: '0 auto 6px', opacity: 0.4 }} />
-            <p style={{ fontSize: '12px', color: '#94A3B8' }}>Tidak ada agenda</p>
+            <CalendarX size={24} color={MC.muted} style={{ margin: '0 auto 6px', opacity: 0.4 }} />
+            <p style={{ fontSize: '12px', color: MC.muted }}>Tidak ada agenda</p>
           </div>
         ) : (
           filteredEvents.map((e, i) => {
@@ -164,14 +178,16 @@ export function AgendaSection({ sales, deliveries, selectedDate, setSelectedDate
             return (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
-                background: C.input, borderRadius: '10px', padding: '8px 10px',
+                background: MC.card, borderRadius: '10px', padding: '8px 10px',
+                border: `1px solid ${MC.border}`,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
               }}>
-                <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${e.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '8px', background: MC.input, border: `1px solid ${MC.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <EventIcon size={13} color={e.color} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
-                  <p style={{ fontSize: '10px', color: e.color, fontWeight: 600 }}>{e.type} · {subText}</p>
+                  <p style={{ fontSize: '12px', fontWeight: 700, color: MC.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+                  <p style={{ fontSize: '10px', color: e.color, fontWeight: 650 }}>{e.type} · {subText}</p>
                 </div>
               </div>
             )

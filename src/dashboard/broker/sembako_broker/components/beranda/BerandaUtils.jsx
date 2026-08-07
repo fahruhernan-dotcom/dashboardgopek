@@ -60,80 +60,89 @@ export function BerandaSkeleton({ isDesktop }) {
 import { Card } from '@/components/ui/card'
 import { motion } from 'framer-motion'
 
-export function KPICard({ icon: Icon, label, value, sub, accentColor = C.accent, urgent, badge, trend }) {
+const MC = {
+  bg: '#F8FAFC',
+  card: '#FFFFFF',
+  input: '#F1F5F9',
+  accent: '#0F172A',
+  amber: '#D97706',
+  green: '#16A34A',
+  red: '#DC2626',
+  text: '#0F172A',
+  muted: '#64748B',
+  border: '#E2E8F0',
+  borderAm: '#F1F5F9',
+}
+
+export function KPICard({ icon: Icon, label, value, sub, accentColor = MC.accent, urgent, badge, trend }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      transition={{ type: 'spring', stiffness: 350, damping: 22 }}
+      whileHover={{ y: -2 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       style={{ display: 'flex', flex: 1, cursor: 'default' }}
     >
       <Card
         style={{
-          background: `linear-gradient(135deg, ${C.card} 0%, #0c0804 100%)`,
-          backgroundImage: `radial-gradient(circle at top right, ${accentColor}12, transparent 65%)`,
+          background: MC.card,
           borderRadius: '16px',
           padding: '14px 16px',
-          border: `1px solid ${C.border}`,
-          borderLeft: urgent ? `4px solid ${accentColor}` : `1px solid ${C.border}`,
+          border: `1px solid ${MC.border}`,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           gap: '10px',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
           fontFamily: "'Sora', 'Inter', sans-serif",
           width: '100%',
+          transition: 'border-color 0.2s ease',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <p style={{
-            fontSize: '11px', color: '#94A3B8', fontWeight: 700,
+            fontSize: '11px', color: MC.muted, fontWeight: 700,
             letterSpacing: '0.04em', textTransform: 'uppercase',
             lineHeight: 1.3,
             fontFamily: "'Sora', 'Inter', sans-serif"
           }}>{label}</p>
           <div style={{
             width: '36px', height: '36px', borderRadius: '11px', flexShrink: 0,
-            background: `${accentColor}18`,
+            background: MC.input,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: `1px solid ${accentColor}28`,
+            border: `1px solid ${MC.border}`,
           }}>
-            <Icon size={18} color={accentColor} />
+            <Icon size={18} color="#475569" />
           </div>
         </div>
 
         <div>
           <p style={{
-            fontSize: '22px', fontWeight: 900, color: '#FFFFFF',
+            fontSize: '22px', fontWeight: 800, color: MC.text,
             lineHeight: 1.2, fontFamily: "'Sora', 'Inter', sans-serif",
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             letterSpacing: '-0.02em',
           }}>{value}</p>
           {sub && (
             <p style={{
-              fontSize: '10px', color: C.muted, marginTop: '3px', lineHeight: 1.4,
-              fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              fontSize: '10px', color: urgent ? MC.red : MC.muted, marginTop: '3px', lineHeight: 1.4,
+              fontWeight: 650, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               fontFamily: "'Sora', 'Inter', sans-serif"
             }}>{sub}</p>
           )}
         </div>
 
         {(trend != null || !!badge) && (
-          <div style={{ paddingTop: '8px', borderTop: `1px solid ${C.border}60`, marginTop: 'auto' }}>
+          <div style={{ paddingTop: '8px', borderTop: `1px solid ${MC.border}60`, marginTop: 'auto' }}>
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: '4px',
-              background: trend != null
-                ? (trend >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)')
-                : 'rgba(248, 150, 30, 0.12)',
-              color: trend != null ? (trend >= 0 ? '#34D399' : '#F87171') : '#F59E0B',
+              background: MC.input,
+              color: trend != null ? (trend >= 0 ? MC.green : MC.red) : MC.amber,
               fontSize: '10px', fontWeight: 800, padding: '3px 8px',
               borderRadius: '6px', letterSpacing: '0.02em', whiteSpace: 'nowrap',
-              border: trend != null
-                ? (trend >= 0 ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)')
-                : '1px solid rgba(248, 150, 30, 0.25)',
+              border: `1px solid ${MC.border}`,
               fontFamily: "'Sora', 'Inter', sans-serif"
             }}>
               {trend != null
@@ -155,17 +164,19 @@ export function InvoiceRow({ sale, onClick }) {
     <div
       onClick={onClick}
       style={{
-        background: C.input, borderRadius: '10px', padding: '10px 12px',
+        background: MC.card, borderRadius: '12px', padding: '10px 12px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
         cursor: onClick ? 'pointer' : 'default',
+        border: `1px solid ${MC.border}`,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
       }}
     >
       <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{ fontSize: '13px', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
-        <p style={{ fontSize: '11px', color: C.muted, marginTop: '1px' }}>{fmtDate(sale.transaction_date)}</p>
+        <p style={{ fontSize: '13px', fontWeight: 700, color: MC.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+        <p style={{ fontSize: '11px', color: MC.muted, marginTop: '1px' }}>{fmtDate(sale.transaction_date)}</p>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <p style={{ fontSize: '13px', fontWeight: 700, color: C.text }}>{formatIDR(sale.total_amount)}</p>
+        <p style={{ fontSize: '13px', fontWeight: 700, color: MC.text }}>{formatIDR(sale.total_amount)}</p>
         <span style={{
           display: 'inline-block', marginTop: '2px',
           background: st.bg, color: st.color,
@@ -182,10 +193,11 @@ export function QuickStatRow({ label, value }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '8px 12px', background: C.input, borderRadius: '10px',
+      padding: '8px 12px', background: MC.input, borderRadius: '10px',
+      border: `1px solid ${MC.border}`,
     }}>
-      <span style={{ fontSize: '12px', color: C.muted, fontWeight: 600 }}>{label}</span>
-      <span style={{ fontSize: '14px', fontWeight: 800, color: C.text }}>{value}</span>
+      <span style={{ fontSize: '12px', color: MC.muted, fontWeight: 650 }}>{label}</span>
+      <span style={{ fontSize: '13px', fontWeight: 800, color: MC.text }}>{value}</span>
     </div>
   )
 }
@@ -199,61 +211,62 @@ export function ChartTooltip({ active, payload }) {
   const opsCost = grossProfit - netProfit
 
   const statusColors = {
-    lunas: { bg: 'rgba(16,185,129,0.12)', color: '#34D399', label: 'Lunas' },
-    sebagian: { bg: 'rgba(245,158,11,0.12)', color: '#FBBF24', label: 'Sebagian' },
-    belum_lunas: { bg: 'rgba(239,68,68,0.12)', color: '#F87171', label: 'Belum Lunas' },
+    lunas: { bg: 'rgba(22,163,74,0.08)', color: '#16A34A', label: 'Lunas' },
+    sebagian: { bg: 'rgba(217,119,6,0.08)', color: '#D97706', label: 'Sebagian' },
+    belum_lunas: { bg: 'rgba(220,38,38,0.08)', color: '#DC2626', label: 'Belum Lunas' },
   }
 
   const hasUnpaid = d.txs?.some(tx => tx.paymentStatus !== 'lunas')
 
   return (
     <div style={{
-      background: '#130C06', border: `1px solid ${C.border}`, borderRadius: '14px',
-      padding: '12px 14px', minWidth: '220px', maxWidth: '280px', boxShadow: '0 8px 24px rgba(0,0,0,0.55)',
+      background: MC.card, border: `1px solid ${MC.border}`, borderRadius: '14px',
+      padding: '12px 14px', minWidth: '220px', maxWidth: '280px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      color: MC.text,
     }}>
-      <p style={{ fontSize: '10px', color: C.muted, fontWeight: 700, marginBottom: '8px', letterSpacing: '0.05em' }}>{d.fullDate}</p>
+      <p style={{ fontSize: '10px', color: MC.muted, fontWeight: 700, marginBottom: '8px', letterSpacing: '0.05em' }}>{d.fullDate}</p>
 
       {/* ── PENJUALAN section ── */}
-      <p style={{ fontSize: '9px', color: '#64748B', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '5px' }}>PENJUALAN</p>
+      <p style={{ fontSize: '9px', color: MC.muted, fontWeight: 700, letterSpacing: '0.08em', marginBottom: '5px' }}>PENJUALAN</p>
 
       {/* Gross Profit */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-          <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600 }}>Gross Profit</span>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16A34A', display: 'inline-block' }} />
+          <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Gross Profit</span>
         </div>
-        <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981' }}>{formatIDR(grossProfit)}</span>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: '#16A34A' }}>{formatIDR(grossProfit)}</span>
       </div>
 
       {/* Net Profit */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EA580C', display: 'inline-block' }} />
-          <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600 }}>Net Profit</span>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D97706', display: 'inline-block' }} />
+          <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Net Profit</span>
         </div>
-        <span style={{ fontSize: '12px', fontWeight: 800, color: '#EA580C' }}>{formatIDR(netProfit)}</span>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: '#D97706' }}>{formatIDR(netProfit)}</span>
       </div>
 
       {/* Ops Cost */}
       {opsCost > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-          <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600, paddingLeft: '13px' }}>Biaya Ops</span>
-          <span style={{ fontSize: '11px', color: '#F87171', fontWeight: 700 }}>− {formatIDR(opsCost)}</span>
+          <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600, paddingLeft: '13px' }}>Biaya Ops</span>
+          <span style={{ fontSize: '11px', color: '#DC2626', fontWeight: 700 }}>− {formatIDR(opsCost)}</span>
         </div>
       )}
 
       {/* ── TRANSAKSI section ── */}
       {d.txs?.length > 0 && (
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '7px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <p style={{ fontSize: '9px', color: '#64748B', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '2px' }}>
+        <div style={{ borderTop: `1px solid ${MC.border}`, paddingTop: '7px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <p style={{ fontSize: '9px', color: MC.muted, fontWeight: 700, letterSpacing: '0.08em', marginBottom: '2px' }}>
             TRANSAKSI ({d.txCount || d.txs.length})
           </p>
           {d.txs.map((tx, i) => {
             const st = statusColors[tx.paymentStatus] || statusColors.belum_lunas
             return (
-              <div key={tx.id || i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '8px', padding: '6px 8px' }}>
+              <div key={tx.id || i} style={{ background: MC.bg, borderRadius: '8px', padding: '6px 8px', border: `1px solid ${MC.border}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '11px', color: C.text, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                  <span style={{ fontSize: '11px', color: MC.text, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
                     {tx.label}
                   </span>
                   <span style={{
@@ -262,11 +275,11 @@ export function ChartTooltip({ active, payload }) {
                   }}>{st.label}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginTop: '2px' }}>
-                  <span style={{ color: '#94A3B8' }}>Invoice {formatIDR(tx.amount)}</span>
-                  <span style={{ color: '#EA580C', fontWeight: 700 }}>Profit {formatIDR(tx.netProfit)}</span>
+                  <span style={{ color: MC.muted }}>Invoice {formatIDR(tx.amount)}</span>
+                  <span style={{ color: '#D97706', fontWeight: 700 }}>Profit {formatIDR(tx.netProfit)}</span>
                 </div>
                 {tx.paymentStatus !== 'lunas' && (
-                  <div style={{ fontSize: '9px', color: '#64748B', marginTop: '1px' }}>
+                  <div style={{ fontSize: '9px', color: MC.muted, marginTop: '1px' }}>
                     Dibayar {formatIDR(tx.paid)} · Sisa {formatIDR(tx.remaining)}
                   </div>
                 )}
@@ -274,7 +287,7 @@ export function ChartTooltip({ active, payload }) {
             )
           })}
           {(d.txCount || 0) > 3 && (
-            <p style={{ fontSize: '9px', color: '#64748B', textAlign: 'center', fontWeight: 600 }}>
+            <p style={{ fontSize: '9px', color: MC.muted, textAlign: 'center', fontWeight: 600 }}>
               +{d.txCount - 3} transaksi lagi
             </p>
           )}
@@ -284,8 +297,8 @@ export function ChartTooltip({ active, payload }) {
       {/* Contextual note for unpaid invoices */}
       {hasUnpaid && grossProfit > 0 && (
         <p style={{
-          fontSize: '9px', color: '#64748B', marginTop: '6px', fontStyle: 'italic',
-          borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '5px',
+          fontSize: '9px', color: MC.muted, marginTop: '6px', fontStyle: 'italic',
+          borderTop: `1px solid ${MC.border}`, paddingTop: '5px',
         }}>
           ℹ Profit akan terealisasi setelah pembayaran diterima
         </p>
@@ -302,7 +315,7 @@ export function StockChartTooltip({ active, payload, label }) {
   const ads = Number(d.ads) || 0
   const doi = d.doi
   const statusLabel = d.statusLabel || 'Aman'
-  const color = d.color || '#10B981'
+  const color = d.color || '#16A34A'
   const modalTertahan = d.modalTertahan || 0
   const potensiOmzet = d.potensiOmzet || 0
   const recSupplierName = d.recSupplierName
@@ -312,39 +325,39 @@ export function StockChartTooltip({ active, payload, label }) {
 
   return (
     <div style={{
-      background: '#130C06', border: `1px solid rgba(234,88,12,0.25)`, borderRadius: '12px',
-      padding: '12px 14px', minWidth: '220px', boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
-      fontFamily: 'DM Sans'
+      background: MC.card, border: `1px solid ${MC.border}`, borderRadius: '12px',
+      padding: '12px 14px', minWidth: '220px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      fontFamily: "'Sora', 'Inter', sans-serif"
     }}>
-      <p style={{ fontSize: '12px', fontWeight: 800, color: C.text, marginBottom: '6px' }}>{d.fullName || label}</p>
+      <p style={{ fontSize: '12px', fontWeight: 800, color: MC.text, marginBottom: '6px' }}>{d.fullName || label}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
-          <span style={{ color: '#94A3B8' }}>Stok Fisik</span>
-          <span style={{ color: C.text, fontWeight: 700 }}>{stok} {unit}</span>
+          <span style={{ color: MC.muted }}>Stok Fisik</span>
+          <span style={{ color: MC.text, fontWeight: 700 }}>{stok} {unit}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
-          <span style={{ color: '#94A3B8' }}>Status</span>
+          <span style={{ color: MC.muted }}>Status</span>
           <span style={{ color: color, fontWeight: 800 }}>{statusLabel}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
-          <span style={{ color: '#94A3B8' }}>Estimasi Habis</span>
+          <span style={{ color: MC.muted }}>Estimasi Habis</span>
           <span style={{ color: color, fontWeight: 700 }}>
             {doi === 999 ? '∞ Aman (Tidak Bergerak)' : `${doi.toFixed(1)} hari lagi`}
           </span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
-          <span style={{ color: '#94A3B8' }}>Kecepatan Keluar</span>
-          <span style={{ color: '#FEF3C7', fontWeight: 600 }}>{ads.toFixed(1)} {unit}/hari</span>
+          <span style={{ color: MC.muted }}>Kecepatan Keluar</span>
+          <span style={{ color: MC.text, fontWeight: 600 }}>{ads.toFixed(1)} {unit}/hari</span>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        <div style={{ borderTop: `1px solid ${MC.border}`, paddingTop: '6px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
-            <span style={{ color: '#94A3B8' }}>Modal Tertahan</span>
-            <span style={{ color: '#FDBA74', fontWeight: 700 }}>{formatIDR(modalTertahan)}</span>
+            <span style={{ color: MC.muted }}>Modal Tertahan</span>
+            <span style={{ color: MC.text, fontWeight: 700 }}>{formatIDR(modalTertahan)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px' }}>
-            <span style={{ color: '#94A3B8' }}>Potensi Omzet</span>
-            <span style={{ color: '#10B981', fontWeight: 700 }}>{formatIDR(potensiOmzet)}</span>
+            <span style={{ color: MC.muted }}>Potensi Omzet</span>
+            <span style={{ color: MC.green, fontWeight: 700 }}>{formatIDR(potensiOmzet)}</span>
           </div>
         </div>
 

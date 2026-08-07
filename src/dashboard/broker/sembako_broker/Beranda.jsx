@@ -25,7 +25,21 @@ import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/
 import { BerandaSkeleton } from './components/beranda/BerandaUtils'
 import { DesktopBeranda } from './components/beranda/DesktopBeranda'
 import { MobileBeranda } from './components/beranda/MobileBeranda'
- 
+
+const MC = {
+  bg: '#F8FAFC',
+  card: '#FFFFFF',
+  input: '#F1F5F9',
+  accent: '#0F172A',
+  amber: '#D97706',
+  green: '#16A34A',
+  red: '#DC2626',
+  text: '#0F172A',
+  muted: '#64748B',
+  border: '#E2E8F0',
+  borderAm: '#F1F5F9',
+}
+
 export default function SembakoBeranda() {
   const navigate    = useNavigate()
   const { profile, tenant, profiles, switchTenant } = useAuth()
@@ -226,13 +240,13 @@ export default function SembakoBeranda() {
 
   if (statsLoading && !!tenant?.id) {
     return (
-      <div style={{ background: C.bg, minHeight: '100vh' }}>
+      <div style={{ background: MC.bg, minHeight: '100vh' }}>
         <BerandaSkeleton isDesktop={isDesktop} />
       </div>
     )
   }
 
-  if (isStatsError) return <div style={{ minHeight: '100vh', background: C.bg }}><SembakoErrorState error={statsError} onRetry={refetchStats} /></div>
+  if (isStatsError) return <div style={{ minHeight: '100vh', background: MC.bg }}><SembakoErrorState error={statsError} onRetry={refetchStats} /></div>
 
   const sharedProps = {
     profile, stats, sales, employees, deliveries, products, navigate, name, salesLoading,
@@ -247,7 +261,7 @@ export default function SembakoBeranda() {
   }
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh' }}>
+    <div style={{ background: MC.bg, minHeight: '100vh', color: MC.text }}>
       {isDesktop ? (
         <DesktopBeranda {...sharedProps} />
       ) : (

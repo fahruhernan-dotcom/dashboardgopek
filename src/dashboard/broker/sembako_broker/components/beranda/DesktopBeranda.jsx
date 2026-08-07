@@ -15,6 +15,20 @@ import { AgendaSection } from './BerandaAgenda'
 import { CollectionReminders } from './CollectionReminders'
 import { Button } from '@/components/ui/button'
 
+const MC = {
+  bg: '#F8FAFC',
+  card: '#FFFFFF',
+  input: '#F1F5F9',
+  accent: '#0F172A',
+  amber: '#D97706',
+  green: '#16A34A',
+  red: '#DC2626',
+  text: '#0F172A',
+  muted: '#64748B',
+  border: '#E2E8F0',
+  borderAm: '#F1F5F9',
+}
+
 export function DesktopBeranda({
   profile, products = [], stats, sales, employees, navigate, name, salesLoading,
   insight, kpiTrends, chartPeriod, setChartPeriod, weeklyChartData, monthlyChartData,
@@ -36,14 +50,14 @@ export function DesktopBeranda({
   const showProfit = canViewProfit(profile)
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" style={{ color: MC.text, fontFamily: "'Sora', 'Inter', sans-serif" }}>
       {/* ── Header Bar ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-border/40">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-sans">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
             Selamat datang, {name}
           </h1>
-          <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+          <p className="text-xs font-bold tracking-widest text-slate-500 uppercase">
             DASHBOARD DISTRIBUTOR ROKOK
           </p>
           <SmartInsight insight={insight} className="mt-2" />
@@ -53,7 +67,7 @@ export function DesktopBeranda({
           <Button
             onClick={() => setStokOpen(true)}
             variant="outline"
-            className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs border-amber-500/20 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 cursor-pointer shadow-sm"
+            className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs border-slate-200 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shadow-sm"
           >
             <Package size={16} />
             <span>Tambah Stok</span>
@@ -62,7 +76,7 @@ export function DesktopBeranda({
           <Button
             onClick={() => navigate(`${brokerBase}/penjualan?action=new`)}
             variant="default"
-            className="flex items-center gap-2 px-5 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95"
+            className="flex items-center gap-2 px-5 h-10 rounded-xl font-bold text-xs bg-slate-950 hover:bg-slate-900 text-white cursor-pointer shadow-md active:scale-95 border-none"
           >
             <Plus size={16} />
             <span>Catat Penjualan</span>
@@ -79,6 +93,7 @@ export function DesktopBeranda({
           sub={overdue > 0 ? `${overdue} jatuh tempo` : 'Semua lancar'} 
           urgent={(stats?.penjualan?.totalOutstanding||0)>0} 
           trend={kpiTrends?.piutangTrend} 
+          accentColor={MC.red}
         />
         <KPICard 
           icon={TrendingUp}  
@@ -86,13 +101,14 @@ export function DesktopBeranda({
           value={formatIDR(stats?.penjualan?.revenueThisMonth || 0)}  
           sub={showProfit ? `Net profit (after ops): ${formatIDR(stats?.penjualan?.netProfitThisMonth || 0)}` : 'Akses Admin (Profit Disembunyikan)'} 
           trend={kpiTrends?.txTrend} 
+          accentColor={MC.green}
         />
         <KPICard 
           icon={Package}     
           label="Nilai Stok Gudang"  
           value={formatIDR(stats?.stok?.nilaiStok || 0)}              
           sub={`${stats?.stok?.totalProduk || 0} jenis produk`} 
-          accentColor={C.amber} 
+          accentColor={MC.amber} 
           badge={lowStock.length > 0 ? `${lowStock.length} menipis` : null} 
         />
         <KPICard 
@@ -100,7 +116,7 @@ export function DesktopBeranda({
           label="Pengeluaran Bulan Ini" 
           value={showProfit ? formatIDR(totalExp) : '***'} 
           sub="Termasuk gaji pegawai" 
-          accentColor="#EF4444" 
+          accentColor={MC.red} 
         />
       </div>
 
