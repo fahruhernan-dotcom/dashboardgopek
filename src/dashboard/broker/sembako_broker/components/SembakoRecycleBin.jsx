@@ -79,16 +79,16 @@ export default function SembakoRecycleBin({ tenantId }) {
     }
 
     return (
-        <Card className="bg-[#111C24] border-white/5 rounded-[28px] overflow-hidden">
+        <Card className="bg-white border border-slate-200/80 rounded-[28px] shadow-sm overflow-hidden">
             <div 
-                className="p-6 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-all"
+                className="p-6 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-all"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="flex items-center gap-3">
-                    <Trash2 size={20} className="text-[#4B6478]" />
-                    <h3 className="font-display font-black text-white text-lg tracking-tight uppercase">Recycle Bin</h3>
+                    <Trash2 size={20} className="text-slate-550" />
+                    <h3 className="font-display font-black text-slate-900 text-lg tracking-tight uppercase">Recycle Bin</h3>
                 </div>
-                {isOpen ? <ChevronUp size={20} className="text-[#4B6478]" /> : <ChevronDown size={20} className="text-[#4B6478]" />}
+                {isOpen ? <ChevronUp size={20} className="text-slate-550" /> : <ChevronDown size={20} className="text-slate-550" />}
             </div>
 
             <AnimatePresence>
@@ -99,21 +99,21 @@ export default function SembakoRecycleBin({ tenantId }) {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                     >
-                        <div className="px-6 pb-8 space-y-6 border-t border-white/5 pt-6">
-                            <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-3">
-                                <Info size={18} className="text-amber-500 shrink-0 mt-0.5" />
-                                <p className="text-[11px] font-bold text-amber-500/80 leading-relaxed uppercase tracking-wider">
+                        <div className="px-6 pb-8 space-y-6 border-t border-slate-200 pt-6">
+                            <div className="bg-amber-50 border border-amber-200/50 p-4 rounded-2xl flex items-start gap-3">
+                                <Info size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                                <p className="text-[11px] font-bold text-amber-700 leading-relaxed uppercase tracking-wider">
                                     Data yang dihapus akan otomatis terhapus permanen setelah 30 hari.
                                 </p>
                             </div>
 
                             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                <TabsList className="bg-secondary/10 p-1 h-12 rounded-xl grid grid-cols-4 gap-1 mb-6">
+                                <TabsList className="bg-slate-100 border border-slate-200/60 p-1 h-12 rounded-xl grid grid-cols-4 gap-1 mb-6">
                                     {tabs.map(tab => (
                                         <TabsTrigger 
                                             key={tab.id}
                                             value={tab.id} 
-                                            className="rounded-lg text-[10px] font-black uppercase tracking-wider data-[state=active]:bg-[#EA580C] data-[state=active]:text-white"
+                                            className="rounded-lg text-[10px] font-black uppercase tracking-wider text-slate-500 data-[state=active]:bg-[#0F172A] data-[state=active]:text-white data-[state=active]:shadow-sm"
                                         >
                                             {tab.label}
                                         </TabsTrigger>
@@ -123,7 +123,7 @@ export default function SembakoRecycleBin({ tenantId }) {
                                 <div className="min-h-[200px]">
                                     {isLoading ? (
                                         <div className="flex items-center justify-center h-40">
-                                            <div className="w-8 h-8 border-4 border-[#EA580C]/20 border-t-[#EA580C] rounded-full animate-spin" />
+                                            <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
                                         </div>
                                     ) : isError ? (
                                         <div className="py-4">
@@ -131,11 +131,11 @@ export default function SembakoRecycleBin({ tenantId }) {
                                         </div>
                                     ) : deletedData?.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-12 text-center">
-                                            <div className="w-16 h-16 rounded-3xl bg-secondary/10 flex items-center justify-center mb-4 border border-white/5 opacity-40">
-                                                <Trash2 size={24} className="text-[#4B6478]" />
+                                            <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4 border border-slate-200/60 opacity-40">
+                                                <Trash2 size={24} className="text-slate-400" />
                                             </div>
-                                            <p className="text-sm font-black text-white uppercase tracking-tight">Recycle Bin Kosong</p>
-                                            <p className="text-[10px] text-[#4B6478] font-black uppercase tracking-widest mt-1.5">Data yang dihapus akan muncul di sini</p>
+                                            <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Recycle Bin Kosong</p>
+                                            <p className="text-[10px] text-slate-550 font-black uppercase tracking-widest mt-1.5">Data yang dihapus akan muncul di sini</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-3">
@@ -187,17 +187,17 @@ function RecycleItem({ item, type, onRestore, onDelete }) {
     const Icon = RECYCLE_ICONS[type] ?? Trash2
 
     return (
-        <div className="p-4 rounded-2xl bg-[#0C1319] border border-white/5 flex flex-col gap-4">
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-4">
             <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20 text-red-500">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-200 text-rose-600">
                     <Icon size={18} />
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                        <p className="text-[13px] font-black text-white truncate uppercase tracking-tight">{getTitle()}</p>
-                        <Badge className="bg-red-500/10 text-red-500 border border-red-500/20 text-[8px] px-1.5 h-4.5 uppercase font-black">TERHAPUS</Badge>
+                        <p className="text-[13px] font-black text-slate-900 truncate uppercase tracking-tight">{getTitle()}</p>
+                        <Badge className="bg-rose-50 text-rose-700 border border-rose-200 text-[8px] px-1.5 h-4.5 uppercase font-black shadow-none">TERHAPUS</Badge>
                     </div>
-                    <p className="text-[10px] text-[#4B6478] font-black uppercase tracking-wider">{getSub()}</p>
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider">{getSub()}</p>
                 </div>
             </div>
             
@@ -206,7 +206,7 @@ function RecycleItem({ item, type, onRestore, onDelete }) {
                     variant="outline" 
                     size="sm"
                     onClick={onRestore}
-                    className="h-10 rounded-xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-[9px] font-black uppercase tracking-widest gap-2"
+                    className="h-10 rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-[9px] font-black uppercase tracking-widest gap-2 shadow-none"
                 >
                     <Undo2 size={12} /> Pulihkan
                 </Button>
@@ -216,23 +216,23 @@ function RecycleItem({ item, type, onRestore, onDelete }) {
                         <Button 
                             variant="outline" 
                             size="sm"
-                            className="h-10 rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10 text-[9px] font-black uppercase tracking-widest gap-2"
+                            className="h-10 rounded-xl border-rose-300 text-rose-700 hover:bg-rose-50 text-[9px] font-black uppercase tracking-widest gap-2 shadow-none"
                         >
                             <FileX2 size={12} /> Hapus Permanen
                         </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-[#0C1319] border-white/10 rounded-[32px] p-8">
+                    <AlertDialogContent className="bg-white border-slate-200 rounded-[32px] p-8 text-left">
                         <AlertDialogHeader>
-                            <AlertDialogTitle className="text-white font-display font-black tracking-tight uppercase text-2xl">Hapus Permanen?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-slate-400 font-bold mt-2">
+                            <AlertDialogTitle className="text-slate-900 font-display font-black tracking-tight uppercase text-2xl">Hapus Permanen?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-600 font-bold mt-2">
                                 Data akan dihapus selamanya dan tidak bisa dipulihkan. Seluruh relasi data terkait juga akan hilang.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="gap-3 mt-8">
-                            <AlertDialogCancel className="bg-secondary/10 border-none text-white rounded-2xl h-14 font-black uppercase tracking-widest text-[11px]">Batal</AlertDialogCancel>
+                            <AlertDialogCancel className="bg-slate-50 text-slate-900 hover:bg-slate-100 border border-slate-200/60 shadow-sm rounded-2xl h-14 font-black uppercase tracking-widest text-[11px]">Batal</AlertDialogCancel>
                             <AlertDialogAction 
                                 onClick={onDelete}
-                                className="bg-red-500 hover:bg-red-600 text-white rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] border-none"
+                                className="bg-rose-600 hover:bg-rose-700 text-white rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] border-none shadow-sm"
                             >
                                 Hapus
                             </AlertDialogAction>

@@ -103,7 +103,7 @@ function ProtectedRoute({ children }) {
 }
 
 function SembakoLayout({ children }) {
-  useForceDarkMode()
+  useForceDarkMode(true)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
 

@@ -54,7 +54,7 @@ export function MobileBeranda({
   chartPeriod, setChartPeriod, weeklyChartData, monthlyChartData,
   cashSummary, unrealizedProfitSnapshot,
   selectedDate, setSelectedDate, currentMonth, setCurrentMonth,
-  agendaFilter, setAgendaFilter, setStokOpen, salesLoading,
+  agendaFilter, setAgendaFilter, setStokOpen, salesLoading, onCatatPenjualanOpen,
 }) {
   const { brokerType } = useParams()
   const brokerBase = `/broker/${brokerType}`
@@ -290,7 +290,7 @@ export function MobileBeranda({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              onClick={() => navigate(`${brokerBase}/penjualan?action=new`)}
+              onClick={onCatatPenjualanOpen}
               style={{
                 flex: 1, height: '48px', borderRadius: '12px',
                 background: MC.accent, border: 'none', cursor: 'pointer',

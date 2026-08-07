@@ -6,10 +6,13 @@
  */
 import { useEffect } from 'react'
 
-export function useForceDarkMode() {
+export function useForceDarkMode(forceLight = false) {
   useEffect(() => {
-    // Force dark saat masuk dashboard
-    document.documentElement.classList.add('dark')
+    if (forceLight) {
+      document.documentElement.classList.remove('dark')
+    } else {
+      document.documentElement.classList.add('dark')
+    }
 
     return () => {
       // Restore preferensi user saat keluar dashboard
@@ -20,5 +23,5 @@ export function useForceDarkMode() {
         document.documentElement.classList.add('dark')
       }
     }
-  }, [])
+  }, [forceLight])
 }

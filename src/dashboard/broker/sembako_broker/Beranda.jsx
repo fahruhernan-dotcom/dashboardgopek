@@ -20,6 +20,7 @@ import {
 import { id as idLocale } from 'date-fns/locale'
 import { C } from './components/sembakoSaleUtils'
 import { SembakoTambahStokSheet } from './components/SembakoTambahStokSheet'
+import { SembakoCreateInvoiceSheet } from './components/SembakoCreateInvoiceSheet'
 import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/SembakoUiPrimitives'
  
 import { BerandaSkeleton } from './components/beranda/BerandaUtils'
@@ -61,6 +62,7 @@ export default function SembakoBeranda() {
   const [currentMonth,  setCurrentMonth]  = useState(new Date())
   const [agendaFilter,  setAgendaFilter]  = useState('Semua')
   const [stokOpen,      setStokOpen]      = useState(false)
+  const [saleWizardOpen, setSaleWizardOpen] = useState(false)
 
   const name = profile?.full_name?.split(' ')[0] || 'Pengguna'
 
@@ -257,7 +259,8 @@ export default function SembakoBeranda() {
     agendaFilter, setAgendaFilter,
     setStokOpen,
     batches,
-    suppliers
+    suppliers,
+    onCatatPenjualanOpen: () => setSaleWizardOpen(true)
   }
 
   return (
@@ -277,6 +280,11 @@ export default function SembakoBeranda() {
           />
         )}
       </AnimatePresence>
+
+      <SembakoCreateInvoiceSheet
+        open={saleWizardOpen}
+        onOpenChange={setSaleWizardOpen}
+      />
     </div>
   )
 }

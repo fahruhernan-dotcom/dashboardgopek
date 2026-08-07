@@ -6,10 +6,10 @@ import { formatIDR } from '@/lib/format'
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 export const C = {
-  bg: '#06090F', card: '#1C1208', input: '#231A0E',
-  accent: '#EA580C', amber: '#F59E0B', green: '#10B981', red: '#EF4444',
-  text: '#FEF3C7', muted: '#FCD34D',
-  border: 'rgba(234,88,12,0.25)', borderAm: 'rgba(245,158,11,0.3)',
+  bg: '#F8FAFC', card: '#FFFFFF', input: '#F1F5F9',
+  accent: '#0F172A', amber: '#D97706', green: '#16A34A', red: '#DC2626',
+  text: '#0F172A', muted: '#64748B',
+  border: '#E2E8F0', borderAm: '#CBD5E1',
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -35,7 +35,6 @@ export const sInput = {
   padding: '10px 12px', color: C.text, fontSize: '16px', fontWeight: 600,
   outline: 'none', width: '100%', appearance: 'none', WebkitAppearance: 'none',
   minHeight: '44px',
-  colorScheme: 'dark',
 }
 
 export const sBtn = (primary) => ({
@@ -57,12 +56,17 @@ export const sLabel = { fontSize: '11px', color: C.muted, fontWeight: 700, lette
  * @returns {string|null}  Full wa.me URL or null if phone is empty
  */
 export function toWaLink(phone, encodedText) {
-  if (!phone) return null
-  const digits = phone.replace(/[^0-9]/g, '')
-  if (!digits) return null
+  if (!phone) {
+    return encodedText ? `https://api.whatsapp.com/send?text=${encodedText}` : null
+  }
+  const phoneStr = String(phone)
+  const digits = phoneStr.replace(/[^0-9]/g, '')
+  if (!digits) {
+    return encodedText ? `https://api.whatsapp.com/send?text=${encodedText}` : null
+  }
   const normalized = digits.startsWith('0') ? '62' + digits.slice(1) : digits
-  const base = `https://wa.me/${normalized}`
-  return encodedText ? `${base}?text=${encodedText}` : base
+  const base = `https://api.whatsapp.com/send?phone=${normalized}`
+  return encodedText ? `${base}&text=${encodedText}` : base
 }
 
 export function fmtDate(d) {
@@ -129,8 +133,8 @@ export function CustomSelect({ value, onChange, options, placeholder, onAddNew, 
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
               style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '8px',
-                background: '#130C06', border: `1px solid ${C.border}`, borderRadius: '14px',
-                zIndex: 999, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                background: C.card, border: `1px solid ${C.border}`, borderRadius: '14px',
+                zIndex: 999, overflow: 'hidden', boxShadow: '0 10px 30px rgba(15,23,42,0.08)',
                 backdropFilter: 'blur(10px)',
               }}
             >
@@ -146,13 +150,13 @@ export function CustomSelect({ value, onChange, options, placeholder, onAddNew, 
                     onClick={() => { onChange(opt.value); setOpen(false) }}
                     style={{
                       padding: '12px 16px', fontSize: '14px', color: value === opt.value ? C.accent : C.text,
-                      background: value === opt.value ? 'rgba(234,88,12,0.1)' : 'transparent',
+                      background: value === opt.value ? 'rgba(15,23,42,0.05)' : 'transparent',
                       cursor: 'pointer', transition: 'all 0.2s',
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                     }}
                   >
                     <span>{opt.label}</span>
-                    {value === opt.value && <Check size={14} />}
+                    {value === opt.value && <Check size={14} color={C.accent} />}
                   </div>
                 ))}
               </div>
@@ -162,7 +166,7 @@ export function CustomSelect({ value, onChange, options, placeholder, onAddNew, 
                   style={{
                     padding: '12px 16px', fontSize: '14px', color: C.accent,
                     fontWeight: 700, borderTop: `1px solid ${C.border}`,
-                    cursor: 'pointer', background: 'rgba(234,88,12,0.05)',
+                    cursor: 'pointer', background: '#F1F5F9',
                     display: 'flex', alignItems: 'center', gap: '8px'
                   }}
                 >

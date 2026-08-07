@@ -21,7 +21,7 @@ import {
   checkSupplierAnomalies
 } from '@/lib/hooks/sembako/sembakoSupplierAssistant'
 
-const TEXT_SEC = '#FDBA74'
+const TEXT_SEC = '#64748B'
 
 const fmt = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
 
@@ -36,11 +36,11 @@ function genBatchCode() {
 const inputSt = {
   width: '100%',
   height: 48,
-  background: '#1D140A',
-  border: `1px solid rgba(234, 88, 12, 0.25)`,
+  background: '#F8FAFC',
+  border: `1px solid #E2E8F0`,
   borderRadius: 12,
   padding: '0 14px',
-  color: '#FEF3C7',
+  color: '#0F172A',
   fontFamily: 'DM Sans',
   fontSize: 14,
   fontWeight: 600,
@@ -49,7 +49,7 @@ const inputSt = {
 
 const SField = ({ label, children }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-    <label style={{ fontFamily: 'DM Sans', fontSize: 11, fontWeight: 800, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</label>
+    <label style={{ fontFamily: 'DM Sans', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</label>
     {children}
   </div>
 )
@@ -223,7 +223,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{
         position: 'fixed', inset: 0, zIndex: 4000,
-        background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+        background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: isDesktop ? 'center' : 'flex-end',
         justifyContent: 'center',
@@ -237,11 +237,11 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
         exit={isDesktop ? { scale: 0.95, opacity: 0 } : { y: '100%' }}
         transition={{ type: 'spring', stiffness: 350, damping: 30 }}
         style={{
-          background: '#100A03',
+          background: '#FFFFFF',
           borderRadius: isDesktop ? '24px' : '24px 24px 0 0',
           width: '100%', maxWidth: '560px',
           border: `1px solid ${C.border}`,
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.85)',
+          boxShadow: '0 10px 30px rgba(15,23,42,0.08)',
           maxHeight: isDesktop ? '88vh' : 'calc(100dvh - env(safe-area-inset-top, 24px) - 16px)',
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
@@ -250,30 +250,30 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
       >
         {!isDesktop && (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px', shrink: 0 }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)' }} />
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(15,23,42,0.1)' }} />
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid rgba(234,88,12,0.12)`, shrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C.border}`, shrink: 0 }}>
           <div>
             <h2 style={{ fontFamily: 'Sora', fontSize: 18, fontWeight: 800, color: C.text, margin: 0, letterSpacing: '-0.02em' }}>Tambah Stok Masuk</h2>
-            <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: '#FDBA74', opacity: 0.8, margin: '2px 0 0' }}>Input data penerimaan barang / stok baru</p>
+            <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: '#64748B', opacity: 0.8, margin: '2px 0 0' }}>Input data penerimaan barang / stok baru</p>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(15,23,42,0.05)', border: '1px solid rgba(15,23,42,0.08)',
               borderRadius: 12, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', transition: 'all 0.2s'
             }}
           >
-            <X size={18} color="#FEF3C7" />
+            <X size={18} color="#0F172A" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', padding: isDesktop ? '20px 24px 24px' : '16px 20px max(40px, calc(24px + env(safe-area-inset-bottom, 24px)))', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Card 1: Informasi Produk & Supplier */}
-          <div style={{ background: 'rgba(234,88,12,0.04)', border: '1px solid rgba(234,88,12,0.15)', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ background: 'rgba(15,23,42,0.015)', border: `1px solid ${C.border}`, borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <SField label="Produk *">
               <AnimatePresence mode="wait">
                 {showAddProd ? (
@@ -326,7 +326,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                     />
                     {products.length === 0 && (
                       <button type="button" onClick={() => setShowAddProd(true)}
-                        style={{ marginTop: 8, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 40, borderRadius: 10, background: 'rgba(234,88,12,0.08)', border: `1px dashed ${C.accent}`, color: C.accent, fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans', cursor: 'pointer' }}>
+                        style={{ marginTop: 8, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 40, borderRadius: 10, background: '#F1F5F9', border: `1px dashed ${C.border}`, color: '#0F172A', fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans', cursor: 'pointer' }}>
                         <Plus size={14} /> Tambah Produk Baru
                       </button>
                     )}
@@ -346,7 +346,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                     style={{ ...inputSt, flex: 1 }}
                   />
                   <button type="button" onClick={handleAddSupplier} disabled={createSup.isPending || !newSupplier.trim()}
-                    style={{ background: C.accent, border: 'none', borderRadius: 10, padding: '0 14px', color: 'white', fontFamily: 'DM Sans', fontSize: 13, cursor: 'pointer' }}>
+                    style={{ background: '#0F172A', border: 'none', borderRadius: 10, padding: '0 14px', color: 'white', fontFamily: 'DM Sans', fontSize: 13, cursor: 'pointer' }}>
                     {createSup.isPending ? '...' : 'Tambah'}
                   </button>
                   <button type="button" onClick={() => setShowAddSup(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6B7280' }}>
@@ -371,7 +371,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                       style={{ flex: 1 }}
                     />
                     <button type="button" onClick={() => setShowAddSup(true)}
-                      style={{ background: 'rgba(234,88,12,0.12)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '0 14px', height: 48, color: C.accent, fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans', cursor: 'pointer', flexShrink: 0 }}>
+                      style={{ background: '#F1F5F9', border: `1px solid ${C.border}`, borderRadius: 10, padding: '0 14px', height: 48, color: '#0F172A', fontSize: 13, fontWeight: 700, fontFamily: 'DM Sans', cursor: 'pointer', flexShrink: 0 }}>
                       + Baru
                     </button>
                   </div>
@@ -379,7 +379,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                   {/* Recommendation Shortcut Badge */}
                   {recommendation && form.supplier_id !== recommendation.supplierId && (
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
-                      <span style={{ fontSize: 11, color: '#FDBA74', opacity: 0.8, fontFamily: 'DM Sans' }}>
+                      <span style={{ fontSize: 11, color: '#64748B', opacity: 0.8, fontFamily: 'DM Sans' }}>
                         💡 Rekomendasi:
                       </span>
                       <button
@@ -391,11 +391,11 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                           }
                         }}
                         style={{
-                          background: 'rgba(234,88,12,0.15)',
-                          border: '1px solid rgba(234,88,12,0.3)',
+                          background: '#F1F5F9',
+                          border: '1px solid #E2E8F0',
                           borderRadius: 6,
                           padding: '2px 8px',
-                          color: '#EA580C',
+                          color: '#475569',
                           fontSize: 10,
                           fontWeight: 800,
                           cursor: 'pointer',
@@ -410,12 +410,12 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
 
                   {/* Selected Supplier Context History Info */}
                   {form.supplier_id && historyContext && (
-                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '10px 12px', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: '10px 12px', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, fontFamily: 'DM Sans' }}>
-                        <span style={{ color: '#FDBA74', fontWeight: 700 }}>Riwayat Supplier ini:</span>
-                        <span style={{ color: '#9CA3AF' }}>Terakhir: {new Date(historyContext.recentDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+                        <span style={{ color: '#475569', fontWeight: 700 }}>Riwayat Supplier ini:</span>
+                        <span style={{ color: '#64748B' }}>Terakhir: {new Date(historyContext.recentDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 10, fontFamily: 'DM Sans', color: '#FEF3C7', opacity: 0.8 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 10, fontFamily: 'DM Sans', color: '#0F172A', opacity: 0.8 }}>
                         <div>• Transaksi: {historyContext.txCount} kali</div>
                         <div>• Total Beli: {fmt(historyContext.totalQty)} {selectedProduct?.unit || ''}</div>
                         <div>• Rerata Modal: Rp {fmt(historyContext.avgPrice)}</div>
@@ -428,9 +428,9 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                   {anomalies.map((anom, idx) => {
                     if (anom.type === 'high_warning') {
                       return (
-                        <div key={idx} style={{ display: 'flex', gap: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', padding: '10px 12px', borderRadius: 10, marginTop: 4, alignItems: 'center' }}>
+                        <div key={idx} style={{ display: 'flex', gap: 8, background: '#FEF2F2', border: '1px solid #FEE2E2', padding: '10px 12px', borderRadius: 10, marginTop: 4, itemsCenter: 'center' }}>
                           <AlertCircle size={14} color="#EF4444" style={{ flexShrink: 0 }} />
-                          <span style={{ fontSize: 11, color: '#FCA5A5', fontWeight: 600, fontFamily: 'DM Sans', lineHeight: '1.4' }}>
+                          <span style={{ fontSize: 11, color: '#DC2626', fontWeight: 600, fontFamily: 'DM Sans', lineHeight: '1.4' }}>
                             {anom.message}
                           </span>
                         </div>
@@ -438,9 +438,9 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                     }
                     if (anom.type === 'info') {
                       return (
-                        <div key={idx} style={{ display: 'flex', gap: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', padding: '10px 12px', borderRadius: 10, marginTop: 4, alignItems: 'center' }}>
+                        <div key={idx} style={{ display: 'flex', gap: 8, background: '#EFF6FF', border: '1px solid #DBEAFE', padding: '10px 12px', borderRadius: 10, marginTop: 4, itemsCenter: 'center' }}>
                           <AlertCircle size={14} color="#3B82F6" style={{ flexShrink: 0 }} />
-                          <span style={{ fontSize: 11, color: '#93C5FD', fontWeight: 600, fontFamily: 'DM Sans', lineHeight: '1.4' }}>
+                          <span style={{ fontSize: 11, color: '#2563EB', fontWeight: 600, fontFamily: 'DM Sans', lineHeight: '1.4' }}>
                             {anom.message}
                           </span>
                         </div>
@@ -454,7 +454,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
           </div>
 
           {/* Card 2: Jumlah & Pricing */}
-          <div style={{ background: 'rgba(234,88,12,0.04)', border: '1px solid rgba(234,88,12,0.15)', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ background: 'rgba(15,23,42,0.015)', border: `1px solid ${C.border}`, borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <SField label={`Jumlah Masuk${selectedProduct ? ` (${selectedProduct.unit})` : ''} *`}>
               <input
                 id="stok-qty" name="qty_masuk" type="text" inputMode="decimal"
@@ -487,7 +487,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                     return (
                       <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
                         <AlertCircle size={12} color="#EF4444" style={{ flexShrink: 0 }} />
-                        <span style={{ fontSize: 10, color: '#FCA5A5', fontWeight: 700, fontFamily: 'DM Sans' }}>
+                        <span style={{ fontSize: 10, color: '#DC2626', fontWeight: 700, fontFamily: 'DM Sans' }}>
                           {anom.message}
                         </span>
                       </div>
@@ -502,13 +502,13 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                   onChange={val => set('sell_price', val)}
                   placeholder="Rp 0"
                 />
-                <p style={{ fontSize: 10, color: '#FDBA74', opacity: 0.7, marginTop: 4, fontFamily: 'DM Sans' }}>Harga ke toko</p>
+                <p style={{ fontSize: 10, color: '#64748B', opacity: 0.7, marginTop: 4, fontFamily: 'DM Sans' }}>Harga ke toko</p>
               </SField>
             </div>
 
             {form.qty_masuk && form.buy_price && (
-              <div style={{ background: 'rgba(234,88,12,0.1)', border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 700, color: '#FDBA74' }}>Total Nilai Pembelian</span>
+              <div style={{ background: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 700, color: '#64748B' }}>Total Nilai Pembelian</span>
                 <span style={{ fontFamily: 'Sora', fontSize: 16, fontWeight: 800, color: C.accent }}>
                   Rp {fmt(Number(form.qty_masuk) * Number(String(form.buy_price).replace(/\D/g, '')))}
                 </span>
@@ -517,7 +517,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
           </div>
 
           {/* Card 3: Tanggal & Catatan */}
-          <div style={{ background: 'rgba(234,88,12,0.04)', border: '1px solid rgba(234,88,12,0.15)', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ background: 'rgba(15,23,42,0.015)', border: `1px solid ${C.border}`, borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <SField label="Tanggal Masuk">
                 <DatePicker
@@ -573,8 +573,8 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
               type="button"
               onClick={handleCancelReset}
               style={{
-                height: 58, padding: '0 16px', borderRadius: 16, background: 'rgba(239,68,68,0.1)', color: '#EF4444',
-                fontFamily: 'Sora', fontSize: 13, fontWeight: 800, border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer',
+                height: 58, padding: '0 16px', borderRadius: 16, background: '#FEF2F2', color: '#DC2626',
+                fontFamily: 'Sora', fontSize: 13, fontWeight: 800, border: '1px solid #FEE2E2', cursor: 'pointer',
               }}
             >
               Batal & Reset
@@ -583,9 +583,9 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
               type="submit"
               disabled={!form.product_id || !form.supplier_id || !form.qty_masuk || !form.buy_price || addBatch.isPending}
               style={{
-                flex: 1, height: 58, minHeight: 58, borderRadius: 16, background: C.accent, color: 'white',
+                flex: 1, height: 58, minHeight: 58, borderRadius: 16, background: '#0F172A', color: 'white',
                 fontFamily: 'Sora', fontSize: 16, fontWeight: 800, border: 'none', cursor: 'pointer',
-                boxShadow: '0 6px 20px rgba(234,88,12,0.4)',
+                boxShadow: '0 4px 12px rgba(15,23,42,0.08)',
                 opacity: (!form.product_id || !form.supplier_id || !form.qty_masuk || !form.buy_price || addBatch.isPending) ? 0.6 : 1,
                 transition: 'all 0.2s',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

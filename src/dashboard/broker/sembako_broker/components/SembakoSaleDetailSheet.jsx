@@ -109,11 +109,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
     }
   }
 
-  const handleWA = () => {
-    const phone = sale.sembako_customers?.phone || ''
-    const msg = generateWAMessage(sale, tenant)
-    window.open(toWaLink(phone, msg), '_blank')
-  }
+
 
   const handleMarkDelivered = async () => {
     try {
@@ -258,10 +254,10 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                 <p style={{ fontSize: '11px', color: C.muted, marginTop: '4px' }}>{sale.invoice_number} - {fmtDate(sale.transaction_date)}</p>
               </div>
               <Badge className={cn(
-                "rounded-full px-3 py-1 border-none font-black text-[10px] uppercase tracking-wider pointer-events-none",
-                sale.payment_status === 'lunas' ? 'bg-emerald-500/10 text-emerald-400' :
-                sale.payment_status === 'sebagian' ? 'bg-amber-500/10 text-amber-400' :
-                'bg-red-500/10 text-red-400'
+                "rounded-full px-3 py-1 border-none font-black text-[10px] uppercase tracking-wider pointer-events-none shadow-none",
+                sale.payment_status === 'lunas' ? 'bg-emerald-55 border-emerald-200 text-emerald-700' :
+                sale.payment_status === 'sebagian' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                'bg-rose-50 border-rose-200 text-rose-700'
               )}>
                 {sale.payment_status === 'lunas' ? 'LUNAS' : sale.payment_status === 'sebagian' ? 'SEBAGIAN' : 'BELUM LUNAS'}
               </Badge>
@@ -273,7 +269,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: '16px' }}>
               <p style={sLabel}>TOKO / CUSTOMER</p>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'rgba(234,88,12,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.accent }}>
+                <div style={{ width: 40, height: 40, borderRadius: '12px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0F172A' }}>
                   <Store size={20} />
                 </div>
                 <div>
@@ -286,9 +282,9 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             {/* Section: Items Table */}
             <div>
               <p style={sLabel}>DAFTAR BARANG</p>
-              <div style={{ marginTop: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+              <div style={{ marginTop: '12px', background: '#F8FAFC', borderRadius: '16px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                  <thead style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  <thead style={{ background: '#F1F5F9' }}>
                     <tr>
                       <th style={{ textAlign: 'left', padding: '12px', color: C.muted, fontWeight: 800, textTransform: 'uppercase', fontSize: '10px' }}>Produk</th>
                       <th style={{ textAlign: 'right', padding: '12px', color: C.muted, fontWeight: 800, textTransform: 'uppercase', fontSize: '10px' }}>Qty</th>
@@ -307,13 +303,13 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                           <td style={{ padding: '12px', color: C.text, fontWeight: 600 }}>
                             {it.product_name}
                             {returQty > 0 && (
-                              <span style={{ fontSize: '10px', color: '#F87171', display: 'block', fontWeight: 700, marginTop: '2px' }}>
+                              <span style={{ fontSize: '10px', color: '#DC2626', display: 'block', fontWeight: 700, marginTop: '2px' }}>
                                 🔄 Ada Retur: -{returQty} {it.unit || 'unit'}
                               </span>
                             )}
                           </td>
                           <td style={{ padding: '12px', textAlign: 'right', color: C.text }}>
-                            <span style={{ fontWeight: returQty > 0 ? 800 : 600, color: returQty > 0 ? '#34D399' : C.text }}>
+                            <span style={{ fontWeight: returQty > 0 ? 800 : 600, color: returQty > 0 ? '#16A34A' : C.text }}>
                               {netQty} {it.unit || 'unit'}
                             </span>
                             {returQty > 0 && (
@@ -340,26 +336,26 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
 
             {/* Section: Riwayat / Rincian Retur Barang */}
             {saleReturns.length > 0 && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '16px', padding: '16px' }}>
+              <div style={{ background: '#FEF2F2', border: '1px solid #FEE2E2', borderRadius: '16px', padding: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <p style={{ ...sLabel, color: '#F87171' }}>🔄 RINCIAN RETUR BARANG ({saleReturns.length})</p>
-                  <span style={{ fontSize: '11px', fontWeight: 900, color: '#EF4444' }}>
+                  <p style={{ ...sLabel, color: '#DC2626' }}>🔄 RINCIAN RETUR BARANG ({saleReturns.length})</p>
+                  <span style={{ fontSize: '11px', fontWeight: 900, color: '#B91C1C' }}>
                     Total Retur: {formatIDR(totalReturnAmount)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {saleReturns.map((ret, rIdx) => (
-                    <div key={ret.id || rIdx} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '10px 12px' }}>
+                    <div key={ret.id || rIdx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '10px 12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#F1F5F9' }}>{ret.product_name}</span>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#F87171' }}>-{ret.quantity} {ret.unit}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>{ret.product_name}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#DC2626' }}>-{ret.quantity} {ret.unit}</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '11px', color: '#94A3B8' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '11px', color: '#64748B' }}>
                         <span>Alasan: {ret.reason || 'Klaim Retur'}</span>
-                        <span style={{ color: '#FBBF24', fontWeight: 700 }}>{formatIDR(Number(ret.total_amount || ret.amount || 0) || Math.round(Number(ret.quantity || 0) * Number(ret.unit_price || 0)))}</span>
+                        <span style={{ color: '#D97706', fontWeight: 700 }}>{formatIDR(Number(ret.total_amount || ret.amount || 0) || Math.round(Number(ret.quantity || 0) * Number(ret.unit_price || 0)))}</span>
                       </div>
                       <div style={{ fontSize: '10px', color: '#64748B', marginTop: '3px' }}>
-                        Status: <strong style={{ color: ret.status === 'completed' ? '#34D399' : '#F59E0B' }}>{ret.status === 'completed' ? 'Selesai (Stok Diterima)' : 'Diproses (Pending Validasi Gudang)'}</strong>
+                        Status: <strong style={{ color: ret.status === 'completed' ? '#16A34A' : '#D97706' }}>{ret.status === 'completed' ? 'Selesai (Stok Diterima)' : 'Diproses (Pending Validasi Gudang)'}</strong>
                       </div>
                     </div>
                   ))}
@@ -368,7 +364,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             )}
 
             {/* Section: Financials */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: `1px solid ${C.border}` }}>
+            <div style={{ background: '#F8FAFC', borderRadius: '16px', padding: '16px', border: `1px solid ${C.border}` }}>
               <DetailRow label="Subtotal Barang" value={formatIDR(itemsSubtotal)} />
               {totalReturnAmount > 0 && (
                 <DetailRow label="Potongan Retur Barang" value={`-${formatIDR(totalReturnAmount)}`} color={C.red} bold />
@@ -394,14 +390,14 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
 
               {/* Warning Alert Banner for Overpaid / Return Cashback */}
               {isOverpaid && (
-                <div style={{ marginTop: '12px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.35)', borderRadius: '12px', padding: '12px' }}>
+                <div style={{ marginTop: '12px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <AlertCircle size={18} style={{ color: '#34D399', flexShrink: 0, marginTop: '2px' }} />
+                    <AlertCircle size={18} style={{ color: '#16A34A', flexShrink: 0, marginTop: '2px' }} />
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '11px', fontWeight: 900, color: '#34D399', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 900, color: '#16A34A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         💵 WAJIB KEMBALIKAN UANG KE TOKO: {formatIDR(overpayAmount)}
                       </p>
-                      <p style={{ fontSize: '11px', color: '#A7F3D0', margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                      <p style={{ fontSize: '11px', color: '#15803D', margin: '4px 0 0 0', lineHeight: '1.4' }}>
                         Akibat retur barang, total pembayaran yang telah diterima (<strong>{formatIDR(rawPaidAmount)}</strong>) melebihi tagihan bersih (<strong>{formatIDR(grandTotal)}</strong>).<br/>
                         Jika uang sudah diserahkan/ditransfer ke toko, klik tombol di bawah untuk menyelesaikannya.
                       </p>
@@ -412,8 +408,8 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                         style={{
                           marginTop: '10px',
                           width: '100%',
-                          background: '#10B981',
-                          color: '#022C22',
+                          background: '#0F172A',
+                          color: '#FFFFFF',
                           fontWeight: 900,
                           fontSize: '11px',
                           padding: '9px 14px',
@@ -426,7 +422,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                           gap: '6px',
                           textTransform: 'uppercase',
                           letterSpacing: '0.05em',
-                          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+                          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
                         }}
                       >
                         {isRefunding ? <Loader2 size={14} className="animate-spin" /> : `✓ Atur / Tandai Pengembalian Uang (${formatIDR(overpayAmount)})`}
@@ -439,7 +435,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
 
             {/* Section: Profit Analysis (Owner Only) */}
             {isOwner && (
-              <div style={{ background: 'rgba(2, 26, 2,0.05)', borderRadius: '16px', padding: '16px', border: `1px solid rgba(2, 26, 2,0.15)` }}>
+              <div style={{ background: '#F8FAFC', borderRadius: '16px', padding: '16px', border: `1px solid #E2E8F0` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <p style={{ ...sLabel, color: C.green }}>ANALISIS LABA (INTERNAL)</p>
                   <span style={{ fontSize: '10px', fontWeight: 900, color: profit >= 0 ? C.green : C.red }}>
@@ -463,13 +459,13 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             )}
 
             {/* Section: Delivery Status */}
-            <div style={{ background: 'rgba(96,165,250,0.05)', borderRadius: '16px', padding: '16px', border: `1px solid rgba(96,165,250,0.15)` }}>
+            <div style={{ background: '#F0F9FF', borderRadius: '16px', padding: '16px', border: `1px solid #BAE6FD` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <p style={{ ...sLabel, color: '#60A5FA' }}>PENGIRIMAN</p>
                 <span style={{
                   fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', padding: '3px 10px', borderRadius: '99px',
-                  background: isDelivered ? 'rgba(16,185,129,0.1)' : deliveries.length > 0 ? 'rgba(251,191,36,0.1)' : 'rgba(148,163,184,0.1)',
-                  color: isDelivered ? '#34D399' : deliveries.length > 0 ? '#FBBF24' : '#94A3B8'
+                  background: isDelivered ? '#F0FDF4' : deliveries.length > 0 ? '#FFFBEB' : '#F1F5F9',
+                  color: isDelivered ? '#16A34A' : deliveries.length > 0 ? '#D97706' : '#64748B'
                 }}>
                   {isDelivered ? '✓ TERKIRIM' : deliveries.length > 0 ? 'DI JALAN' : 'BELUM DIKIRIM'}
                 </span>
@@ -478,12 +474,12 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
               {deliveries.length > 0 && (
                 <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {deliveries.map((d, i) => (
-                    <div key={d.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: '10px' }}>
+                    <div key={d.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', background: '#FFFFFF', padding: '10px 12px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <Truck size={14} color="#60A5FA" />
+                        <Truck size={14} color="#0284C7" />
                         <span style={{ color: C.text, fontWeight: 700 }}>{[d.vehicle_type, d.vehicle_plate].filter(Boolean).join(' ') || 'Pengiriman'}</span>
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: 800, color: d.status === 'delivered' ? '#34D399' : '#FBBF24' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: d.status === 'delivered' ? '#16A34A' : '#D97706' }}>
                         {d.status === 'delivered' ? '✓ Terkirim' : d.status === 'on_route' ? 'Di Jalan' : 'Disiapkan'}
                       </span>
                     </div>
@@ -495,7 +491,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             {sale.notes && (
               <div>
                 <p style={sLabel}>CATATAN</p>
-                <p style={{ fontSize: '13px', color: C.muted, fontStyle: 'italic', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '12px', border: `1px solid ${C.border}`, marginTop: '8px' }}>
+                <p style={{ fontSize: '13px', color: C.muted, fontStyle: 'italic', background: '#F8FAFC', padding: '12px', borderRadius: '12px', border: `1px solid ${C.border}`, marginTop: '8px' }}>
                   "{sale.notes}"
                 </p>
               </div>
@@ -582,12 +578,15 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <button
-                onClick={handleWA}
-                style={{ ...sBtn(false), display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderColor: '#25D366', color: '#25D366' }}
+              <a
+                href={toWaLink(sale.sembako_customers?.phone || '', generateWAMessage(sale, tenant)) || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 border border-[#25D366] text-[#25D366] rounded-xl hover:bg-[#25D366]/5 active:scale-95 transition-all text-xs font-bold"
+                style={{ height: '48px', textDecoration: 'none' }}
               >
                 <Smartphone size={16} /> Kirim WA
-              </button>
+              </a>
               {saleReturns.length > 0 ? (
                 <button
                   onClick={() => setConfirmCancelReturn(true)}

@@ -50,7 +50,7 @@ function WheelColumn({ items, value, onChange }) {
     <div className="flex-1 relative overflow-hidden touch-none min-w-0" style={{ height: CONTAINER_HEIGHT, touchAction: 'none' }}>
       {/* Highlight Box */}
       <div 
-        className="absolute w-full left-0 right-0 pointer-events-none bg-white/[0.03] border-y border-white/[0.08] z-0"
+        className="absolute w-full left-0 right-0 pointer-events-none bg-slate-900/[0.03] dark:bg-white/[0.03] border-y border-slate-200 dark:border-white/[0.08] z-0"
         style={{ top: '50%', transform: 'translateY(-50%)', height: ITEM_HEIGHT }}
       />
       
@@ -70,8 +70,8 @@ function WheelColumn({ items, value, onChange }) {
             className={cn(
               "flex items-center justify-center snap-center transition-all duration-200 text-center line-clamp-1",
               item.value === value 
-                ? "text-[17px] text-white font-semibold tracking-wide" 
-                : "text-[15px] text-slate-500 font-medium opacity-50"
+                ? "text-[17px] text-slate-950 dark:text-white font-semibold tracking-wide" 
+                : "text-[15px] text-slate-400 dark:text-slate-500 font-medium opacity-50"
             )}
             style={{ height: ITEM_HEIGHT }}
           >
@@ -150,12 +150,14 @@ export function MobileWheelDatePicker({
         <Button
           variant="outline"
           className={cn(
-            "h-12 w-full rounded-xl bg-[#231A0E] border-[#EA580C]/25 px-4 flex items-center justify-start gap-3 hover:bg-[#2A1F13] hover:border-[#EA580C]/40 transition-all",
-            !value && "text-[#FCD34D]/60",
-            value && "text-[#FEF3C7] font-semibold text-sm"
+            "h-12 w-full rounded-xl px-4 flex items-center justify-start gap-3 transition-all",
+            "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300",
+            "dark:bg-[#231A0E] dark:border-[#EA580C]/25 dark:hover:bg-[#2A1F13] dark:hover:border-[#EA580C]/40",
+            !value && "text-slate-400 dark:text-[#FCD34D]/60",
+            value && "text-slate-900 font-semibold text-sm dark:text-[#FEF3C7]"
           )}
         >
-          <CalendarIcon size={18} className={cn("transition-colors", value ? "text-[#EA580C]" : "text-[#4B6478]")} />
+          <CalendarIcon size={18} className={cn("transition-colors", value ? "text-slate-900 dark:text-[#EA580C]" : "text-slate-400 dark:text-[#4B6478]")} />
           <span className="flex-1 text-left">
             {value && isValid(new Date(value))
               ? format(new Date(value), 'dd MMM yyyy', { locale: idLocale })
@@ -164,16 +166,16 @@ export function MobileWheelDatePicker({
         </Button>
       </SheetTrigger>
       
-      <SheetContent side="bottom" className="bg-[#111C24] border-t border-white/10 px-0 pb-6 pt-4 rounded-t-3xl overflow-hidden">
+      <SheetContent side="bottom" className="bg-white dark:bg-[#111C24] border-t border-slate-200 dark:border-white/10 px-0 pb-6 pt-4 rounded-t-3xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-300">
         <SheetHeader className="px-6 mb-4">
-          <SheetTitle className="text-center text-lg text-white font-bold">{placeholder}</SheetTitle>
+          <SheetTitle className="text-center text-lg text-slate-900 dark:text-white font-bold">{placeholder}</SheetTitle>
           <SheetDescription className="sr-only">Pilih tanggal</SheetDescription>
         </SheetHeader>
         
         <div className="flex px-6 items-center justify-center gap-2 relative select-none">
           {/* Fading Overlays */}
-          <div className="absolute inset-x-0 top-0 h-[36px] bg-gradient-to-b from-[#111C24] to-transparent z-20 pointer-events-none" />
-          <div className="absolute inset-x-0 bottom-0 h-[36px] bg-gradient-to-t from-[#111C24] to-transparent z-20 pointer-events-none" />
+          <div className="absolute inset-x-0 top-0 h-[36px] bg-gradient-to-b from-white dark:from-[#111C24] to-transparent z-20 pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-[36px] bg-gradient-to-t from-white dark:from-[#111C24] to-transparent z-20 pointer-events-none" />
           
           <WheelColumn items={days} value={day} onChange={setDay} />
           <WheelColumn items={months} value={month} onChange={setMonth} />
@@ -183,7 +185,7 @@ export function MobileWheelDatePicker({
         <div className="px-6 mt-8">
           <Button 
             onClick={handleConfirm}
-            className="w-full h-14 bg-white hover:bg-slate-100 text-[#111C24] rounded-2xl font-bold text-[15px] shadow-lg shadow-white/5"
+            className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-[#111C24] rounded-2xl font-bold text-[15px] shadow-lg shadow-black/5 dark:shadow-white/5"
           >
             Pilih Tanggal
           </Button>

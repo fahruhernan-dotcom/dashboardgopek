@@ -47,13 +47,15 @@ export function DatePicker({ id, value, onChange, placeholder, className, allowC
             id={id}
             variant="outline"
             className={cn(
-              "h-12 w-full rounded-xl bg-[#231A0E] border-[#EA580C]/25 px-4 flex items-center justify-start gap-3 hover:bg-[#2A1F13] hover:border-[#EA580C]/40 transition-all",
-              !value && "text-[#FCD34D]/60",
-              value && "text-[#FEF3C7] font-semibold text-sm",
+              "h-12 w-full rounded-xl px-4 flex items-center justify-start gap-3 transition-all",
+              "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300",
+              "dark:bg-[#231A0E] dark:border-[#EA580C]/25 dark:hover:bg-[#2A1F13] dark:hover:border-[#EA580C]/40",
+              !value && "text-slate-400 dark:text-[#FCD34D]/60",
+              value && "text-slate-900 font-semibold text-sm dark:text-[#FEF3C7]",
               className
             )}
           >
-            <CalendarIcon size={18} className={cn("transition-colors", value ? "text-[#EA580C]" : "text-[#4B6478]")} />
+            <CalendarIcon size={18} className={cn("transition-colors", value ? "text-slate-900 dark:text-[#EA580C]" : "text-slate-400 dark:text-[#4B6478]")} />
             <span className="flex-1 text-left">
               {dateValue && !isNaN(dateValue.getTime())
                 ? format(dateValue, 'dd MMM yyyy', { locale: idLocale })
@@ -68,9 +70,9 @@ export function DatePicker({ id, value, onChange, placeholder, className, allowC
               e.stopPropagation()
               onChange(null)
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-full cursor-pointer transition-colors z-10"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full cursor-pointer transition-colors z-10"
           >
-            <X size={14} className="text-white/50 hover:text-white" />
+            <X size={14} className="text-slate-400 hover:text-slate-600 dark:text-white/50 dark:hover:text-white" />
           </div>
         )}
       </div>

@@ -80,7 +80,7 @@ export function SembakoPaymentSheet({ sale, onClose }) {
               style={{
                 ...sBtn(!recordPayment.isError),
                 width: '100%', padding: '14px',
-                ...(recordPayment.isError ? { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', opacity: 0.85, cursor: 'not-allowed' } : {})
+                ...(recordPayment.isError ? { background: '#FEF2F2', border: '1px solid #FEE2E2', color: '#DC2626', opacity: 0.85, cursor: 'not-allowed' } : {})
               }}
             >
               {recordPayment.isPending

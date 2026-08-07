@@ -35,7 +35,7 @@ export function DesktopBeranda({
   cashSummary, unrealizedProfitSnapshot,
   deliveries, selectedDate, setSelectedDate, currentMonth, setCurrentMonth,
   agendaFilter, setAgendaFilter, setStokOpen,
-  batches = [], suppliers = [],
+  batches = [], suppliers = [], onCatatPenjualanOpen,
 }) {
   const { brokerType } = useParams()
   const brokerBase = `/broker/${brokerType}`
@@ -64,23 +64,22 @@ export function DesktopBeranda({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <Button
-            onClick={() => setStokOpen(true)}
-            variant="outline"
-            className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs border-slate-200 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shadow-sm"
+          <button
+            onClick={() => navigate(`${brokerBase}/gudang?action=add-stock`)}
+            className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shadow-sm active:scale-95"
           >
             <Package size={16} />
             <span>Tambah Stok</span>
-          </Button>
+          </button>
 
-          <Button
-            onClick={() => navigate(`${brokerBase}/penjualan?action=new`)}
-            variant="default"
-            className="flex items-center gap-2 px-5 h-10 rounded-xl font-bold text-xs bg-slate-950 hover:bg-slate-900 text-white cursor-pointer shadow-md active:scale-95 border-none"
+          <button
+            onClick={onCatatPenjualanOpen}
+            className="flex items-center gap-2 px-5 h-10 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white cursor-pointer shadow-md active:scale-95 border-none"
+            style={{ color: '#ffffff' }}
           >
             <Plus size={16} />
             <span>Catat Penjualan</span>
-          </Button>
+          </button>
         </div>
       </div>
 

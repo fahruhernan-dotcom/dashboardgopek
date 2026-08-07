@@ -288,13 +288,13 @@ export default function SembakoInvoicePreview({ data, mode = 'invoice', onClose 
   const isDelivery = mode === 'delivery'
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 print:p-0 print:bg-white print:relative print:z-0">
+    <div className="fixed inset-0 z-[100] bg-[#0F172A]/40 backdrop-blur-md flex items-center justify-center p-4 md:p-8 print:p-0 print:bg-white print:relative print:z-0">
       {/* Controls - Hidden on Print */}
       <div className="absolute top-4 right-4 flex gap-2 print:hidden">
-        <Button onClick={handlePrint} className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold gap-2 shadow-xl">
+        <Button onClick={handlePrint} className="bg-slate-900 hover:bg-slate-800 text-white font-bold gap-2 shadow-xl border-none">
           <Printer size={18} /> Cetak {isDelivery ? 'Surat Jalan' : 'Invoice'}
         </Button>
-        <Button onClick={onClose} variant="secondary" className="bg-[#111C24] text-white hover:bg-white/10 border-white/10">
+        <Button onClick={onClose} variant="secondary" className="bg-white text-slate-900 hover:bg-slate-50 border border-slate-200 shadow-sm">
           <X size={18} />
         </Button>
       </div>

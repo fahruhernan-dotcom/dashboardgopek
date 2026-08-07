@@ -22,7 +22,10 @@ import { useTransactionQuota } from '@/lib/hooks/useTransactionQuota'
 export default function SembakoPenjualan() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const location = useLocation()
-  const [openWizard, setOpenWizard] = useState(false)
+  const [openWizard, setOpenWizard] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('action') === 'new'
+  })
   const navigate = useNavigate()
 
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
@@ -175,17 +178,17 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
         activeFilter={invoiceFilter}
         onFilterChange={setInvoiceFilter}
         actionButton={
-          <Button
+          <button
             type="button"
             onClick={() => !quota.isAtLimit && setOpenWizard(true)}
             disabled={quota.isAtLimit}
             title={quota.isAtLimit ? 'Kuota transaksi bulan ini habis — Upgrade ke Pro' : undefined}
-            className="h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-950/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-950/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border-none flex items-center"
             style={{ background: quota.isAtLimit ? '#6B7280' : '#EA580C' }}
           >
             {quota.isAtLimit ? <Lock size={14} className="mr-1" /> : <Plus size={15} className="mr-1" />}
             {quota.isAtLimit ? 'Kuota Habis' : 'Catat Penjualan'}
-          </Button>
+          </button>
         }
       />
 

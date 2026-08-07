@@ -24,16 +24,16 @@ import {
 import { SembakoSuccessCard } from './SembakoSuccessCard'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const ACCENT   = C.accent   // #EA580C
-const BG       = C.bg       // #06090F
-const SURFACE  = C.card     // #1C1208
-const MUTED    = C.muted    // #92400E
-const TEXT     = C.text     // #FEF3C7
-const BORDER   = C.border   // rgba(234,88,12,0.15)
-const INPUT_BG = C.input    // #231A0E
+const ACCENT   = C.accent   // #0F172A
+const BG       = C.bg       // #F8FAFC
+const SURFACE  = C.card     // #FFFFFF
+const MUTED    = C.muted    // #64748B
+const TEXT     = C.text     // #0F172A
+const BORDER   = C.border   // #E2E8F0
+const INPUT_BG = C.input    // #F1F5F9
 
-const inputCn = `w-full h-12 bg-[#231A0E] border border-[#EA580C]/15 rounded-xl px-4 text-[#FEF3C7] text-sm font-semibold focus:border-[#EA580C]/50 focus:outline-none focus:ring-1 focus:ring-[#EA580C]/20 transition-colors [color-scheme:dark] appearance-none`
-const labelCn = `block text-[9px] font-black text-[#92400E] uppercase tracking-[0.15em] mb-1.5`
+const inputCn = `w-full h-12 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl px-4 text-[#0F172A] text-sm font-semibold focus:border-[#0F172A]/50 focus:outline-none focus:ring-1 focus:ring-[#0F172A]/20 transition-colors appearance-none`
+const labelCn = `block text-[9px] font-black text-[#64748B] uppercase tracking-[0.15em] mb-1.5`
 
 // ─── Mobile Customer Search Overlay ──────────────────────────────────────────
 function MobileCustomerSearch({ customers, value, onSelect, onAddNew, onClose }) {
@@ -322,10 +322,10 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
 
       {/* Full-width suggestions and metadata section */}
       {prod && (
-        <div className="space-y-3 pt-1 border-t border-[#ea580c]/10 mt-1">
+        <div className="space-y-3 pt-1 border-t border-[#E2E8F0] mt-1">
           {/* Price Suggestions Row */}
-          <div className="flex flex-wrap gap-1.5 items-center bg-[#1D140A]/60 border border-orange-500/15 rounded-xl p-2.5">
-            <span className="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider mr-1 select-none">
+          <div className="flex flex-wrap gap-1.5 items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5">
+            <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider mr-1 select-none">
               Saran Harga:
             </span>
             
@@ -334,7 +334,7 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
               <button
                 type="button"
                 onClick={() => onChangeItem(idx, 'price_per_unit', prod.sell_price)}
-                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/25 text-amber-400 border border-amber-500/20 active:scale-95 transition-all cursor-pointer"
+                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 active:scale-95 transition-all cursor-pointer"
               >
                 Std: {formatIDR(prod.sell_price)}
               </button>
@@ -352,8 +352,8 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
                   onClick={() => onChangeItem(idx, 'price_per_unit', markupPrice)}
                   className={`text-[10px] font-bold px-2 py-1 rounded-lg border active:scale-95 transition-all cursor-pointer font-mono ${
                     multiplier === 1.00 
-                      ? 'bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border-rose-500/20' 
-                      : 'bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border-emerald-500/20'
+                      ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' 
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
                   }`}
                 >
                   {label}: {formatIDR(markupPrice)}
@@ -366,24 +366,24 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
           {hpp > 0 && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-xs px-1">
-                <span className="font-bold uppercase tracking-wider text-muted-foreground text-[10px]">
+                <span className="font-bold uppercase tracking-wider text-slate-500 text-[10px]">
                   HPP Terbobot (FIFO)
                 </span>
-                <span className="font-black text-amber-400 font-mono text-xs">
+                <span className="font-black text-slate-800 font-mono text-xs">
                   {formatIDR(hpp)} / {item.unit || 'slop'}
                 </span>
               </div>
 
               {/* FIFO Breakdown Info Box */}
               {fifoBreakdown.length > 0 && (
-                <div style={{ background: 'rgba(234, 88, 12, 0.03)', border: '1px dashed rgba(234, 88, 12, 0.2)', borderRadius: 12, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', color: '#FDBA74', letterSpacing: '0.04em', marginBottom: 4 }}>
+                <div style={{ background: '#F8FAFC', border: '1px dashed #E2E8F0', borderRadius: 12, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', color: '#64748B', letterSpacing: '0.04em', marginBottom: 4 }}>
                     Alokasi FIFO Batch:
                   </div>
                   <div className="space-y-1.5">
                     {fifoBreakdown.map((b, bIdx) => (
                       <div key={bIdx} className="flex justify-between items-center text-[10px] font-mono leading-tight">
-                        <span className="text-amber-200 font-bold truncate max-w-[220px]">
+                        <span className="text-[#0F172A] font-bold truncate max-w-[220px]">
                           {b.qty} {item.unit || 'slop'} @ {formatIDR(b.buy_price)}
                         </span>
                         <span className="text-muted-foreground text-[9px] truncate max-w-[150px]" title={b.batch_code}>
@@ -395,13 +395,13 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
                   
                   {/* Warning / Explanation note */}
                   {fifoBreakdown.length > 1 && !fifoBreakdown.some(b => b.batch_code.includes('Fallback')) && (
-                    <div className="text-[9px] text-amber-500/90 font-medium mt-2 leading-normal flex items-start gap-1">
+                    <div className="text-[9px] text-slate-500 font-medium mt-2 leading-normal flex items-start gap-1">
                       <span>ℹ️</span>
                       <span>Kuantitas mencakup lebih dari 1 batch karena sisa batch sebelumnya telah habis.</span>
                     </div>
                   )}
                   {fifoBreakdown.some(b => b.batch_code.includes('Fallback')) && (
-                    <div className="text-[9px] text-red-400 font-bold mt-2 leading-normal flex items-start gap-1">
+                    <div className="text-[9px] text-[#B91C1C] font-bold mt-2 leading-normal flex items-start gap-1">
                       <span>⚠️</span>
                       <span>Stok batch aktif tidak mencukupi pesanan ini. Sisa menggunakan estimasi default.</span>
                     </div>
@@ -412,9 +412,9 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
           )}
 
           {marginPerUnit !== null && !isBelowHpp && (
-            <div className="flex items-center justify-between text-xs px-1 border-t border-[#ea580c]/5 pt-2">
-              <span className="font-bold uppercase tracking-wider text-emerald-400 text-[10px]">Estimasi Margin Keuntungan</span>
-              <span className="font-black text-emerald-400 font-mono text-xs">+{formatIDR(marginPerUnit)} / {item.unit || 'slop'}</span>
+            <div className="flex items-center justify-between text-xs px-1 border-t border-slate-100 pt-2">
+              <span className="font-bold uppercase tracking-wider text-emerald-700 text-[10px]">Estimasi Margin Keuntungan</span>
+              <span className="font-black text-emerald-700 font-mono text-xs">+{formatIDR(marginPerUnit)} / {item.unit || 'slop'}</span>
             </div>
           )}
         </div>
@@ -1206,7 +1206,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     </button>
 
                     {/* Running total */}
-                    <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: '#F8FAFC' }}>
                       <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: MUTED }}>Total Sementara</span>
                       <span className="text-base font-black" style={{ color: TEXT }}>{formatIDR(totalAmount)}</span>
                     </div>
@@ -1228,16 +1228,16 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                           onClick={() => { setUseDelivery(true); setDeliveryStatus('terkirim'); }}
                           className="p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer"
                           style={{
-                            background: (useDelivery && deliveryStatus === 'terkirim') ? 'rgba(34,197,94,0.12)' : SURFACE,
-                            borderColor: (useDelivery && deliveryStatus === 'terkirim') ? '#22C55E' : BORDER,
+                            background: (useDelivery && deliveryStatus === 'terkirim') ? '#F0FDF4' : SURFACE,
+                            borderColor: (useDelivery && deliveryStatus === 'terkirim') ? '#16A34A' : BORDER,
                           }}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-lg">✅</span>
-                            {(useDelivery && deliveryStatus === 'terkirim') && <Check size={16} color="#22C55E" strokeWidth={3} />}
+                            {(useDelivery && deliveryStatus === 'terkirim') && <Check size={16} color="#16A34A" strokeWidth={3} />}
                           </div>
                           <div>
-                            <p className="font-bold text-xs" style={{ color: (useDelivery && deliveryStatus === 'terkirim') ? '#4ADE80' : TEXT }}>
+                            <p className="font-bold text-xs" style={{ color: (useDelivery && deliveryStatus === 'terkirim') ? '#16A34A' : TEXT }}>
                               Langsung Terkirim
                             </p>
                             <p className="text-[10px] mt-0.5 font-medium" style={{ color: MUTED }}>Barang sudah sampai / diserahkan</p>
@@ -1250,16 +1250,16 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                           onClick={() => { setUseDelivery(true); setDeliveryStatus('pending'); }}
                           className="p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer"
                           style={{
-                            background: (useDelivery && deliveryStatus === 'pending') ? 'rgba(96,165,250,0.12)' : SURFACE,
-                            borderColor: (useDelivery && deliveryStatus === 'pending') ? '#3B82F6' : BORDER,
+                            background: (useDelivery && deliveryStatus === 'pending') ? '#F0F9FF' : SURFACE,
+                            borderColor: (useDelivery && deliveryStatus === 'pending') ? '#0284C7' : BORDER,
                           }}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-lg">🚚</span>
-                            {(useDelivery && deliveryStatus === 'pending') && <Check size={16} color="#60A5FA" strokeWidth={3} />}
+                            {(useDelivery && deliveryStatus === 'pending') && <Check size={16} color="#0284C7" strokeWidth={3} />}
                           </div>
                           <div>
-                            <p className="font-bold text-xs" style={{ color: (useDelivery && deliveryStatus === 'pending') ? '#93C5FD' : TEXT }}>
+                            <p className="font-bold text-xs" style={{ color: (useDelivery && deliveryStatus === 'pending') ? '#0284C7' : TEXT }}>
                               Jadwalkan Kirim
                             </p>
                             <p className="text-[10px] mt-0.5 font-medium" style={{ color: MUTED }}>Trip armada / kurir nanti</p>
@@ -1272,16 +1272,16 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                           onClick={() => { setUseDelivery(false); }}
                           className="p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer"
                           style={{
-                            background: !useDelivery ? 'rgba(148,163,184,0.12)' : SURFACE,
-                            borderColor: !useDelivery ? '#94A3B8' : BORDER,
+                            background: !useDelivery ? '#F1F5F9' : SURFACE,
+                            borderColor: !useDelivery ? '#475569' : BORDER,
                           }}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-lg">🏪</span>
-                            {!useDelivery && <Check size={16} color="#94A3B8" strokeWidth={3} />}
+                            {!useDelivery && <Check size={16} color="#475569" strokeWidth={3} />}
                           </div>
                           <div>
-                            <p className="font-bold text-xs" style={{ color: !useDelivery ? '#F1F5F9' : TEXT }}>
+                            <p className="font-bold text-xs" style={{ color: !useDelivery ? '#475569' : TEXT }}>
                               Tanpa Pengiriman
                             </p>
                             <p className="text-[10px] mt-0.5 font-medium" style={{ color: MUTED }}>Ambil di toko / cash & carry</p>
@@ -1316,9 +1316,9 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                                     onClick={() => setDeliveryVehicle(active ? '' : value)}
                                     className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-bold transition-all"
                                     style={{
-                                      background: active ? 'rgba(96,165,250,0.15)' : INPUT_BG,
-                                      border: `${active ? 2 : 1}px solid ${active ? '#60A5FA' : 'rgba(234,88,12,0.15)'}`,
-                                      color: active ? '#93C5FD' : TEXT,
+                                      background: active ? '#F1F5F9' : '#FFFFFF',
+                                      border: `${active ? 2 : 1}px solid ${active ? '#0F172A' : BORDER}`,
+                                      color: active ? '#0F172A' : '#64748B',
                                     }}
                                   >
                                     <Icon size={13} strokeWidth={2.5} />
@@ -1350,13 +1350,13 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                                 onClick={() => setDeliveryDriver('')}
                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all"
                                 style={{
-                                  background: !deliveryDriver ? 'rgba(96,165,250,0.08)' : SURFACE,
-                                  border: `1px solid ${!deliveryDriver ? '#60A5FA' : BORDER}`,
+                                  background: !deliveryDriver ? '#F1F5F9' : SURFACE,
+                                  border: `1px solid ${!deliveryDriver ? '#0F172A' : BORDER}`,
                                 }}
                               >
-                                <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, color: MUTED }}>–</div>
-                                <span className="font-bold text-sm" style={{ color: !deliveryDriver ? '#93C5FD' : MUTED }}>Belum Ditentukan (Kosongkan)</span>
-                                {!deliveryDriver && <Check size={14} color="#60A5FA" strokeWidth={3} className="ml-auto" />}
+                                <div style={{ width: 32, height: 32, borderRadius: 10, background: !deliveryDriver ? '#E2E8F0' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, color: MUTED }}>–</div>
+                                <span className="font-bold text-sm" style={{ color: !deliveryDriver ? '#0F172A' : MUTED }}>Belum Ditentukan (Kosongkan)</span>
+                                {!deliveryDriver && <Check size={14} color="#0F172A" strokeWidth={3} className="ml-auto" />}
                               </button>
 
                               {/* Employee cards */}
@@ -1367,16 +1367,16 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                                   onClick={() => handleSelectDriver(e.id)}
                                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all"
                                   style={{
-                                    background: deliveryDriver === e.id ? 'rgba(96,165,250,0.08)' : SURFACE,
-                                    border: `1px solid ${deliveryDriver === e.id ? '#60A5FA' : BORDER}`,
+                                    background: deliveryDriver === e.id ? '#F1F5F9' : SURFACE,
+                                    border: `1px solid ${deliveryDriver === e.id ? '#0F172A' : BORDER}`,
                                   }}
                                 >
-                                  <div style={{ width: 32, height: 32, borderRadius: 10, background: deliveryDriver === e.id ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>👤</div>
+                                  <div style={{ width: 32, height: 32, borderRadius: 10, background: deliveryDriver === e.id ? '#E2E8F0' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>👤</div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-sm truncate" style={{ color: deliveryDriver === e.id ? '#93C5FD' : TEXT }}>{e.full_name}</p>
+                                    <p className="font-bold text-sm truncate" style={{ color: deliveryDriver === e.id ? '#0F172A' : TEXT }}>{e.full_name}</p>
                                     <p className="text-[11px] font-medium capitalize" style={{ color: MUTED }}>{e.role}</p>
                                   </div>
-                                  {deliveryDriver === e.id && <Check size={14} color="#60A5FA" strokeWidth={3} />}
+                                  {deliveryDriver === e.id && <Check size={14} color="#0F172A" strokeWidth={3} />}
                                 </button>
                               ))}
 
@@ -1514,11 +1514,11 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     {editId && editSale && (editSale.paid_amount || 0) > totalAmount && (
                       <div
                         className="flex items-start gap-2.5 px-4 py-3 rounded-xl"
-                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
+                        style={{ background: '#FFFBEB', border: '1px solid #FEF3C7' }}
                       >
                         <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
                         <div>
-                          <p className="text-xs font-bold" style={{ color: '#F59E0B' }}>Kelebihan Bayar</p>
+                          <p className="text-xs font-bold" style={{ color: '#D97706' }}>Kelebihan Bayar</p>
                           <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>
                             Toko sudah bayar {formatIDR(editSale.paid_amount || 0)} tapi total baru {formatIDR(totalAmount)}.
                             Sisa kelebihan {formatIDR((editSale.paid_amount || 0) - totalAmount)} — invoice akan ditandai <strong>LUNAS</strong>.
@@ -1531,11 +1531,11 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     {totalAmount > 0 && totalCogs === 0 && items.some(i => i.product_id) && (
                       <div
                         className="flex items-start gap-2.5 px-4 py-3 rounded-xl"
-                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}
+                        style={{ background: '#FFFBEB', border: '1px solid #FEF3C7' }}
                       >
                         <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
                         <div>
-                          <p className="text-xs font-bold" style={{ color: '#F59E0B' }}>HPP / Modal belum terhitung</p>
+                          <p className="text-xs font-bold" style={{ color: '#D97706' }}>HPP / Modal belum terhitung</p>
                           <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>Estimasi profit di atas <strong>belum dikurangi modal beli</strong>. Pastikan produk sudah punya data batch/stok masuk agar HPP otomatis terisi.</p>
                         </div>
                       </div>
@@ -1545,11 +1545,11 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     {totalAmount > 0 && netMarginPct < 0 && (
                       <div
                         className="flex items-start gap-2.5 px-4 py-3 rounded-xl"
-                        style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}
+                        style={{ background: '#FEF2F2', border: '1px solid #FEE2E2' }}
                       >
                         <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>🚨</span>
                         <div>
-                          <p className="text-xs font-bold" style={{ color: '#EF4444' }}>PERHATIAN: Transaksi ini RUGI ({netMarginPct}%)</p>
+                          <p className="text-xs font-bold" style={{ color: '#DC2626' }}>PERHATIAN: Transaksi ini RUGI ({netMarginPct}%)</p>
                           <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>Harga jual lebih rendah dari HPP. Periksa harga atau COGS sebelum menyimpan.</p>
                         </div>
                       </div>
@@ -1559,11 +1559,11 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     {totalAmount > 0 && totalCogs > 0 && netMarginPct < 5 && netMarginPct >= 0 && (
                       <div
                         className="flex items-start gap-2.5 px-4 py-3 rounded-xl"
-                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}
+                        style={{ background: '#FFFBEB', border: '1px solid #FEF3C7' }}
                       >
                         <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
                         <div>
-                          <p className="text-xs font-bold" style={{ color: '#F59E0B' }}>Margin tipis ({netMarginPct}%)</p>
+                          <p className="text-xs font-bold" style={{ color: '#D97706' }}>Margin tipis ({netMarginPct}%)</p>
                           <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>Pastikan harga jual sudah benar agar keuntungan optimal</p>
                         </div>
                       </div>
@@ -1585,9 +1585,9 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     {/* Payment section */}
                     <div
                       className="rounded-2xl p-4 space-y-3"
-                      style={{ background: 'rgba(16, 185, 129,0.04)', border: '1px solid rgba(16, 185, 129,0.15)' }}
+                      style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
                     >
-                      <label className={labelCn + ' text-[#10B981]'}>Pembayaran Awal (Opsional)</label>
+                      <label className={labelCn + ' text-[#16A34A]'}>Pembayaran Awal (Opsional)</label>
                       <InputRupiah value={payAmount} onChange={setPayAmount} placeholder="Jumlah bayar..." />
                       <AnimatePresence>
                         {payAmount > 0 && (
@@ -1606,7 +1606,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                       {payAmount > 0 && (
                         <div className="flex justify-between text-[11px]">
                           <span style={{ color: MUTED }}>Sisa Piutang</span>
-                          <span className="font-black" style={{ color: totalAmount - payAmount > 0 ? '#EF4444' : '#10B981' }}>
+                          <span className="font-black" style={{ color: totalAmount - payAmount > 0 ? '#DC2626' : '#16A34A' }}>
                             {formatIDR(Math.max(0, totalAmount - payAmount))}
                           </span>
                         </div>
@@ -1642,15 +1642,15 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
             {step > 0 ? (
               <button
                 onClick={() => setStep(s => s - 1)}
-                className="flex-1 h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all"
-                style={{ border: `1px solid ${BORDER}`, color: TEXT, background: 'transparent' }}
+                className="flex-1 h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all bg-transparent hover:bg-slate-50 border border-slate-200 text-slate-700"
               >
                 <ChevronLeft size={16} /> Kembali
               </button>
             ) : (
               <button
                 onClick={handleCancelReset}
-                className="flex-1 h-12 rounded-xl font-bold text-sm transition-all text-red-400 hover:bg-red-500/10 border border-red-500/20"
+                className="flex-1 h-12 rounded-xl font-bold text-sm transition-all text-rose-600 hover:bg-rose-50 border border-rose-200"
+                style={{ color: '#e11d48' }}
               >
                 Batal & Reset
               </button>
@@ -1659,8 +1659,8 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
             {step < 3 ? (
               <button
                 onClick={goNext}
-                className="flex-[2] h-12 rounded-xl font-black text-sm transition-all"
-                style={{ background: ACCENT, color: '#fff', boxShadow: '0 4px 16px rgba(234,88,12,0.3)' }}
+                className="flex-[2] h-12 rounded-xl font-black text-sm transition-all bg-[#0F172A] text-white hover:bg-slate-900 shadow-sm"
+                style={{ color: '#ffffff' }}
               >
                 Lanjut →
               </button>
@@ -1668,12 +1668,10 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
               <button
                 onClick={handleSubmit}
                 disabled={createSale.isPending || updateSale.isPending}
-                className="flex-[2] h-12 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all"
+                className="flex-[2] h-12 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all bg-[#0F172A] text-white hover:bg-slate-900"
                 style={{
-                  background: ACCENT,
-                  color: '#fff',
+                  color: '#ffffff',
                   opacity: (createSale.isPending || updateSale.isPending) ? 0.6 : 1,
-                  boxShadow: '0 4px 16px rgba(234,88,12,0.3)',
                 }}
               >
                 {(createSale.isPending || updateSale.isPending)

@@ -14,11 +14,7 @@ export function SembakoSuccessCard({ isOpen, onClose, data, onPrint }) {
   const handleSheetClose = useCallback((v) => { if (!v) onClose() }, [onClose])
   if (!data) return null
 
-  const handleWA = () => {
-    const msg = generateWAMessage(data, tenant)
-    const url = toWaLink(data.customerPhone, msg) || `https://wa.me/?text=${msg}`
-    window.open(url, '_blank')
-  }
+
 
   return (
     <Sheet open={isOpen} onOpenChange={handleSheetClose}>
@@ -47,11 +43,11 @@ export function SembakoSuccessCard({ isOpen, onClose, data, onPrint }) {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-            style={{ width: 80, height: 80, borderRadius: '24px', background: 'rgba(2, 26, 2,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 0 40px rgba(2, 26, 2,0.2)' }}
+            style={{ width: 80, height: 80, borderRadius: '24px', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 10px 30px rgba(22, 163, 74, 0.08)' }}
           >
             <motion.svg width="40" height="40" viewBox="0 0 50 50">
-              <motion.circle cx="25" cy="25" r="22" fill="none" stroke="#021a02" strokeWidth="4" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} />
-              <motion.path d="M 14 26 L 22 34 L 38 16" fill="transparent" stroke="#021a02" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }} />
+              <motion.circle cx="25" cy="25" r="22" fill="none" stroke="#16A34A" strokeWidth="4" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} />
+              <motion.path d="M 14 26 L 22 34 L 38 16" fill="transparent" stroke="#16A34A" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }} />
             </motion.svg>
           </motion.div>
 
@@ -90,12 +86,15 @@ export function SembakoSuccessCard({ isOpen, onClose, data, onPrint }) {
             </button>
           )}
 
-          <button
-            onClick={handleWA}
-            style={{ ...sBtn(false), width: '100%', height: '48px', fontSize: '13px', marginBottom: '8px', borderColor: '#25D366', color: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          <a
+            href={toWaLink(data.customerPhone, generateWAMessage(data, tenant)) || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full h-12 rounded-xl text-xs font-bold transition-all border border-[#25D366] text-[#25D366] hover:bg-[#25D366]/5 active:scale-95 flex items-center justify-center gap-2 select-none"
+            style={{ textDecoration: 'none', marginBottom: '8px' }}
           >
             <Smartphone size={16} /> KIRIM STRUK KE WA
-          </button>
+          </a>
 
           <button onClick={onClose} style={{ ...sBtn(true), width: '100%', height: '48px', fontSize: '15px' }}>
             Tutup & Kembali

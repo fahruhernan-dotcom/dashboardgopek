@@ -163,7 +163,9 @@ function PoultryBrokerPrefetcher() {
 export default function BrokerLayout() {
   const { profile, tenant, loading, isSuperadmin, refetchProfile } = useAuth()
   useNotificationGenerator()
-  useForceDarkMode()
+  const vertical = resolveBusinessVertical(profile, tenant)
+  const isSembako = vertical === 'distributor_sembako' || vertical === 'sembako_broker'
+  useForceDarkMode(isSembako)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -244,9 +246,6 @@ export default function BrokerLayout() {
     return <BusinessModelOverlay profile={profile} onComplete={refetchProfile} />
   }
 
-  const vertical = resolveBusinessVertical(profile, tenant)
-  const isSembako = vertical === 'distributor_sembako' || vertical === 'sembako_broker'
-
   const renderContent = () => {
     if (!isDesktop) {
       return (
@@ -255,7 +254,7 @@ export default function BrokerLayout() {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           style={{
-            background: '#06090F',
+            background: isSembako ? '#F8FAFC' : '#06090F',
             minHeight: '100vh',
             maxWidth: '480px',
             margin: '0 auto',
