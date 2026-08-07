@@ -45,6 +45,7 @@ export default function SembakoRetur() {
 
   // Confirmation state for deleting/cancelling retur
   const [confirmCancelReturn, setConfirmCancelReturn] = useState(null)
+  const [selectedReturnDetail, setSelectedReturnDetail] = useState(null)
 
   // Close modal on Android hardware back button
   useBackHandler(sheetOpen, () => setSheetOpen(false))
@@ -267,7 +268,8 @@ export default function SembakoRetur() {
                     key={r.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-card border border-border/60 hover:border-amber-500/30 rounded-2xl p-4 sm:p-5 transition-all shadow-sm"
+                    onClick={() => setSelectedReturnDetail(r)}
+                    className="bg-card border border-border/60 hover:border-amber-500/30 rounded-2xl p-4 sm:p-5 transition-all shadow-sm cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="flex flex-wrap items-center gap-2">
@@ -285,7 +287,10 @@ export default function SembakoRetur() {
                       
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleToggleStatus(r.id, r.status)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleStatus(r.id, r.status)
+                          }}
                           className={`text-xs font-bold px-3 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${r.status === 'completed'
                               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
                               : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
@@ -293,14 +298,6 @@ export default function SembakoRetur() {
                         >
                           {r.status === 'completed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
                           {r.status === 'completed' ? 'Selesai' : 'Diproses'}
-                        </button>
-                        
-                        <button
-                          onClick={() => setConfirmCancelReturn(r)}
-                          title="Batalkan Retur ini"
-                          className="p-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all cursor-pointer"
-                        >
-                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
@@ -689,6 +686,157 @@ export default function SembakoRetur() {
                   )}
                 </button>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Detail Retur */}
+      <AnimatePresence>
+        {selectedReturnDetail && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4"
+            onClick={() => setSelectedReturnDetail(null)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-card border-t-2 border-amber-500 sm:border sm:border-border rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto space-y-4 text-left"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <FileText className="text-amber-500" size={20} />
+                  <h2 className="text-base font-bold text-foreground">Detail Retur Produk</h2>
+                </div>
+                <button onClick={() => setSelectedReturnDetail(null)} className="text-muted-foreground hover:text-foreground">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Status & Badge */}
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/[0.02] border border-border/60 rounded-xl text-xs">
+                <div className="space-y-1">
+                  <p className="text-muted-foreground font-bold">Nomor Retur</p>
+                  <p className="text-sm font-mono font-black text-foreground">{selectedReturnDetail.return_number || selectedReturnDetail.id}</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    await handleToggleStatus(selectedReturnDetail.id, selectedReturnDetail.status);
+                    // Update local detail state status
+                    setSelectedReturnDetail(prev => ({ ...prev, status: prev.status === 'pending' ? 'completed' : 'pending' }));
+                  }}
+                  className={`font-bold px-3 h-8 rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${selectedReturnDetail.status === 'completed'
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
+                    }`}
+                >
+                  {selectedReturnDetail.status === 'completed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
+                  {selectedReturnDetail.status === 'completed' ? 'Selesai' : 'Diproses'}
+                </button>
+              </div>
+
+              {/* Main Information */}
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-muted-foreground font-bold block mb-1">Tipe Retur</span>
+                    <span className={`inline-block font-extrabold uppercase px-2.5 py-0.5 rounded-md ${
+                      (selectedReturnDetail.return_type || selectedReturnDetail.type) === 'sale_return'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                    }`}>
+                      {(selectedReturnDetail.return_type || selectedReturnDetail.type) === 'sale_return' ? 'Retur dari Toko' : 'Retur ke Pabrik'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-bold block mb-1">Nama Pihak</span>
+                    <span className="text-foreground font-extrabold">{selectedReturnDetail.party_name}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 border-t border-border/40 pt-3">
+                  <div>
+                    <span className="text-muted-foreground font-bold block mb-1">Produk</span>
+                    <span className="text-foreground font-black">{selectedReturnDetail.product_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-bold block mb-1">Jumlah</span>
+                    <span className="text-amber-500 font-extrabold bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/20">
+                      {selectedReturnDetail.quantity} {selectedReturnDetail.unit}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 border-t border-border/40 pt-3">
+                  <div>
+                    <span className="text-muted-foreground font-bold block mb-1">Harga Satuan</span>
+                    <span className="text-foreground font-semibold">Rp {fmt(selectedReturnDetail.unit_price)}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-bold block mb-1">Total Nilai Retur</span>
+                    <span className="text-rose-500 font-black text-sm">Rp {fmt(selectedReturnDetail.total_amount || selectedReturnDetail.amount)}</span>
+                  </div>
+                </div>
+
+                {selectedReturnDetail.sembako_sales?.invoice_number && (
+                  <div className="border-t border-border/40 pt-3">
+                    <span className="text-muted-foreground font-bold block mb-1">Nota Penjualan Terhubung</span>
+                    <span className="inline-flex items-center gap-1.5 font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <FileText size={11} /> {selectedReturnDetail.sembako_sales.invoice_number}
+                    </span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 border-t border-border/40 pt-3">
+                  <div>
+                    <span className="text-muted-foreground font-bold block mb-1">Alasan</span>
+                    <span className="text-foreground italic">{selectedReturnDetail.reason || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-bold block mb-1">Penanganan Stok</span>
+                    <span className="text-amber-400 font-semibold">
+                      {selectedReturnDetail.action === 'fifo_stock' ? 'Masuk Stok (FIFO)' : 'Afkir / Loss'}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedReturnDetail.notes && (
+                  <div className="border-t border-border/40 pt-3">
+                    <span className="text-muted-foreground font-bold block mb-1">Catatan Tambahan</span>
+                    <p className="text-foreground bg-slate-50 dark:bg-white/[0.01] p-2.5 rounded-xl border border-border/60 leading-relaxed">
+                      {selectedReturnDetail.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action buttons (including delete) */}
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-border/40">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmCancelReturn(selectedReturnDetail);
+                    setSelectedReturnDetail(null); // Close detail when confirming delete
+                  }}
+                  className="px-4 h-10 rounded-xl font-bold text-xs bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 size={13} />
+                  <span>Batalkan / Hapus Retur</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReturnDetail(null)}
+                  className="px-5 h-10 rounded-xl font-bold text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
