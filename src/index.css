@@ -1,6 +1,9 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 html,
 body {
@@ -149,43 +152,42 @@ section h1, section h2, section h3 {
   color: #8cb88c; /* emerald-300 forest tone — readable on dark bg */
 }
 
-
 @layer base {
   :root {
     /* Shadcn defaults for light mode */
-    --background: 0 0% 98%; /* warm off-white — bukan sage gray yang aneh */
-    --foreground: 222.2 84% 4.9%; /* slate-950 text */
-    --card: 0 0% 100%; /* white cards */
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 120 67% 14.3%; /* forest green (#0c3d0c) */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 217.2 19% 32.5%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --background: oklch(1 0 0); /* warm off-white — bukan sage gray yang aneh */
+    --foreground: oklch(0.148 0.004 228.8); /* slate-950 text */
+    --card: oklch(1 0 0); /* white cards */
+    --card-foreground: oklch(0.148 0.004 228.8);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.148 0.004 228.8);
+    --primary: oklch(0.553 0.195 38.402); /* forest green (#0c3d0c) */
+    --primary-foreground: oklch(0.98 0.016 73.684);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --muted: oklch(0.963 0.002 197.1);
+    --muted-foreground: oklch(0.56 0.021 213.5);
+    --accent: oklch(0.963 0.002 197.1);
+    --accent-foreground: oklch(0.218 0.008 223.9);
+    --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 87.4%; /* slightly darker slate-200 for border contrast */
-    --input: 214.3 31.8% 87.4%;
-    --ring: 120 67% 14.3%;
-    --radius: 0.75rem;
-    --chart-1: 120 67% 14.3%;
-    --chart-2: 217 91% 60%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 262 83% 58%;
-    --chart-5: 0 72% 70%;
+    --border: oklch(0.925 0.005 214.3); /* slightly darker slate-200 for border contrast */
+    --input: oklch(0.925 0.005 214.3);
+    --ring: oklch(0.723 0.014 214.4);
+    --radius: 0.625rem;
+    --chart-1: oklch(0.837 0.128 66.29);
+    --chart-2: oklch(0.705 0.213 47.604);
+    --chart-3: oklch(0.646 0.222 41.116);
+    --chart-4: oklch(0.553 0.195 38.402);
+    --chart-5: oklch(0.47 0.157 37.304);
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 120 67% 14.3%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 87.4%;
-    --sidebar-ring: 120 67% 14.3%;
+    --sidebar-foreground: oklch(0.148 0.004 228.8);
+    --sidebar-primary: oklch(0.646 0.222 41.116);
+    --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+    --sidebar-accent: oklch(0.963 0.002 197.1);
+    --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
+    --sidebar-border: oklch(0.925 0.005 214.3);
+    --sidebar-ring: oklch(0.723 0.014 214.4);
 
     /* Extended Color Variables for Light Mode */
     --emerald-50: #f0f7f0;
@@ -194,7 +196,7 @@ section h1, section h2, section h3 {
     --emerald-500: #0c3d0c; /* #0c3d0c forest green */
     --emerald-600: #063306; /* #063306 forest green */
     --em-500: #0c3d0c;
-  
+
     --bg-base-val: #FAFAFA; /* off-white bersih */
     --bg-1-val: #FFFFFF;    /* white panels */
     --bg-2-val: #F6F9F5;    /* warm sage-50 cards */
@@ -203,7 +205,7 @@ section h1, section h2, section h3 {
     --text-secondary-val: #273041; /* slate-800 - darker for 15% more contrast */
     --text-muted-val: #4A5568;     /* slate-600 - darker for more contrast */
     --text-accent-val: #0c3d0c;    /* forest-500 */
-    
+
     --border-sub-val: rgba(15, 23, 42, 0.08); /* bumped contrast */
     --border-def-val: rgba(15, 23, 42, 0.13); /* bumped contrast */
     --border-strong-val: rgba(15, 23, 42, 0.22); /* bumped contrast */
@@ -295,37 +297,38 @@ section h1, section h2, section h3 {
     --shadow-tko-md: 0 12px 32px rgba(15, 23, 42, 0.10);
     --shadow-tko-lg: 0 24px 60px rgba(15, 23, 42, 0.14);
     --shadow-tko-brand: 0 12px 28px rgba(2, 26, 2, 0.24);
+    --sidebar: oklch(0.987 0.002 197.1);
   }
 
   .dark {
     /* Shadcn defaults for dark mode */
-    --background: 220 14% 4%; /* original dark */
-    --foreground: 210 40% 96%;
-    --card: 215 22% 8%;
-    --card-foreground: 210 40% 96%;
-    --popover: 215 22% 8%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 120 22% 63.5%; /* forest green (#8cb88c) */
-    --primary-foreground: 222.2 47.4% 11.2%; /* dark text on light primary */
-    --secondary: 215 19% 11%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 215 19% 11%;
-    --muted-foreground: 215 16% 40%;
-    --accent: 215 19% 14%;
-    --accent-foreground: 210 40% 96%;
-    --destructive: 0 72% 70%;
+    --background: oklch(0.148 0.004 228.8); /* original dark */
+    --foreground: oklch(0.987 0.002 197.1);
+    --card: oklch(0.218 0.008 223.9);
+    --card-foreground: oklch(0.987 0.002 197.1);
+    --popover: oklch(0.218 0.008 223.9);
+    --popover-foreground: oklch(0.987 0.002 197.1);
+    --primary: oklch(0.47 0.157 37.304); /* forest green (#8cb88c) */
+    --primary-foreground: oklch(0.98 0.016 73.684); /* dark text on light primary */
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.275 0.011 216.9);
+    --muted-foreground: oklch(0.723 0.014 214.4);
+    --accent: oklch(0.275 0.011 216.9);
+    --accent-foreground: oklch(0.987 0.002 197.1);
+    --destructive: oklch(0.704 0.191 22.216);
     --destructive-foreground: 0 0% 100%;
-    --border: 215 20% 13%;
-    --input: 215 19% 11%;
-    --ring: 120 22% 63.5%;
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.56 0.021 213.5);
     --sidebar-background: 215 25% 6%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 120 22% 63.5%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 215 19% 11%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 215 20% 10%;
-    --sidebar-ring: 120 22% 63.5%;
+    --sidebar-foreground: oklch(0.987 0.002 197.1);
+    --sidebar-primary: oklch(0.705 0.213 47.604);
+    --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+    --sidebar-accent: oklch(0.275 0.011 216.9);
+    --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.56 0.021 213.5);
 
     /* Semantic Variable Overrides for Dark Mode */
     --bg-page: #021a02;
@@ -346,7 +349,7 @@ section h1, section h2, section h3 {
     --emerald-500: #8cb88c; /* base brand green */
     --emerald-600: #749e74; /* darker — hover backgrounds */
     --em-500: #8cb88c;
-  
+
     --bg-base-val: #06090F;
     --bg-1-val: #0C1319;
     --bg-2-val: #111C24;
@@ -355,7 +358,7 @@ section h1, section h2, section h3 {
     --text-secondary-val: #94A3B8;
     --text-muted-val: #4B6478;
     --text-accent-val: #8cb88c;  /* forest green 500 — readable on dark bg */
-    
+
     --border-sub-val: rgba(255, 255, 255, 0.05);
     --border-def-val: rgba(255, 255, 255, 0.09);
     --border-strong-val: rgba(255, 255, 255, 0.16);
@@ -375,6 +378,25 @@ section h1, section h2, section h3 {
     --mobile-button-secondary-border: rgba(255, 255, 255, 0.08);
     --mobile-button-secondary-text: #e2e8f0;
     --mobile-button-secondary-hover-bg: rgba(255, 255, 255, 0.07);
+    --chart-1: oklch(0.837 0.128 66.29);
+    --chart-2: oklch(0.705 0.213 47.604);
+    --chart-3: oklch(0.646 0.222 41.116);
+    --chart-4: oklch(0.553 0.195 38.402);
+    --chart-5: oklch(0.47 0.157 37.304);
+    --sidebar: oklch(0.218 0.008 223.9);
+  }
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Inter Variable', sans-serif;
+  }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
@@ -508,8 +530,6 @@ html:not(.dark) .text-\[\#4B6478\] { color: #6B7280 !important; }
 html:not(.dark) .text-\[\#64748B\] { color: #6B7280 !important; }
 html:not(.dark) .text-\[\#8899A6\] { color: #6B7280 !important; }
 html:not(.dark) .text-\[\#7F8EA0\] { color: #6B7280 !important; }
-
-
 
 /* ── EXCEPTION: Button/link/span/div dengan text-white tetap putih HANYA jika memiliki background solid ── */
 html:not(.dark) .text-white[class*="bg-emerald"],
@@ -794,7 +814,6 @@ html:not(.dark) .bg-amber-600 .text-white {
 /* ── FAQItem / Accordion headers ── */
 html:not(.dark) summary span.text-white { color: #1E293B !important; }
 
-
 /* ===================================================================
    TARGETED .fitur-page OVERRIDES
    Menggunakan class 'fitur-page' sebagai namespace agar override
@@ -857,7 +876,6 @@ html:not(.dark) .fitur-page .py-20.bg-\[\#080D13\] {
 html:not(.dark) .fitur-page .py-24 {
   background-color: #FAFAFA !important;
 }
-
 
 /* ===================================================================
    DARK THEME PRESERVATION (DARK PRESERVE SYSTEM)
@@ -930,9 +948,6 @@ html:not(.dark) .fitur-page .py-24 {
 .dark-preserve .text-em-500 { color: #22c55e !important; }
 .dark-preserve .text-em-600 { color: #16a34a !important; }
 
-
-
-
 /* Theme-Adaptive Brand utility classes */
 .text-brand-500 {
   color: var(--brand-500) !important;
@@ -994,4 +1009,3 @@ html.dark ::-moz-selection,
   background-color: #8cb88c !important;
   color: #0F172A !important;
 }
-
