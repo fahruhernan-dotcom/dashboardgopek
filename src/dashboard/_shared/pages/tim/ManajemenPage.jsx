@@ -28,13 +28,12 @@ export default function ManajemenPage({ roleConfig, workerTab }) {
 
   const rgb = roleConfig?.accentRgb || '16, 185, 129' // Fallback to emerald
   const activeStyle = {
-    backgroundColor: `rgba(${rgb}, 0.15)`,
+    backgroundColor: `rgba(${rgb}, 0.1)`,
     borderColor: `rgba(${rgb}, 0.25)`,
     color: `rgb(${rgb})`,
   }
   const inactiveStyle = {
     borderColor: 'transparent',
-    color: '#4B6478',
   }
 
   // If no workerTab → render Tim directly without any tab chrome
@@ -45,19 +44,18 @@ export default function ManajemenPage({ roleConfig, workerTab }) {
   const WorkerComponent = workerTab.component
 
   return (
-    <div className="flex flex-col min-h-full" style={{ background: '#06090F' }}>
+    <div className="flex flex-col min-h-screen bg-background text-foreground text-left">
       {/* Mobile sticky header */}
       {!isDesktop && (
-        <header className="sticky top-0 z-30 backdrop-blur-md border-b border-white/5 pt-[env(safe-area-inset-top,0px)]"
-          style={{ background: 'rgba(6,9,15,0.90)' }}>
+        <header className="sticky top-0 z-30 bg-background/90 dark:bg-[#06090F]/90 backdrop-blur-md border-b border-border/40 dark:border-white/5 pt-[env(safe-area-inset-top,0px)]">
           <div className="h-14 px-4 flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen?.(true)}
-              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 active:scale-90 transition-transform bg-white/[0.03] border border-white/[0.06]"
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 active:scale-90 transition-transform bg-slate-50 dark:bg-white/[0.03] border border-border/60 dark:border-white/[0.06]"
             >
               <Menu size={18} style={{ color: `rgb(${rgb})` }} />
             </button>
-            <div className="flex gap-1.5 bg-white/[0.02] border border-white/[0.04] rounded-xl p-1 flex-1">
+            <div className="flex gap-1.5 bg-slate-100 dark:bg-white/[0.02] border border-border/60 dark:border-white/[0.04] rounded-xl p-1 flex-1">
               {TABS.map(tab => {
                 const Icon = tab.icon
                 const active = activeTab === tab.id
@@ -66,8 +64,8 @@ export default function ManajemenPage({ roleConfig, workerTab }) {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border',
-                      active ? 'font-extrabold shadow-sm' : 'border-transparent text-[#4B6478] hover:text-white/60'
+                      'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer',
+                      active ? 'font-extrabold shadow-sm' : 'border-transparent text-muted-foreground hover:text-foreground'
                     )}
                     style={active ? activeStyle : inactiveStyle}
                   >
@@ -85,7 +83,7 @@ export default function ManajemenPage({ roleConfig, workerTab }) {
       {/* Desktop tab bar */}
       {isDesktop && (
         <div className="px-8 pt-8">
-          <div className="inline-flex bg-white/[0.02] border border-white/[0.04] p-1 rounded-xl">
+          <div className="inline-flex bg-slate-100 dark:bg-white/[0.02] border border-border/60 dark:border-white/[0.04] p-1 rounded-xl">
             {TABS.map(tab => {
               const Icon = tab.icon
               const active = activeTab === tab.id
@@ -94,8 +92,8 @@ export default function ManajemenPage({ roleConfig, workerTab }) {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all border',
-                    active ? 'font-extrabold shadow-sm' : 'text-[#4B6478] hover:text-slate-300'
+                    'flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all border cursor-pointer',
+                    active ? 'font-extrabold shadow-sm' : 'text-muted-foreground hover:text-foreground border-transparent'
                   )}
                   style={active ? activeStyle : inactiveStyle}
                 >
