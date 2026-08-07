@@ -206,103 +206,183 @@ export function QuickStatRow({ label, value }) {
 export function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
+  const cashIn = d.cashIn || 0
+  const cashOut = d.cashOut || 0
+  const netFlow = cashIn - cashOut
   const grossProfit = d.grossProfit || 0
   const netProfit = d.netProfit || 0
-  const opsCost = grossProfit - netProfit
 
-  const statusColors = {
-    lunas: { bg: 'rgba(22,163,74,0.08)', color: '#16A34A', label: 'Lunas' },
-    sebagian: { bg: 'rgba(217,119,6,0.08)', color: '#D97706', label: 'Sebagian' },
-    belum_lunas: { bg: 'rgba(220,38,38,0.08)', color: '#DC2626', label: 'Belum Lunas' },
-  }
-
-  const hasUnpaid = d.txs?.some(tx => tx.paymentStatus !== 'lunas')
+  // Lists
+  const dayPayments = d.dayPayments || []
+  const daySupplierPayments = d.daySupplierPayments || []
+  const dayExpenses = d.dayExpenses || []
+  const dayPayroll = d.dayPayroll || []
 
   return (
     <div style={{
       background: MC.card, border: `1px solid ${MC.border}`, borderRadius: '14px',
-      padding: '12px 14px', minWidth: '220px', maxWidth: '280px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      padding: '12px 14px', minWidth: '250px', maxWidth: '300px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
       color: MC.text,
+      fontFamily: "'Sora', 'Inter', sans-serif"
     }}>
-      <p style={{ fontSize: '10px', color: MC.muted, fontWeight: 700, marginBottom: '8px', letterSpacing: '0.05em' }}>{d.fullDate}</p>
+      <p style={{ fontSize: '10px', color: MC.muted, fontWeight: 700, marginBottom: '10px', letterSpacing: '0.05em' }}>{d.fullDate}</p>
 
-      {/* ── PENJUALAN section ── */}
-      <p style={{ fontSize: '9px', color: MC.muted, fontWeight: 700, letterSpacing: '0.08em', marginBottom: '5px' }}>PENJUALAN</p>
-
-      {/* Gross Profit */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16A34A', display: 'inline-block' }} />
-          <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Gross Profit</span>
-        </div>
-        <span style={{ fontSize: '12px', fontWeight: 800, color: '#16A34A' }}>{formatIDR(grossProfit)}</span>
-      </div>
-
-      {/* Net Profit */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D97706', display: 'inline-block' }} />
-          <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Net Profit</span>
-        </div>
-        <span style={{ fontSize: '12px', fontWeight: 800, color: '#D97706' }}>{formatIDR(netProfit)}</span>
-      </div>
-
-      {/* Ops Cost */}
-      {opsCost > 0 && (
+      {/* ── PROFIT (AKRUAL) ── */}
+      <div style={{ marginBottom: '12px' }}>
+        <p style={{ fontSize: '9px', color: MC.muted, fontWeight: 700, letterSpacing: '0.08em', marginBottom: '5px' }}>PROFIT (AKRUAL)</p>
+        
+        {/* Gross Profit */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-          <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600, paddingLeft: '13px' }}>Biaya Ops</span>
-          <span style={{ fontSize: '11px', color: '#DC2626', fontWeight: 700 }}>− {formatIDR(opsCost)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+            <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Gross Profit</span>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981' }}>{formatIDR(grossProfit)}</span>
         </div>
-      )}
 
-      {/* ── TRANSAKSI section ── */}
-      {d.txs?.length > 0 && (
-        <div style={{ borderTop: `1px solid ${MC.border}`, paddingTop: '7px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <p style={{ fontSize: '9px', color: MC.muted, fontWeight: 700, letterSpacing: '0.08em', marginBottom: '2px' }}>
-            TRANSAKSI ({d.txCount || d.txs.length})
-          </p>
-          {d.txs.map((tx, i) => {
-            const st = statusColors[tx.paymentStatus] || statusColors.belum_lunas
-            return (
-              <div key={tx.id || i} style={{ background: MC.bg, borderRadius: '8px', padding: '6px 8px', border: `1px solid ${MC.border}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '11px', color: MC.text, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                    {tx.label}
-                  </span>
-                  <span style={{
-                    fontSize: '8px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px',
-                    background: st.bg, color: st.color,
-                  }}>{st.label}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginTop: '2px' }}>
-                  <span style={{ color: MC.muted }}>Invoice {formatIDR(tx.amount)}</span>
-                  <span style={{ color: '#D97706', fontWeight: 700 }}>Profit {formatIDR(tx.netProfit)}</span>
-                </div>
-                {tx.paymentStatus !== 'lunas' && (
-                  <div style={{ fontSize: '9px', color: MC.muted, marginTop: '1px' }}>
-                    Dibayar {formatIDR(tx.paid)} · Sisa {formatIDR(tx.remaining)}
-                  </div>
-                )}
+        {/* Net Profit */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EA580C', display: 'inline-block' }} />
+            <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Net Profit</span>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: '#EA580C' }}>{formatIDR(netProfit)}</span>
+        </div>
+      </div>
+
+      {/* ── ARUS KAS (RIIL) ── */}
+      <div style={{ marginBottom: '12px', borderTop: `1px solid ${MC.border}`, paddingTop: '8px' }}>
+        <p style={{ fontSize: '9px', color: MC.muted, fontWeight: 700, letterSpacing: '0.08em', marginBottom: '5px' }}>ARUS KAS (RIIL)</p>
+        
+        {/* Uang Masuk */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16A34A', display: 'inline-block' }} />
+            <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Uang Masuk</span>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: '#16A34A' }}>{formatIDR(cashIn)}</span>
+        </div>
+        
+        {dayPayments.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', paddingLeft: '13px', marginBottom: '8px' }}>
+            {dayPayments.slice(0, 2).map((p, i) => (
+              <div key={p.id || i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: MC.text }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
+                  {p.customerName}
+                </span>
+                <span style={{ fontWeight: 600 }}>{formatIDR(p.amount)}</span>
               </div>
-            )
-          })}
-          {(d.txCount || 0) > 3 && (
-            <p style={{ fontSize: '9px', color: MC.muted, textAlign: 'center', fontWeight: 600 }}>
-              +{d.txCount - 3} transaksi lagi
-            </p>
-          )}
-        </div>
-      )}
+            ))}
+            {dayPayments.length > 2 && (
+              <p style={{ fontSize: '8px', color: MC.muted, fontStyle: 'italic' }}>+{dayPayments.length - 2} pembayaran lainnya</p>
+            )}
+          </div>
+        )}
 
-      {/* Contextual note for unpaid invoices */}
-      {hasUnpaid && grossProfit > 0 && (
-        <p style={{
-          fontSize: '9px', color: MC.muted, marginTop: '6px', fontStyle: 'italic',
-          borderTop: `1px solid ${MC.border}`, paddingTop: '5px',
+        {/* Uang Keluar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#DC2626', display: 'inline-block' }} />
+            <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Uang Keluar</span>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: '#DC2626' }}>{formatIDR(cashOut)}</span>
+        </div>
+
+        {cashOut > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '13px', marginTop: '6px' }}>
+            {/* Supplier / Stok Purchases */}
+            {d.cashOutPurchases > 0 && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: MC.text, fontWeight: 700 }}>
+                  <span>Bayar Supplier</span>
+                  <span>{formatIDR(d.cashOutPurchases)}</span>
+                </div>
+                {daySupplierPayments.slice(0, 1).map((sp, i) => (
+                  <div key={sp.id || i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: MC.muted, paddingLeft: '10px' }}>
+                    <span>{sp.label}</span>
+                    <span>{formatIDR(sp.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Expenses */}
+            {d.cashOutExpenses > 0 && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: MC.text, fontWeight: 700 }}>
+                  <span>Biaya Operasional</span>
+                  <span>{formatIDR(d.cashOutExpenses)}</span>
+                </div>
+                {dayExpenses.slice(0, 1).map((ex, i) => (
+                  <div key={ex.id || i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: MC.muted, paddingLeft: '10px' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '130px' }}>{ex.label}</span>
+                    <span>{formatIDR(ex.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Payroll */}
+            {d.cashOutPayroll > 0 && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: MC.text, fontWeight: 700 }}>
+                  <span>Gaji Karyawan</span>
+                  <span>{formatIDR(d.cashOutPayroll)}</span>
+                </div>
+                {dayPayroll.slice(0, 1).map((pr, i) => (
+                  <div key={pr.id || i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: MC.muted, paddingLeft: '10px' }}>
+                    <span>{pr.label}</span>
+                    <span>{formatIDR(pr.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* COGS / Modal Barang */}
+            {d.cashOutCogs > 0 && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: MC.text, fontWeight: 700 }}>
+                  <span>Modal Barang (COGS)</span>
+                  <span>{formatIDR(d.cashOutCogs)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Cost */}
+            {d.cashOutDelivery > 0 && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: MC.text, fontWeight: 700 }}>
+                  <span>Biaya Kirim & Lainnya</span>
+                  <span>{formatIDR(d.cashOutDelivery)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Net Surplus / Deficit */}
+      <div style={{
+        borderTop: `1px solid ${MC.border}`,
+        paddingTop: '8px',
+        marginTop: '8px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontSize: '10px'
+      }}>
+        <span style={{ fontWeight: 700, color: MC.muted }}>Selisih Kas</span>
+        <span style={{
+          fontWeight: 900,
+          color: netFlow >= 0 ? '#16A34A' : '#DC2626',
+          background: netFlow >= 0 ? 'rgba(22,163,74,0.06)' : 'rgba(220,38,38,0.06)',
+          padding: '2px 6px',
+          borderRadius: '5px',
+          border: netFlow >= 0 ? '1px solid rgba(22,163,74,0.12)' : '1px solid rgba(220,38,38,0.12)'
         }}>
-          ℹ Profit akan terealisasi setelah pembayaran diterima
-        </p>
-      )}
+          {netFlow >= 0 ? '+' : ''}{formatIDR(netFlow)}
+        </span>
+      </div>
     </div>
   )
 }

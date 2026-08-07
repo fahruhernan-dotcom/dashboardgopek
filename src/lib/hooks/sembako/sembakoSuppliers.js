@@ -154,6 +154,25 @@ export const useSembakoSupplierPayments = (supplierId) => useQuery({
   }
 })
 
+export const useSembakoAllSupplierPayments = () => {
+  const { tenant } = useAuth()
+  return useQuery({
+    queryKey: ['sembako-all-supplier-payments', tenant?.id],
+    enabled: !!tenant?.id,
+    staleTime: STALE_5M,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('sembako_supplier_payments')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .eq('is_deleted', false)
+        .order('payment_date', { ascending: true })
+      if (error) throw normalizeSupabaseError(error)
+      return data || []
+    }
+  })
+}
+
+
 export const useRecordSembakoSupplierPayment = () => {
   const queryClient = useQueryClient()
   return useMutation({

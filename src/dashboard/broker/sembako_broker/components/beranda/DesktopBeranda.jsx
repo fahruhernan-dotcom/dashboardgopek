@@ -46,7 +46,12 @@ export function DesktopBeranda({
   const activeEmployees  = employees.filter(e => e.status === 'aktif').length
   const lowStock  = stats?.stok?.lowStock || []
   const overdue   = stats?.penjualan?.overdueCount || 0
-  const totalExp  = (stats?.pengeluaran?.totalExpenseThisMonth || 0) + (stats?.pengeluaran?.totalPayrollThisMonth || 0)
+  const totalExp  = (stats?.pengeluaran?.totalExpenseThisMonth || 0) +
+                    (stats?.pengeluaran?.totalPayrollThisMonth || 0) +
+                    (stats?.pengeluaran?.totalSupplierPaymentThisMonth || 0) +
+                    (stats?.pengeluaran?.totalDeliveryCostThisMonth || 0) +
+                    (stats?.pengeluaran?.totalOtherCostThisMonth || 0) +
+                    (stats?.pengeluaran?.totalCogsThisMonth || 0)
   const showProfit = canViewProfit(profile)
 
   return (
@@ -114,7 +119,7 @@ export function DesktopBeranda({
           icon={Receipt}     
           label="Pengeluaran Bulan Ini" 
           value={showProfit ? formatIDR(totalExp) : '***'} 
-          sub="Termasuk gaji pegawai" 
+          sub="Gaji, supplier, operasional & transportasi" 
           accentColor={MC.red} 
         />
       </div>

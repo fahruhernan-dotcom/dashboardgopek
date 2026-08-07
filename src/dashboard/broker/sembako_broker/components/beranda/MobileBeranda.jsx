@@ -81,7 +81,12 @@ export function MobileBeranda({
 
   const recentSales = useMemo(() => sales.slice(0, 3), [sales])
   const lowStock = stats?.stok?.lowStock || []
-  const totalExp = (stats?.pengeluaran?.totalExpenseThisMonth || 0) + (stats?.pengeluaran?.totalPayrollThisMonth || 0)
+  const totalExp = (stats?.pengeluaran?.totalExpenseThisMonth || 0) +
+                   (stats?.pengeluaran?.totalPayrollThisMonth || 0) +
+                   (stats?.pengeluaran?.totalSupplierPaymentThisMonth || 0) +
+                   (stats?.pengeluaran?.totalDeliveryCostThisMonth || 0) +
+                   (stats?.pengeluaran?.totalOtherCostThisMonth || 0) +
+                   (stats?.pengeluaran?.totalCogsThisMonth || 0)
 
   return (
     <>
@@ -560,6 +565,27 @@ export function MobileBeranda({
                     <div>
                       <p style={{ fontSize: '11px', color: MC.muted }}>Operasional (Expenses)</p>
                       <p style={{ fontSize: '13px', fontWeight: 700, color: MC.text, marginTop: '2px' }}>{formatIDR(stats?.pengeluaran?.totalExpenseThisMonth || 0)}</p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: MC.card, border: `1px solid ${MC.border}`, borderRadius: '10px', padding: '10px 12px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                    <div>
+                      <p style={{ fontSize: '11px', color: MC.muted }}>Bayar Supplier (Stok)</p>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: MC.text, marginTop: '2px' }}>{formatIDR(stats?.pengeluaran?.totalSupplierPaymentThisMonth || 0)}</p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: MC.card, border: `1px solid ${MC.border}`, borderRadius: '10px', padding: '10px 12px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                    <div>
+                      <p style={{ fontSize: '11px', color: MC.muted }}>Modal Barang Terkirim (COGS)</p>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: MC.text, marginTop: '2px' }}>{formatIDR(stats?.pengeluaran?.totalCogsThisMonth || 0)}</p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: MC.card, border: `1px solid ${MC.border}`, borderRadius: '10px', padding: '10px 12px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                    <div>
+                      <p style={{ fontSize: '11px', color: MC.muted }}>Transport & Pengiriman</p>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: MC.text, marginTop: '2px' }}>{formatIDR((stats?.pengeluaran?.totalDeliveryCostThisMonth || 0) + (stats?.pengeluaran?.totalOtherCostThisMonth || 0))}</p>
                     </div>
                   </div>
 

@@ -32,6 +32,14 @@ const chartConfig = {
 }
 
 const salesChartConfig = {
+  cashIn: {
+    label: "Uang Masuk",
+    color: "#16A34A",
+  },
+  cashOut: {
+    label: "Uang Keluar",
+    color: "#DC2626",
+  },
   grossProfit: {
     label: "Gross Profit",
     color: "#10B981",
@@ -64,6 +72,7 @@ export function SalesAndCashChart({
   cashSummary = {},
   stats
 }) {
+  const [hoveredChart, setHoveredChart] = useState(null)
   const data = chartPeriod === 'weekly' ? weeklyData : monthlyData
   const totalGrossProfit = data.reduce((s, d) => s + (d.grossProfit || 0), 0)
   const totalNetProfit = data.reduce((s, d) => s + (d.netProfit || 0), 0)
@@ -74,6 +83,8 @@ export function SalesAndCashChart({
     totalCashOutPurchases = 0,
     totalCashOutExpenses = 0,
     totalCashOutPayroll = 0,
+    totalCashOutCogs = 0,
+    totalCashOutDelivery = 0,
     cashBalance = 0,
     realizedProfit = 0,
   } = cashSummary
@@ -179,11 +190,13 @@ export function SalesAndCashChart({
                 <span style={kpiLabelStyle}>Kas Keluar</span>
               </div>
               <span style={kpiValueStyle}>{formatIDR(totalCashOut)}</span>
-              {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0) && (
+              {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0 || totalCashOutCogs > 0 || totalCashOutDelivery > 0) && (
                 <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap', fontSize: '8px', color: MC.muted, fontFamily: "'Sora', 'Inter', sans-serif" }}>
                   {totalCashOutPurchases > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>Stok {formatIDR(totalCashOutPurchases)}</span>}
                   {totalCashOutExpenses > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>Ops {formatIDR(totalCashOutExpenses)}</span>}
                   {totalCashOutPayroll > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>Gaji {formatIDR(totalCashOutPayroll)}</span>}
+                  {totalCashOutCogs > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>COGS {formatIDR(totalCashOutCogs)}</span>}
+                  {totalCashOutDelivery > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>Kirim {formatIDR(totalCashOutDelivery)}</span>}
                 </div>
               )}
             </div>
@@ -205,71 +218,145 @@ export function SalesAndCashChart({
         </div>
       </div>
 
-      {/* ── Legend ── */}
-      <div style={{ display: 'flex', gap: '14px', marginBottom: '12px', marginTop: '6px', flexWrap: 'wrap' }}>
-        <LegendDot color="#16A34A" label="Gross Profit (Rev − COGS)" />
-        <LegendDot color="#D97706" label="Net Profit (setelah biaya ops)" />
+      {/* ── CHART 1: ARUS KAS (RIIL) ── */}
+      <div 
+        onMouseEnter={() => setHoveredChart('cash')}
+        onMouseLeave={() => setHoveredChart(null)}
+        style={{ marginBottom: '20px', position: 'relative', zIndex: hoveredChart === 'cash' ? 10 : 1 }}
+      >
+        <div style={{ display: 'flex', flexDirection: isDesktop ? 'row' : 'column', justifyContent: 'space-between', alignItems: isDesktop ? 'center' : 'flex-start', gap: '8px', marginBottom: '8px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: MC.muted, letterSpacing: '0.05em' }}>💸 GRAFIK ARUS KAS (KAS MASUK vs KAS KELUAR)</span>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <LegendDot color="#16A34A" label="Uang Masuk" />
+            <LegendDot color="#DC2626" label="Uang Keluar" />
+          </div>
+        </div>
+        <div style={{ width: '100%', height: isDesktop ? '140px' : '110px' }}>
+          <ChartContainer config={salesChartConfig} style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}>
+            <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorCashIn" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#16A34A" stopOpacity={0.08}/>
+                  <stop offset="95%" stopColor="#16A34A" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorCashOut" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#DC2626" stopOpacity={0.08}/>
+                  <stop offset="95%" stopColor="#DC2626" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+              <XAxis
+                dataKey="name"
+                stroke={MC.muted}
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={16}
+              />
+              <YAxis
+                stroke={MC.muted}
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={v => v >= 1000000 ? (v/1000000).toFixed(1)+'jt' : v >= 1000 ? (v/1000).toFixed(0)+'rb' : v}
+              />
+              <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} wrapperStyle={{ zIndex: 1000 }} />
+              <Area
+                type="monotone"
+                dataKey="cashIn"
+                name="Uang Masuk"
+                stroke="#16A34A"
+                strokeWidth={2.5}
+                fill="url(#colorCashIn)"
+                isAnimationActive={false}
+                activeDot={{ r: 5, fill: '#16A34A', stroke: MC.card, strokeWidth: 2 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="cashOut"
+                name="Uang Keluar"
+                stroke="#DC2626"
+                strokeWidth={2.5}
+                fill="url(#colorCashOut)"
+                isAnimationActive={false}
+                activeDot={{ r: 5, fill: '#DC2626', stroke: MC.card, strokeWidth: 2 }}
+              />
+            </AreaChart>
+          </ChartContainer>
+        </div>
       </div>
 
-      {/* ── Chart Area ── */}
-      <div style={{ width: '100%', height: isDesktop ? '200px' : '150px' }}>
-        <ChartContainer config={salesChartConfig} style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}>
-          <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorGrossProfit" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#16A34A" stopOpacity={0.08}/>
-                <stop offset="95%" stopColor="#16A34A" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorNetProfit" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#D97706" stopOpacity={0.08}/>
-                <stop offset="95%" stopColor="#D97706" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-            <XAxis
-              dataKey="name"
-              stroke={MC.muted}
-              fontSize={10}
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={16}
-            />
-            <YAxis
-              stroke={MC.muted}
-              fontSize={10}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={v => v >= 1000000 ? (v/1000000).toFixed(1)+'jt' : v >= 1000 ? (v/1000).toFixed(0)+'rb' : v}
-            />
-            <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
+      <div style={{ height: '1px', background: MC.border, margin: '16px 0' }} />
 
-            {/* Gross Profit — monotone curve, dashed line */}
-            <Area
-              type="monotone"
-              dataKey="grossProfit"
-              name="Gross Profit"
-              stroke="#16A34A"
-              strokeWidth={1.5}
-              strokeDasharray="5 3"
-              fill="url(#colorGrossProfit)"
-              isAnimationActive={false}
-              activeDot={{ r: 4, fill: '#16A34A', stroke: MC.card, strokeWidth: 2 }}
-            />
-
-            {/* Net Profit — monotone curve, solid line */}
-            <Area
-              type="monotone"
-              dataKey="netProfit"
-              name="Net Profit"
-              stroke="#D97706"
-              strokeWidth={2.5}
-              fill="url(#colorNetProfit)"
-              isAnimationActive={false}
-              activeDot={{ r: 5, fill: '#D97706', stroke: MC.card, strokeWidth: 2 }}
-            />
-          </AreaChart>
-        </ChartContainer>
+      {/* ── CHART 2: KINERJA PROFIT (AKRUAL) ── */}
+      <div
+        onMouseEnter={() => setHoveredChart('profit')}
+        onMouseLeave={() => setHoveredChart(null)}
+        style={{ position: 'relative', zIndex: hoveredChart === 'profit' ? 10 : 1 }}
+      >
+        <div style={{ display: 'flex', flexDirection: isDesktop ? 'row' : 'column', justifyContent: 'space-between', alignItems: isDesktop ? 'center' : 'flex-start', gap: '8px', marginBottom: '8px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: MC.muted, letterSpacing: '0.05em' }}>📊 GRAFIK PROFITABILITAS (GROSS vs NET PROFIT)</span>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <LegendDot color="#10B981" label="Gross Profit" />
+            <LegendDot color="#EA580C" label="Net Profit" />
+          </div>
+        </div>
+        <div style={{ width: '100%', height: isDesktop ? '140px' : '110px' }}>
+          <ChartContainer config={salesChartConfig} style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}>
+            <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorGrossProfit" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.06}/>
+                  <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorNetProfit" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#EA580C" stopOpacity={0.06}/>
+                  <stop offset="95%" stopColor="#EA580C" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+              <XAxis
+                dataKey="name"
+                stroke={MC.muted}
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={16}
+              />
+              <YAxis
+                stroke={MC.muted}
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={v => v >= 1000000 ? (v/1000000).toFixed(1)+'jt' : v >= 1000 ? (v/1000).toFixed(0)+'rb' : v}
+              />
+              <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} wrapperStyle={{ zIndex: 1000 }} />
+              <Area
+                type="monotone"
+                dataKey="grossProfit"
+                name="Gross Profit"
+                stroke="#10B981"
+                strokeWidth={1.5}
+                strokeDasharray="5 3"
+                fill="url(#colorGrossProfit)"
+                isAnimationActive={false}
+                activeDot={{ r: 4, fill: '#10B981', stroke: MC.card, strokeWidth: 2 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="netProfit"
+                name="Net Profit"
+                stroke="#EA580C"
+                strokeWidth={2}
+                fill="url(#colorNetProfit)"
+                isAnimationActive={false}
+                activeDot={{ r: 5, fill: '#EA580C', stroke: MC.card, strokeWidth: 2 }}
+              />
+            </AreaChart>
+          </ChartContainer>
+        </div>
       </div>
     </div>
   )

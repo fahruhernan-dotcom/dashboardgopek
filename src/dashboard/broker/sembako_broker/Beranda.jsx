@@ -12,7 +12,8 @@ import {
   useSembakoSuppliers,
   useSembakoAllBatches,
   useSembakoExpenses,
-  useSembakoPayroll
+  useSembakoPayroll,
+  useSembakoAllSupplierPayments
 } from '@/lib/hooks/useSembakoData'
 import {
   startOfWeek, startOfMonth, subMonths, addDays, format,
@@ -55,6 +56,7 @@ export default function SembakoBeranda() {
   const { data: batches = [] }                             = useSembakoAllBatches()
   const { data: expenses = [] }                            = useSembakoExpenses()
   const { data: payroll = [] }                             = useSembakoPayroll()
+  const { data: supplierPayments = [] }                    = useSembakoAllSupplierPayments()
 
   // Chart + insight state
   const [chartPeriod,   setChartPeriod]   = useState('weekly')
@@ -75,27 +77,85 @@ export default function SembakoBeranda() {
     const monthStart  = startOfMonth(today)
     const m1Start     = startOfMonth(subMonths(today, 1))
 
-    // ── Sales Chart Data (pure invoice-date based) ──
+    // ── Cash Flow + Profit Chart Data ──
     const buildData = (start, end) => {
       const days = []
       let curr = new Date(start)
       while (curr <= end) {
         const dStr = format(curr, 'yyyy-MM-dd')
         const isFuture = curr > today
-        const daySales = isFuture ? [] : sales.filter(s => s.transaction_date?.slice(0, 10) === dStr)
         const isWeekly = (end - start) / 86400000 < 8
 
-        // Gross Profit = Revenue - COGS (before ops deduction)
+        // 0. Accrual Sales & Profits (Invoice-date based)
+        const daySales = isFuture ? [] : sales.filter(s => s.transaction_date?.slice(0, 10) === dStr)
         const grossProfit = isFuture ? 0 : daySales.reduce((s, sale) => {
           const net = Number(sale.net_profit) || 0
           const ops = Number(sale.delivery_cost || 0) + Number(sale.other_cost || 0)
           return s + (net + ops)
         }, 0)
-
-        // Net Profit = Revenue - COGS - Ops
         const netProfit = isFuture ? 0 : daySales.reduce((s, sale) => {
           return s + (Number(sale.net_profit) || 0)
         }, 0)
+
+        // 1. Customer Payments (Cash In)
+        const dayPayments = []
+        if (!isFuture) {
+          sales.forEach(s => {
+            const customerName = s.sembako_customers?.customer_name || s.customer_name || 'Umum'
+            ;(s.sembako_payments || []).forEach(p => {
+              if (!p.is_deleted && p.payment_date?.slice(0, 10) === dStr) {
+                dayPayments.push({
+                  id: p.id,
+                  customerName,
+                  amount: Number(p.amount || p.amount_paid || 0)
+                })
+              }
+            })
+          })
+        }
+        const cashIn = dayPayments.reduce((sum, p) => sum + p.amount, 0)
+
+        // 2. Supplier Payments (Cash Out — purchases)
+        const daySupplierPayments = isFuture ? [] : supplierPayments.filter(p => {
+          return !p.is_deleted && p.payment_date?.slice(0, 10) === dStr
+        }).map(p => {
+          const supp = suppliers.find(s => s.id === p.supplier_id)
+          return {
+            id: p.id,
+            label: supp ? supp.supplier_name : 'Supplier',
+            amount: Number(p.amount || 0)
+          }
+        })
+        const cashOutPurchases = daySupplierPayments.reduce((sum, p) => sum + p.amount, 0)
+
+        // 3. Operational Expenses (Cash Out — expenses)
+        const dayExpenses = isFuture ? [] : expenses.filter(e => {
+          return !e.is_deleted && e.expense_date?.slice(0, 10) === dStr
+        }).map(e => ({
+          id: e.id,
+          label: e.description || e.category || 'Biaya Ops',
+          amount: Number(e.amount || 0)
+        }))
+        const cashOutExpenses = dayExpenses.reduce((sum, e) => sum + e.amount, 0)
+
+        // 4. Payroll Paid (Cash Out — payroll)
+        const dayPayroll = isFuture ? [] : payroll.filter(p => {
+          if (p.is_deleted || p.payment_status !== 'paid') return false
+          const payDate = (p.paid_at || p.period_date || p.created_at)?.slice(0, 10)
+          return payDate === dStr
+        }).map(p => {
+          const emp = employees.find(e => e.id === p.employee_id)
+          return {
+            id: p.id,
+            label: `Gaji ${emp ? emp.full_name : 'Pegawai'}`,
+            amount: Number(p.total_pay || 0)
+          }
+        })
+        const cashOutPayroll = dayPayroll.reduce((sum, p) => sum + p.amount, 0)
+        const cashOutCogs = isFuture ? 0 : daySales.reduce((sum, s) => sum + (Number(s.total_cogs) || 0), 0)
+        const cashOutDelivery = isFuture ? 0 : daySales.reduce((sum, s) => sum + (Number(s.delivery_cost) || 0) + (Number(s.other_cost) || 0), 0)
+
+        const cashOut = cashOutPurchases + cashOutExpenses + cashOutPayroll + cashOutCogs + cashOutDelivery
 
         days.push({
           name: isWeekly
@@ -104,16 +164,17 @@ export default function SembakoBeranda() {
           fullDate: format(curr, 'EEEE, d MMMM yyyy', { locale: idLocale }),
           grossProfit,
           netProfit,
-          txs: daySales.slice(0, 3).map(s => ({
-            id: s.id,
-            label: s.sembako_customers?.customer_name || s.customer_name || `Invoice #${s.id?.slice(0, 4)}`,
-            amount: Number(s.total_amount) || 0,
-            paid: Number(s.paid_amount) || 0,
-            remaining: Number(s.remaining_amount) || 0,
-            netProfit: Number(s.net_profit) || 0,
-            paymentStatus: s.payment_status || 'belum_lunas',
-          })),
-          txCount: daySales.length,
+          cashIn,
+          cashOut,
+          cashOutPurchases,
+          cashOutExpenses,
+          cashOutPayroll,
+          cashOutCogs,
+          cashOutDelivery,
+          dayPayments,
+          daySupplierPayments,
+          dayExpenses,
+          dayPayroll
         })
         curr = addDays(curr, 1)
       }
@@ -133,11 +194,13 @@ export default function SembakoBeranda() {
         .reduce((acc, p) => acc + (Number(p.amount || p.amount_paid || 0)), 0)
     }, 0)
 
-    // Cash Out: purchases + expenses + payroll
+    // Cash Out: purchases + expenses + payroll + cogs + delivery
     const totalCashOutPurchases = suppliers.reduce((sum, s) => sum + (Number(s.total_paid_value) || 0), 0)
     const totalCashOutExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
     const totalCashOutPayroll = payroll.reduce((sum, p) => sum + (Number(p.total_pay) || 0), 0)
-    const totalCashOut = totalCashOutPurchases + totalCashOutExpenses + totalCashOutPayroll
+    const totalCashOutCogs = sales.reduce((sum, s) => sum + (Number(s.total_cogs) || 0), 0)
+    const totalCashOutDelivery = sales.reduce((sum, s) => sum + (Number(s.delivery_cost) || 0) + (Number(s.other_cost) || 0), 0)
+    const totalCashOut = totalCashOutPurchases + totalCashOutExpenses + totalCashOutPayroll + totalCashOutCogs + totalCashOutDelivery
     const cashBalance = INITIAL_CAPITAL + totalCashIn - totalCashOut
 
     // Realized & Unrealized Profit: computed per sale as clean integers with no rounding discrepancies
@@ -165,6 +228,8 @@ export default function SembakoBeranda() {
       totalCashOutPurchases,
       totalCashOutExpenses,
       totalCashOutPayroll,
+      totalCashOutCogs,
+      totalCashOutDelivery,
       totalCashOut,
       cashBalance,
       realizedProfit: totalRealizedProfit,
@@ -238,7 +303,7 @@ export default function SembakoBeranda() {
     console.groupEnd()
 
     return { weeklyChartData, monthlyChartData, insight, kpiTrends: { piutangTrend, txTrend }, cashSummary, unrealizedProfitSnapshot }
-  }, [sales, batches, expenses, payroll, suppliers])
+  }, [sales, batches, expenses, payroll, suppliers, supplierPayments, employees])
 
   if (statsLoading && !!tenant?.id) {
     return (

@@ -177,33 +177,40 @@ export default function SembakoLaporan() {
             <>
               {/* SECTION A — KPI Summary */}
               <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4,1fr)' : 'repeat(2,1fr)', gap: '12px', marginBottom: '24px' }}>
-                <KPICard icon={DollarSign} label="Revenue" value={formatIDR(s.totalRevenue)} color={C.accent} />
-                <KPICard icon={TrendingUp} label="Gross Profit"
-                  value={formatIDR(s.grossProfit)}
-                  badge={`${s.grossMarginPct}%`}
-                  color={s.grossProfit >= 0 ? C.green : C.red} />
-                <KPICard icon={s.netProfit >= 0 ? TrendingUp : TrendingDown} label="Net Profit"
+                <KPICard icon={DollarSign} label="Revenue (Akrual)" value={formatIDR(s.totalRevenue)} color={C.accent} />
+                <KPICard icon={s.netProfit >= 0 ? TrendingUp : TrendingDown} label="Net Profit (Akrual)"
                   value={formatIDR(s.netProfit)}
                   badge={`${s.netMarginPct}%`}
                   color={s.netProfit >= 0 ? C.green : C.red} />
-                <KPICard icon={Receipt} label="Total Pengeluaran"
-                  value={formatIDR(s.totalCOGS + s.totalDeliveryCost + s.totalOtherCost + s.totalExpenses + s.totalPayroll)}
-                  color={C.red} />
+                <KPICard icon={s.netCashFlowPeriod >= 0 ? TrendingUp : TrendingDown} label="Arus Kas Bersih"
+                  value={formatIDR(s.netCashFlowPeriod)}
+                  color={s.netCashFlowPeriod >= 0 ? C.green : C.red}
+                  subtitle="Kas Masuk - Kas Keluar" />
+                <KPICard icon={TrendingUp} label="Laba Terkonversi Kas (Est)"
+                  value={formatIDR(s.cashMarginEstimate)}
+                  color={C.green}
+                  subtitle="Estimasi laba cair proporsional" />
               </div>
 
-              {/* SECTION B — P&L Waterfall */}
-              <WaterfallPL summary={s} />
+              {/* SECTION B — Laba Rugi & Modal Beredar */}
+              <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1.2fr 0.8fr' : '1fr', gap: '16px', marginBottom: '24px' }}>
+                <WaterfallPL summary={s} />
+                <WorkingCapitalCard summary={s} />
+              </div>
 
-              {/* SECTION C — 2 columns */}
+              {/* SECTION C — Laporan Arus Kas Rincian */}
+              <CashFlowStatement summary={s} />
+
+              {/* SECTION D — 2 columns */}
               <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '3fr 2fr' : '1fr', gap: '16px', marginTop: '24px' }}>
                 <ProductMarginTable byProduct={data.byProduct} />
                 <TopCustomers byCustomer={data.byCustomer} />
               </div>
 
-              {/* SECTION D — Expense Pie */}
+              {/* SECTION E — Expense Pie */}
               <ExpensePie expenseByCategory={data.expenseByCategory} summary={s} isDesktop={isDesktop} />
 
-              {/* SECTION E — Invoice Table (Collapsible) */}
+              {/* SECTION F — Invoice Table (Collapsible) */}
               <InvoiceCollapsible sales={data.sales} />
             </>
           </div>
@@ -216,7 +223,7 @@ export default function SembakoLaporan() {
 // ═══════════════════════════════════════════════════════════════════════════
 // KPI Card
 // ═══════════════════════════════════════════════════════════════════════════
-function KPICard({ icon: Icon, label, value, badge, color }) {
+function KPICard({ icon: Icon, label, value, badge, color, subtitle }) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{
       background: C.card, borderRadius: '14px', padding: '14px',
@@ -235,6 +242,7 @@ function KPICard({ icon: Icon, label, value, badge, color }) {
       </div>
       <p style={{ fontSize: '10px', color: C.muted, fontWeight: 700, letterSpacing: '0.06em' }}>{label.toUpperCase()}</p>
       <p style={{ fontSize: '18px', fontWeight: 800, color: C.text, fontFamily: 'DM Sans', lineHeight: 1.2 }}>{value}</p>
+      {subtitle && <p style={{ fontSize: '9px', color: C.muted, marginTop: '4px' }}>{subtitle}</p>}
     </motion.div>
   )
 }
@@ -541,6 +549,207 @@ function LoadingSkeleton() {
         {[1, 2, 3, 4].map(i => <div key={i} style={{ background: C.card, borderRadius: '14px', height: '100px', border: `1px solid ${C.border}`, opacity: 0.5 }} />)}
       </div>
       <div style={{ background: C.card, borderRadius: '16px', height: '250px', border: `1px solid ${C.border}`, opacity: 0.4 }} />
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Working Capital Card (Modal Beredar / Aset Lancar)
+// ═══════════════════════════════════════════════════════════════════════════
+function WorkingCapitalCard({ summary: s }) {
+  const cashOnHand = s.endingCashOnHand || 0
+  const bankBalance = s.endingBankBalance || 0
+  const stockValue = s.stockValue || 0
+  const receivables = s.outstandingReceivable || 0
+  const payables = s.outstandingPayable || 0
+  const totalAssets = cashOnHand + bankBalance + stockValue + receivables
+  const netWorkingCapital = totalAssets - payables
+
+  return (
+    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '16px' }}>LIKUIDITAS & MODAL BEREDAR</p>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '16px' }}>💵</span>
+            <div>
+              <p style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>Cash On Hand</p>
+              <p style={{ fontSize: '9px', color: C.muted }}>Uang tunai di kasir/tangan</p>
+            </div>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(cashOnHand)}</span>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '16px' }}>🏦</span>
+            <div>
+              <p style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>Bank Balance (System)</p>
+              <p style={{ fontSize: '9px', color: C.muted }}>Uang di rekening bank tercatat</p>
+            </div>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(bankBalance)}</span>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '16px' }}>📦</span>
+            <div>
+              <p style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>Persediaan (Stok Gudang)</p>
+              <p style={{ fontSize: '9px', color: C.muted }}>Nilai modal barang di gudang</p>
+            </div>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(stockValue)}</span>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '16px' }}>🧾</span>
+            <div>
+              <p style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>Piutang Dagang (Toko)</p>
+              <p style={{ fontSize: '9px', color: C.muted }}>Tagihan belum dilunasi toko</p>
+            </div>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(receivables)}</span>
+        </div>
+
+        <div style={{ height: '1px', background: C.border, margin: '4px 0' }} />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '11px', fontWeight: 800, color: C.text }}>TOTAL ASET LANCAR</span>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(totalAssets)}</span>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '16px' }}>🤝</span>
+            <div>
+              <p style={{ fontSize: '11px', color: C.red, fontWeight: 700 }}>Hutang Dagang (Supplier)</p>
+              <p style={{ fontSize: '9px', color: C.muted }}>Kewajiban belum dibayar ke supplier</p>
+            </div>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: C.red }}>{formatIDR(payables)}</span>
+        </div>
+      </div>
+
+      <div style={{ height: '1.5px', background: C.accent, opacity: 0.3, margin: '14px 0' }} />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '11px', fontWeight: 800, color: C.text }}>MODAL KERJA BERSIH (NET)</span>
+        <span style={{ fontSize: '15px', fontWeight: 900, color: C.green }}>{formatIDR(netWorkingCapital)}</span>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Detailed Cash Flow Statement (Arus Kas Terperinci)
+// ═══════════════════════════════════════════════════════════════════════════
+function CashFlowStatement({ summary: s }) {
+  const openingCash = s.openingCashOnHand + s.openingBankBalance
+  const cashIn = s.cashInPeriodTunai + s.cashInPeriodTransfer
+  
+  const supplierOut = s.supplierOutPeriodTunai + s.supplierOutPeriodTransfer
+  const payrollOut = s.payrollOutPeriodTunai
+  const opsOut = s.regularExpensesOutPeriodTunai
+  const priveOut = s.priveOutPeriodTunai
+  const totalOut = supplierOut + payrollOut + opsOut + priveOut
+  
+  const endingCash = s.endingCashOnHand + s.endingBankBalance
+
+  return (
+    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}`, marginTop: '24px' }}>
+      <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '16px' }}>LAPORAN ARUS KAS (CASH FLOW)</p>
+
+      {/* Warning Known Limitation */}
+      <div style={{ 
+        background: 'rgba(217,119,6,0.06)', 
+        border: '1px solid rgba(217,119,6,0.15)', 
+        borderRadius: '8px', 
+        padding: '10px 12px', 
+        marginBottom: '16px',
+        fontSize: '10px',
+        color: '#D97706',
+        lineHeight: '1.4'
+      }}>
+        <strong>💡 Batasan Sistem:</strong> Saldo Kas Awal dihitung berdasarkan riwayat transaksi yang tercatat di sistem aplikasi dan belum memperhitungkan saldo kas awal fisik atau penyesuaian manual luar sistem.
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Opening Balance */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px dashed ${C.border}` }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: C.text }}>SALDO KAS AWAL</span>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: C.text }}>{formatIDR(openingCash)}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '12px', fontSize: '9px', color: C.muted, marginTop: '-4px' }}>
+          <span>Tunai: {formatIDR(s.openingCashOnHand)}</span>
+          <span>Bank: {formatIDR(s.openingBankBalance)}</span>
+        </div>
+
+        {/* Cash In */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', marginTop: '4px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: C.green }}>+ Penerimaan Pembayaran (Cash In)</span>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: C.green }}>{formatIDR(cashIn)}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '12px', fontSize: '9px', color: C.muted, marginTop: '-6px', marginBottom: '4px' }}>
+          <span>Tunai: {formatIDR(s.cashInPeriodTunai)}</span>
+          <span>Bank: {formatIDR(s.cashInPeriodTransfer)}</span>
+        </div>
+
+        {/* Cash Out Flow (Penjualan, Supplier, Gaji, Ops, Prive) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '12px', borderLeft: `2px solid ${C.border}` }}>
+          {/* Supplier */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text }}>
+            <span style={{ color: C.muted }}>− Pembelian Stok & Bayar Supplier</span>
+            <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(supplierOut)}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', paddingLeft: '10px', fontSize: '9px', color: C.muted, marginTop: '-4px', marginBottom: '2px' }}>
+            <span>Tunai: {formatIDR(s.supplierOutPeriodTunai)}</span>
+            <span>Bank: {formatIDR(s.supplierOutPeriodTransfer)}</span>
+          </div>
+
+          {/* Gaji */}
+          {payrollOut > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
+              <span style={{ color: C.muted }}>− Gaji Pegawai Terbayar (Asumsi Tunai)</span>
+              <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(payrollOut)}</span>
+            </div>
+          )}
+
+          {/* Operasional */}
+          {opsOut > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
+              <span style={{ color: C.muted }}>− Biaya Operasional Toko (Asumsi Tunai)</span>
+              <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(opsOut)}</span>
+            </div>
+          )}
+
+          {/* Prive */}
+          {priveOut > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
+              <span style={{ color: C.muted }}>− Penarikan Pemilik (Prive)</span>
+              <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(priveOut)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Total Cash Out Summary */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', marginTop: '4px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: C.red }}>= Total Pengeluaran Kas (Cash Out)</span>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: C.red }}>− {formatIDR(totalOut)}</span>
+        </div>
+
+        {/* Ending Balance */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: `2px solid ${C.border}`, marginTop: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 900, color: C.text }}>SALDO KAS AKHIR</span>
+          <span style={{ fontSize: '14px', fontWeight: 900, color: C.accent }}>{formatIDR(endingCash)}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '12px', fontSize: '9px', color: C.muted, marginTop: '-6px' }}>
+          <span>Tunai (Cash On Hand): {formatIDR(s.endingCashOnHand)}</span>
+          <span>Bank (System Balance): {formatIDR(s.endingBankBalance)}</span>
+        </div>
+      </div>
     </div>
   )
 }

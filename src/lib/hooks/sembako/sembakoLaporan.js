@@ -4,6 +4,7 @@ import { useAuth } from '../useAuth'
 import { normalizeSupabaseError } from '../../supabaseErrorHandler'
 import { STALE_5M } from './sembakoCommon'
 import { processSaleRow } from './sembakoSales'
+import * as reportUtils from './sembakoReportUtils'
 
 export const useSembakoDashboardStats = () => {
   const { tenant } = useAuth()
@@ -13,7 +14,7 @@ export const useSembakoDashboardStats = () => {
     staleTime: STALE_5M,
     queryFn: async () => {
       try {
-        const [productsRes, salesRes, expensesRes, payrollRes, returnsRes, batchesRes] =
+        const [productsRes, salesRes, expensesRes, payrollRes, returnsRes, batchesRes, supplierPaymentsRes] =
           await Promise.all([
             supabase.from('sembako_products')
               .select('id, product_name, current_stock, avg_buy_price, sell_price, min_stock_alert')
@@ -40,12 +41,17 @@ export const useSembakoDashboardStats = () => {
               .eq('tenant_id', tenant.id)
               .eq('is_deleted', false)
               .gt('qty_sisa', 0),
+            supabase.from('sembako_supplier_payments')
+              .select('amount, payment_date')
+              .eq('tenant_id', tenant.id)
+              .eq('is_deleted', false),
           ])
 
         if (productsRes.error) console.error('Sembako Stats (Products):', productsRes.error)
         if (salesRes.error) console.error('Sembako Stats (Sales):', salesRes.error)
         if (expensesRes.error) console.error('Sembako Stats (Expenses):', expensesRes.error)
         if (payrollRes.error) console.error('Sembako Stats (Payroll):', payrollRes.error)
+        if (supplierPaymentsRes.error) console.error('Sembako Stats (Supplier Payments):', supplierPaymentsRes.error)
 
         const products = productsRes.data || []
         const rawSales = salesRes.data || []
@@ -53,6 +59,7 @@ export const useSembakoDashboardStats = () => {
         const payroll = payrollRes.data || []
         const returnsList = returnsRes.data || []
         const activeBatches = batchesRes.data || []
+        const supplierPayments = supplierPaymentsRes.data || []
 
         const sales = rawSales.map(sale => processSaleRow(sale, returnsList))
 
@@ -61,17 +68,24 @@ export const useSembakoDashboardStats = () => {
 
         const expenseThisMonth = expenses
           .filter(e => new Date(e.expense_date) > thirtyDaysAgo)
-          .reduce((s, e) => s + (e.amount || 0), 0)
+          .reduce((s, e) => s + (Number(e.amount) || 0), 0)
         const payrollThisMonth = payroll
           .filter(p => new Date(p.period_date) > thirtyDaysAgo)
-          .reduce((s, p) => s + (p.total_pay || 0), 0)
+          .reduce((s, p) => s + (Number(p.total_pay) || 0), 0)
+        const supplierPaymentThisMonth = supplierPayments
+          .filter(sp => new Date(sp.payment_date) > thirtyDaysAgo)
+          .reduce((s, sp) => s + (Number(sp.amount) || 0), 0)
 
         const salesThisMonth = sales.filter(s => new Date(s.transaction_date) > thirtyDaysAgo)
 
-        const revenueThisMonth = salesThisMonth.reduce((s, i) => s + (i.total_amount || 0), 0)
-        const saleNetProfitThisMonth = salesThisMonth.reduce((s, i) => s + (i.net_profit || 0), 0)
+        const revenueThisMonth = salesThisMonth.reduce((s, i) => s + (Number(i.total_amount) || 0), 0)
+        const saleNetProfitThisMonth = salesThisMonth.reduce((s, i) => s + (Number(i.net_profit) || 0), 0)
         const netProfitThisMonth = Math.max(0, saleNetProfitThisMonth - expenseThisMonth - payrollThisMonth)
-        const grossProfitThisMonth = salesThisMonth.reduce((s, i) => s + (i.gross_profit || 0), 0)
+        const grossProfitThisMonth = salesThisMonth.reduce((s, i) => s + (Number(i.gross_profit) || 0), 0)
+
+        const deliveryCostThisMonth = salesThisMonth.reduce((s, i) => s + (Number(i.delivery_cost) || 0), 0)
+        const otherCostThisMonth = salesThisMonth.reduce((s, i) => s + (Number(i.other_cost) || 0), 0)
+        const cogsThisMonth = salesThisMonth.reduce((s, i) => s + (Number(i.total_cogs) || 0), 0)
 
         return {
           stok: {
@@ -84,11 +98,11 @@ export const useSembakoDashboardStats = () => {
               : products.reduce((s, p) => s + (p.current_stock * p.avg_buy_price), 0),
           },
           penjualan: {
-            totalRevenue: sales.reduce((s, i) => s + (i.total_amount || 0), 0),
+            totalRevenue: sales.reduce((s, i) => s + (Number(i.total_amount) || 0), 0),
             revenueThisMonth,
             netProfitThisMonth,
             grossProfitThisMonth,
-            totalOutstanding: sales.reduce((s, i) => s + (i.remaining_amount || 0), 0),
+            totalOutstanding: sales.reduce((s, i) => s + (Number(i.remaining_amount) || 0), 0),
             overdueCount: sales.filter(s =>
               s.payment_status !== 'lunas' && s.due_date && new Date(s.due_date) < now
             ).length,
@@ -96,6 +110,10 @@ export const useSembakoDashboardStats = () => {
           pengeluaran: {
             totalExpenseThisMonth: expenseThisMonth,
             totalPayrollThisMonth: payrollThisMonth,
+            totalSupplierPaymentThisMonth: supplierPaymentThisMonth,
+            totalDeliveryCostThisMonth: deliveryCostThisMonth,
+            totalOtherCostThisMonth: otherCostThisMonth,
+            totalCogsThisMonth: cogsThisMonth,
           },
         }
       } catch (err) {
@@ -103,7 +121,14 @@ export const useSembakoDashboardStats = () => {
         return {
           stok: { totalProduk: 0, lowStock: [], nilaiStok: 0 },
           penjualan: { totalRevenue: 0, revenueThisMonth: 0, netProfitThisMonth: 0, grossProfitThisMonth: 0, totalOutstanding: 0, overdueCount: 0 },
-          pengeluaran: { totalExpenseThisMonth: 0, totalPayrollThisMonth: 0 }
+          pengeluaran: {
+            totalExpenseThisMonth: 0,
+            totalPayrollThisMonth: 0,
+            totalSupplierPaymentThisMonth: 0,
+            totalDeliveryCostThisMonth: 0,
+            totalOtherCostThisMonth: 0,
+            totalCogsThisMonth: 0,
+          }
         }
       }
     }
@@ -118,60 +143,116 @@ export const useSembakoLaporan = (startDate, endDate) => {
     staleTime: STALE_5M,
     queryFn: async () => {
       try {
-        const [salesRes, expensesRes, payrollRes, batchesRes] = await Promise.all([
+        const [
+          salesRes,
+          expensesRes,
+          payrollRes,
+          batchesRes,
+          supplierPaymentsRes,
+          returnsRes,
+          allPaymentsRes,
+          allSupplierPaymentsRes,
+          allExpensesRes,
+          allPayrollRes,
+          allSalesRes
+        ] = await Promise.all([
+          // Period Sales
           supabase.from('sembako_sales')
-            .select('*, sembako_sale_items(*), sembako_customers(customer_name, customer_type)')
+            .select('*, sembako_sale_items(*), sembako_payments(*), sembako_customers(customer_name, customer_type)')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false)
             .gte('transaction_date', startDate)
             .lte('transaction_date', endDate),
+          // Period Expenses
           supabase.from('sembako_expenses')
             .select('*').eq('tenant_id', tenant.id).eq('is_deleted', false)
             .gte('expense_date', startDate).lte('expense_date', endDate),
+          // Period Payroll
           supabase.from('sembako_payroll')
             .select('*, sembako_employees(full_name, role)')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false)
             .gte('period_date', startDate).lte('period_date', endDate),
+          // All Stock Batches (active & historical)
           supabase.from('sembako_stock_batches')
-            .select('*, sembako_products(product_name, category)')
+            .select('qty_masuk, buy_price, total_cost, qty_sisa, purchase_date')
+            .eq('tenant_id', tenant.id)
+            .eq('is_deleted', false),
+          // Period Supplier Payments
+          supabase.from('sembako_supplier_payments')
+            .select('*')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false)
-            .gte('purchase_date', startDate).lte('purchase_date', endDate),
+            .gte('payment_date', startDate)
+            .lte('payment_date', endDate),
+          // All Returns
+          supabase.from('sembako_returns')
+            .select('*')
+            .eq('tenant_id', tenant.id)
+            .eq('is_deleted', false),
+          // All Payments (historical + period)
+          supabase.from('sembako_payments')
+            .select('amount, payment_method, payment_date, created_at')
+            .eq('tenant_id', tenant.id)
+            .eq('is_deleted', false),
+          // All Supplier Payments (historical + period)
+          supabase.from('sembako_supplier_payments')
+            .select('amount, payment_method, payment_date')
+            .eq('tenant_id', tenant.id)
+            .eq('is_deleted', false),
+          // All Expenses (historical + period)
+          supabase.from('sembako_expenses')
+            .select('amount, category, expense_date')
+            .eq('tenant_id', tenant.id)
+            .eq('is_deleted', false),
+          // All Payroll (historical + period)
+          supabase.from('sembako_payroll')
+            .select('total_pay, payment_status, period_date')
+            .eq('tenant_id', tenant.id)
+            .eq('is_deleted', false),
+          // All Sales (for accounts receivable)
+          supabase.from('sembako_sales')
+            .select('remaining_amount')
+            .eq('tenant_id', tenant.id)
+            .eq('is_deleted', false),
         ])
 
         if (salesRes.error) console.error('Sembako Report (Sales):', salesRes.error)
         if (expensesRes.error) console.error('Sembako Report (Expenses):', expensesRes.error)
         if (payrollRes.error) console.error('Sembako Report (Payroll):', payrollRes.error)
         if (batchesRes.error) console.error('Sembako Report (Batches):', batchesRes.error)
+        if (supplierPaymentsRes.error) console.error('Sembako Report (Supplier Payments):', supplierPaymentsRes.error)
+        if (returnsRes.error) console.error('Sembako Report (Returns):', returnsRes.error)
 
-        const sales = salesRes.data || []
+        const returnsList = returnsRes.data || []
+        // Process returns on raw sales
+        const sales = (salesRes.data || []).map(sale => processSaleRow(sale, returnsList))
         const expenses = expensesRes.data || []
         const payroll = payrollRes.data || []
         const batches = batchesRes.data || []
+        const supplierPayments = supplierPaymentsRes.data || []
 
-        const totalRevenue = sales.reduce((s, i) => s + (i.total_amount || 0), 0)
-        const totalCOGS = sales.reduce((s, i) => s + (i.total_cogs || 0), 0)
-        const totalDeliveryCost = sales.reduce((s, i) => s + (i.delivery_cost || 0), 0)
-        const totalOtherCost = sales.reduce((s, i) => s + (i.other_cost || 0), 0)
-        const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0)
-        const totalPayroll = payroll.reduce((s, p) => s + (p.total_pay || 0), 0)
-        const grossProfit = totalRevenue - totalCOGS
-        const netProfit = grossProfit - totalDeliveryCost - totalOtherCost - totalExpenses - totalPayroll
-        const grossMarginPct = totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : 0
-        const netMarginPct = totalRevenue > 0 ? (netProfit / totalRevenue * 100).toFixed(1) : 0
+        const allPayments = allPaymentsRes.data || []
+        const allSupplierPayments = allSupplierPaymentsRes.data || []
+        const allExpenses = allExpensesRes.data || []
+        const allPayroll = allPayrollRes.data || []
+        const allSales = allSalesRes.data || []
+
+        const pl = reportUtils.calculatePL(sales, expenses, payroll, batches, supplierPayments, startDate, endDate)
+        const cf = reportUtils.calculateCashFlow(sales, allPayments, allSupplierPayments, allExpenses, allPayroll, startDate, endDate)
+        const wc = reportUtils.calculateWorkingCapital(allSales, batches, allSupplierPayments)
+        const rp = reportUtils.calculateRealizedProfit(sales, pl.totalExpenses, pl.totalPayroll)
 
         const byProduct = {}
         sales.forEach(sale => {
           ;(sale.sembako_sale_items || []).forEach(item => {
             const key = item.product_name || 'Lainnya'
             if (!byProduct[key]) byProduct[key] = { revenue: 0, cogs: 0, qty: 0, unit: item.unit }
-            const qty = item.quantity || 0
-            const sellPrice = item.sell_price || 0
-            const cogsPerUnit = item.cogs_per_unit || 0
-            // Use stored subtotal/cogs_total if available; fall back to computed values for old data
-            byProduct[key].revenue += (item.subtotal > 0 ? item.subtotal : Math.round(qty * sellPrice))
-            byProduct[key].cogs    += (item.cogs_total > 0 ? item.cogs_total : Math.round(qty * cogsPerUnit))
+            const qty = Number(item.quantity) || 0
+            const sellPrice = Number(item.sell_price) || 0
+            const cogsPerUnit = Number(item.cogs_per_unit) || 0
+            byProduct[key].revenue += (Number(item.subtotal) > 0 ? Number(item.subtotal) : Math.round(qty * sellPrice))
+            byProduct[key].cogs    += (Number(item.cogs_total) > 0 ? Number(item.cogs_total) : Math.round(qty * cogsPerUnit))
             byProduct[key].qty     += qty
           })
         })
@@ -180,8 +261,8 @@ export const useSembakoLaporan = (startDate, endDate) => {
         sales.forEach(sale => {
           const key = sale.customer_name || 'Umum'
           if (!byCustomer[key]) byCustomer[key] = { revenue: 0, profit: 0, count: 0, type: sale.sembako_customers?.customer_type }
-          byCustomer[key].revenue += sale.total_amount || 0
-          byCustomer[key].profit += sale.net_profit || 0
+          byCustomer[key].revenue += Number(sale.total_amount) || 0
+          byCustomer[key].profit += Number(sale.net_profit) || 0
           byCustomer[key].count++
         })
 
@@ -189,18 +270,26 @@ export const useSembakoLaporan = (startDate, endDate) => {
         expenses.forEach(e => {
           const cat = e.category || 'lainnya'
           if (!expenseByCategory[cat]) expenseByCategory[cat] = 0
-          expenseByCategory[cat] += e.amount || 0
+          expenseByCategory[cat] += Number(e.amount) || 0
         })
+
+        if (pl.unpaidSupplierPeriod > 0) {
+          expenseByCategory['Hutang Supplier Baru'] = pl.unpaidSupplierPeriod
+        }
 
         return {
           summary: {
-            totalRevenue, totalCOGS, grossProfit, grossMarginPct,
-            totalDeliveryCost, totalOtherCost, totalExpenses, totalPayroll,
-            netProfit, netMarginPct,
-            totalStockPurchase: batches.reduce((s, b) => s + (b.total_cost || 0), 0),
+            ...pl,
+            ...cf,
+            ...wc,
+            ...rp,
           },
-          byProduct, byCustomer, expenseByCategory,
-          sales, expenses, payroll,
+          byProduct,
+          byCustomer,
+          expenseByCategory,
+          sales,
+          expenses,
+          payroll,
         }
       } catch (err) {
         throw normalizeSupabaseError(err)
