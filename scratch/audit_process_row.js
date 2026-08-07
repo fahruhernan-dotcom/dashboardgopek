@@ -13,25 +13,22 @@ envText.split('\n').forEach(line => {
 
 const supabase = createClient(envConfig.VITE_SUPABASE_URL, envConfig.VITE_SUPABASE_ANON_KEY)
 
-async function runAudit() {
+async function runRealProcessAudit() {
   const { data: salesCheck } = await supabase.from('sembako_sales').select('tenant_id').limit(1)
   const tenantId = salesCheck[0].tenant_id
 
-  // Fetch returns
   const { data: dbReturns } = await supabase.from('sembako_returns').select('*').eq('tenant_id', tenantId).eq('is_deleted', false)
-
-  // Fetch sale #1 with items and payments
-  const { data: sale } = await supabase
+  const { data: rawSales } = await supabase
     .from('sembako_sales')
     .select('*, sembako_sale_items(*), sembako_payments(*)')
-    .eq('id', 'c47db40a-d196-4a12-89b8-c2348512d224')
-    .single()
+    .eq('tenant_id', tenantId)
+    .eq('is_deleted', false)
 
-  console.log('--- RAW DB SALE #1 ---')
-  console.log(JSON.stringify(sale, null, 2))
+  const processedSales = rawSales.map(s => processSaleRow(s, dbReturns))
 
-  const processed = processSaleRow(sale, dbReturns, {})
-  console.log('--- PROCESSED SALE #1 ---')
-  console.log(JSON.stringify(processed, null, 2))
+  console.log('--- REAL PROCESSED SALES SUMMARY ---')
+  processedSales.forEach((s, idx) => {
+    console.log(`Sale #${idx + 1}: ID=${s.id} | Date=${s.transaction_date} | Total=${s.total_amount} | Paid=${s.paid_amount} | Remaining=${s.remaining_amount} | NetProfit=${s.net_profit} | GrossProfit=${s.gross_profit}`)
+  })
 }
-runAudit()
+runRealProcessAudit()

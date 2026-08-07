@@ -12,14 +12,17 @@ envText.split('\n').forEach(line => {
 
 const supabase = createClient(envConfig.VITE_SUPABASE_URL, envConfig.VITE_SUPABASE_ANON_KEY)
 
-async function runAudit() {
+async function runReturnsAudit() {
   const { data: salesCheck } = await supabase.from('sembako_sales').select('tenant_id').limit(1)
   const tenantId = salesCheck[0].tenant_id
-  
-  const { data: returns } = await supabase.from('sembako_returns').select('*').eq('tenant_id', tenantId).eq('is_deleted', false)
+
+  const { data: returns } = await supabase
+    .from('sembako_returns')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('is_deleted', false)
+
   console.log('--- RETURNS ---')
-  returns.forEach(r => {
-    console.log(`ID: ${r.id} | SaleID: ${r.sale_id} | Product: ${r.product_name} | Qty: ${r.quantity} | UnitPrice: ${r.unit_price} | TotalAmount: ${r.total_amount}`)
-  })
+  console.log(returns)
 }
-runAudit()
+runReturnsAudit()

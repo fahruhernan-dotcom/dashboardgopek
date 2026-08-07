@@ -12,21 +12,30 @@ envText.split('\n').forEach(line => {
 
 const supabase = createClient(envConfig.VITE_SUPABASE_URL, envConfig.VITE_SUPABASE_ANON_KEY)
 
-async function runAudit() {
+async function runRawAudit() {
   const { data: salesCheck } = await supabase.from('sembako_sales').select('tenant_id').limit(1)
   const tenantId = salesCheck[0].tenant_id
-  
-  const { data: sales } = await supabase.from('sembako_sales').select('*').eq('tenant_id', tenantId).eq('is_deleted', false)
-  const { data: payments } = await supabase.from('sembako_payments').select('*').eq('tenant_id', tenantId).eq('is_deleted', false)
-  
-  console.log('--- RAW SALES ---')
-  sales.forEach(s => {
-    console.log(`ID: ${s.id} | Date: ${s.transaction_date} | total_amount: ${s.total_amount} | paid_amount: ${s.paid_amount} | remaining_amount: ${s.remaining_amount} | net_profit: ${s.net_profit}`)
-  })
-  
-  console.log('--- RAW PAYMENTS ---')
-  payments.forEach(p => {
-    console.log(`ID: ${p.id} | SaleID: ${p.sale_id} | Date: ${p.payment_date} | amount: ${p.amount} | method: ${p.payment_method}`)
+
+  const { data: sales } = await supabase
+    .from('sembako_sales')
+    .select('*, sembako_sale_items(*)')
+    .eq('tenant_id', tenantId)
+    .eq('is_deleted', false)
+
+  sales.forEach((s, idx) => {
+    console.log(`\n--- SALE #${idx + 1} ---`)
+    console.log(`ID: ${s.id}`)
+    console.log(`Invoice: ${s.invoice_number}`)
+    console.log(`Total Amount: ${s.total_amount}`)
+    console.log(`Paid Amount: ${s.paid_amount}`)
+    console.log(`Net Profit (DB): ${s.net_profit}`)
+    console.log(`Total COGS (DB): ${s.total_cogs}`)
+    console.log(`Delivery Cost: ${s.delivery_cost}`)
+    console.log(`Other Cost: ${s.other_cost}`)
+    console.log('Items:')
+    s.sembako_sale_items.forEach((item, itemIdx) => {
+      console.log(`  Item #${itemIdx + 1}: ${item.product_name} | Qty: ${item.quantity} | Sell Price: ${item.sell_price || item.unit_price || item.price_per_unit} | COGS/unit: ${item.cogs_per_unit}`)
+    })
   })
 }
-runAudit()
+runRawAudit()

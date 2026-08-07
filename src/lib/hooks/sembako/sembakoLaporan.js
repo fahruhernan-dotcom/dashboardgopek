@@ -33,7 +33,7 @@ export const useSembakoDashboardStats = () => {
               .eq('tenant_id', tenant.id)
               .eq('is_deleted', false),
             supabase.from('sembako_returns')
-              .select('quantity, unit_price, total_amount, created_at')
+              .select('*')
               .eq('tenant_id', tenant.id)
               .eq('is_deleted', false),
             supabase.from('sembako_stock_batches')

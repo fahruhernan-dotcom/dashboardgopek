@@ -61,47 +61,54 @@ function processSaleRow(sale, returnsData = [], itemsBySaleId = {}) {
   const remaining_amount = Math.max(0, total_amount - paid_amount)
   const payment_status = remaining_amount <= 0 && total_amount > 0 ? 'lunas' : paid_amount > 0 ? 'sebagian' : (sale.payment_status || 'belum_lunas')
 
+  const cogsFromItems = items.reduce((s, i) => s + Math.round((i.quantity || 0) * (i.cogs_per_unit || 0)), 0)
+  const fallbackCogs = items.reduce((s, i) => s + Math.round((i.quantity || 0) * (Number(i.cogs_per_unit || i.buy_price || 0) || (i.price_per_unit * 0.75))), 0)
+  const totalCogs = Number(sale.total_cogs) || cogsFromItems || fallbackCogs || Math.round(itemsSubtotal * 0.75)
+  const returnCogs = saleReturns.reduce((s, r) => {
+    const matchItem = items.find(i => i.product_id === r.product_id || i.product_name === r.product_name)
+    const cogs = Number(r.cogs_per_unit || matchItem?.cogs_per_unit || (matchItem ? matchItem.price_per_unit * 0.75 : 80000))
+    return s + Math.round((Number(r.quantity) || 0) * cogs)
+  }, 0)
+  const effectiveCogs = Math.max(0, totalCogs - returnCogs)
+  const grossProfit = Math.max(0, (itemsSubtotal - totalReturnAmount) - effectiveCogs)
+  const totalExpenses = deliveryCost + otherCost
+  const computedNetProfit = Math.max(0, grossProfit - totalExpenses)
+  const net_profit = (totalReturnAmount > 0)
+    ? computedNetProfit
+    : ((Number(sale.net_profit) > 0) ? Number(sale.net_profit) : computedNetProfit)
+
   return {
     ...sale,
-    itemsSubtotal,
-    totalReturnAmount,
-    paidFromPayments,
-    refundFromPayments,
-    netPaidFromPayments,
-    raw_paid,
-    total_amount,
-    paid_amount,
     remaining_amount,
-    payment_status
+    payment_status,
+    net_profit,
+    gross_profit: grossProfit,
+    due_date: sale.due_date
   }
 }
 
-async function runSelfContainedAudit() {
+async function runLaporanAudit() {
   const { data: salesCheck } = await supabase.from('sembako_sales').select('tenant_id').limit(1)
   const tenantId = salesCheck[0].tenant_id
 
-  const { data: dbReturns } = await supabase.from('sembako_returns').select('*').eq('tenant_id', tenantId).eq('is_deleted', false)
-  const { data: rawSales } = await supabase
-    .from('sembako_sales')
-    .select('*, sembako_sale_items(*), sembako_payments(*)')
-    .eq('tenant_id', tenantId)
-    .eq('is_deleted', false)
+  const [salesRes, returnsRes] = await Promise.all([
+    supabase.from('sembako_sales').select('*, sembako_sale_items(*), sembako_payments(*)').eq('tenant_id', tenantId).eq('is_deleted', false),
+    supabase.from('sembako_returns').select('quantity, unit_price, total_amount, created_at, sale_id, product_id, product_name, is_deleted').eq('tenant_id', tenantId).eq('is_deleted', false)
+  ])
 
-  const processedSales = rawSales.map(s => processSaleRow(s, dbReturns))
+  const rawSales = salesRes.data || []
+  const returnsList = returnsRes.data || []
 
-  console.log('--- PROCESSED DATA DETAILED ---')
-  processedSales.forEach((s, idx) => {
-    console.log(`Sale #${idx + 1}: ${s.invoice_number}`)
-    console.log(`  itemsSubtotal:      ${s.itemsSubtotal}`)
-    console.log(`  totalReturnAmount:  ${s.totalReturnAmount}`)
-    console.log(`  paidFromPayments:   ${s.paidFromPayments}`)
-    console.log(`  refundFromPayments: ${s.refundFromPayments}`)
-    console.log(`  netPaidFromPayments: ${s.netPaidFromPayments}`)
-    console.log(`  raw_paid:           ${s.raw_paid}`)
-    console.log(`  total_amount:       ${s.total_amount}`)
-    console.log(`  paid_amount:        ${s.paid_amount}`)
-    console.log(`  remaining_amount:   ${s.remaining_amount}`)
-    console.log(`  payment_status:     ${s.payment_status}`)
+  const sales = rawSales.map(sale => processSaleRow(sale, returnsList))
+
+  sales.forEach((s, idx) => {
+    console.log(`\nProcessed Sale #${idx+1}: Invoice=${s.invoice_number}`)
+    console.log(`  remaining_amount: ${s.remaining_amount} (Type: ${typeof s.remaining_amount})`)
+    console.log(`  payment_status:   ${s.payment_status}`)
+    console.log(`  due_date:         ${s.due_date}`)
   })
+
+  const totalOutstanding = sales.reduce((s, i) => s + (Number(i.remaining_amount) || 0), 0)
+  console.log('\nCalculated totalOutstanding:', totalOutstanding)
 }
-runSelfContainedAudit()
+runLaporanAudit()
