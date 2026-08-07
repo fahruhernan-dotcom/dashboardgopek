@@ -82,7 +82,7 @@ export function processSaleRow(sale, returnsData = [], itemsBySaleId = {}) {
     subtotal: initialSubtotal,
     delivery_cost: deliveryCost,
     other_cost: otherCost,
-    total_cogs: totalCogs,
+    total_cogs: effectiveCogs,
     net_profit,
     gross_profit: grossProfit,   // Revenue - COGS (pre-ops deduction)
     total_amount,

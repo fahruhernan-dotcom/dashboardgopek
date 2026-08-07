@@ -255,6 +255,31 @@ export const useSembakoLaporan = (startDate, endDate) => {
             byProduct[key].cogs    += (Number(item.cogs_total) > 0 ? Number(item.cogs_total) : Math.round(qty * cogsPerUnit))
             byProduct[key].qty     += qty
           })
+
+          // Deduct returns for this sale from product totals
+          const saleReturns = (returnsList || []).filter(r => {
+            if (!r || r.is_deleted) return false
+            if (sale.id && (r.sale_id === sale.id || String(r.sale_id) === String(sale.id))) return true
+            if (sale.invoice_number && r.invoice_number && String(r.invoice_number).trim() === String(sale.invoice_number).trim()) return true
+            return false
+          })
+
+          saleReturns.forEach(r => {
+            const key = r.product_name || 'Lainnya'
+            if (!byProduct[key]) byProduct[key] = { revenue: 0, cogs: 0, qty: 0, unit: r.unit || 'slop' }
+            const qty = Number(r.quantity) || 0
+            const price = Number(r.unit_price) || 0
+            const refundAmt = Number(r.total_amount) || (qty * price)
+
+            // Find matching item to get cogs
+            const matchItem = (sale.sembako_sale_items || []).find(i => i.product_id === r.product_id || i.product_name === r.product_name)
+            const cogsPerUnit = Number(r.cogs_per_unit || matchItem?.cogs_per_unit || (matchItem ? matchItem.price_per_unit * 0.75 : 80000))
+            const retCogs = qty * cogsPerUnit
+
+            byProduct[key].revenue -= refundAmt
+            byProduct[key].cogs    -= retCogs
+            byProduct[key].qty     -= qty
+          })
         })
 
         const byCustomer = {}
