@@ -492,21 +492,21 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
 
   // ── MOBILE header — 2-row layout ──
   const mobileHeader = (
-    <div className="flex flex-col gap-1.5 w-full">
+    <div className="flex flex-col gap-2 w-full">
       {/* Row 1: avatar + name + payment badge */}
       <div className="flex items-center gap-2 min-w-0">
-        <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center font-black text-base border-2 shrink-0', avatarCn)}>
+        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center font-black text-base border-2 shrink-0', avatarCn)}>
           {initialCustomer}
         </div>
-        <h3 className="font-display font-bold text-[12px] text-[#F1F5F9] leading-none uppercase tracking-tight flex-1 min-w-0 truncate">
+        <h3 className="font-sans font-extrabold text-[14px] text-foreground leading-none uppercase tracking-tight flex-1 min-w-0 truncate">
           {customerName}
         </h3>
         <span style={{
           display: 'inline-flex', alignItems: 'center', flexShrink: 0,
-          padding: '2px 7px', borderRadius: '99px',
+          padding: '3px 8px', borderRadius: '99px',
           background: isLunas ? 'rgba(16, 185, 129, 0.1)' : isSebagian ? 'rgba(251,191,36,0.1)' : 'rgba(239,68,68,0.1)',
-          color: isLunas ? '#34D399' : isSebagian ? '#FBBF24' : '#F87171',
-          fontSize: '8px', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase',
+          color: isLunas ? '#10B981' : isSebagian ? '#D97706' : '#EF4444',
+          fontSize: '9px', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase',
         }}>
           {isLunas ? 'LUNAS' : isSebagian ? 'SEBAGIAN' : 'BELUM LUNAS'}
         </span>
@@ -514,17 +514,17 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
         <motion.div
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="shrink-0 text-[#94A3B8]"
+          className="shrink-0 text-muted-foreground"
         >
-          <ChevronDown size={15} />
+          <ChevronDown size={18} />
         </motion.div>
       </div>
       {/* Row 2: invoice info + delivery badge */}
-      <div className="flex items-center justify-between pl-10">
-        <p className="text-[10px] font-medium text-[#94A3B8] tabular-nums truncate">
+      <div className="flex items-center justify-between pl-11">
+        <p className="text-[11px] font-semibold text-muted-foreground tracking-wide tabular-nums truncate">
           {sale.invoice_number || '-'} · {fmtDateLocal(sale.transaction_date)}
         </p>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 900, padding: '2px 7px', borderRadius: '99px', background: deliveryBadge.bg, border: `1px solid ${deliveryBadge.border}`, color: deliveryBadge.color, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 900, padding: '2px 8px', borderRadius: '99px', background: deliveryBadge.bg, border: `1px solid ${deliveryBadge.border}`, color: deliveryBadge.color, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
           {deliveryBadge.icon && <span style={{ opacity: 0.7 }}>{deliveryBadge.icon}</span>}
           {deliveryBadge.label}
         </span>
@@ -656,34 +656,34 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
 
   // ── MOBILE body — 2-row compact strip ──
   const mobileBody = (
-    <div className="space-y-1.5">
+    <div className="space-y-2.5">
       {/* Row 1: item count + total amount */}
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex items-baseline justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-2">
         <div className="flex items-baseline gap-1 flex-1 min-w-0">
-          <span className="text-[13px] font-bold text-[#F1F5F9] tabular-nums leading-none">{noItems ? '—' : items.length}</span>
-          <span className="text-[9px] font-medium text-[#94A3B8] leading-none">jenis</span>
-          <span className="text-[9px] text-[#94A3B8] leading-none mx-0.5">·</span>
-          <span className="text-[13px] font-bold text-[#F1F5F9] tabular-nums leading-none">{noItems ? '—' : netQty}</span>
-          <span className="text-[9px] font-medium text-[#94A3B8] leading-none">{itemUnit}{totalReturnQty > 0 ? ` (-${totalReturnQty})` : ''}</span>
+          <span className="text-[14px] font-black text-foreground tabular-nums leading-none">{noItems ? '—' : items.length}</span>
+          <span className="text-[11px] font-bold text-muted-foreground leading-none">jenis</span>
+          <span className="text-[11px] text-muted-foreground leading-none mx-0.5">·</span>
+          <span className="text-[14px] font-black text-foreground tabular-nums leading-none">{noItems ? '—' : netQty}</span>
+          <span className="text-[11px] font-bold text-muted-foreground leading-none">{itemUnit}{totalReturnQty > 0 ? ` (-${totalReturnQty})` : ''}</span>
         </div>
-        <span className="font-display text-[14px] font-bold text-[#F1F5F9] tabular-nums leading-none shrink-0">
+        <span className="font-sans text-[16px] font-black text-foreground tabular-nums leading-none shrink-0">
           {expanded ? formatIDR(totalAmount) : formatIDRShort(totalAmount)}
         </span>
       </div>
 
       {/* Row 2: top product + payment summary */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[9px] font-medium text-[#94A3B8] truncate flex-1">
+        <span className="text-[12px] font-semibold text-muted-foreground truncate flex-1">
           {topItem?.product_name || '—'}
         </span>
         {isOverpaid && overpayAmount > 0 ? (
-          <span className="text-[10px] font-black text-[#34D399] shrink-0">
+          <span className="text-[12px] font-black text-emerald-500 shrink-0">
             Balikin {expanded ? formatIDR(overpayAmount) : formatIDRShort(overpayAmount)}
           </span>
         ) : isLunas ? (
-          <span className="text-[10px] font-black text-[#34D399] shrink-0">✓ Lunas</span>
+          <span className="text-[12px] font-black text-emerald-500 shrink-0">✓ Lunas</span>
         ) : (
-          <span className="text-[10px] font-black text-[#F87171] tabular-nums shrink-0">
+          <span className="text-[12px] font-black text-red-500 tabular-nums shrink-0">
             Sisa {expanded ? formatIDR(remainingAmount) : formatIDRShort(remainingAmount)}
           </span>
         )}

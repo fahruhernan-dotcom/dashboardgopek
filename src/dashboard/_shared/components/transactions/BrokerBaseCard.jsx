@@ -19,8 +19,8 @@ export function BrokerBaseCard({
     <Card
       onClick={onClick}
       className={cn(
-        "bg-[#111C24] rounded-[22px] overflow-hidden relative cursor-pointer hover:bg-white/[0.04] active:scale-[0.98] transition-all group",
-        isLoss ? "border-[#F87171]" : "border-white/5",
+        "bg-white dark:bg-[#0A0F16] rounded-[22px] overflow-hidden relative cursor-pointer hover:bg-slate-50/50 dark:hover:bg-white/[0.02] active:scale-[0.99] border border-slate-200/80 dark:border-white/10 shadow-tko-sm hover:shadow-tko-md transition-all group",
+        isLoss ? "border-red-500/50 dark:border-red-500/30 shadow-red-500/5" : "",
         className
       )}
     >

@@ -2,10 +2,10 @@ import React from 'react'
 import { formatIDR } from '@/lib/format'
 
 const COLOR_MAP = {
-  red:   { text: '#F87171', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',   bar: '#EF4444' },
-  green: { text: '#34D399', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.2)',  bar: '#10B981' },
-  amber: { text: '#FBBF24', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.2)',  bar: '#F59E0B' },
-  default:{ text: '#F59E0B', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.2)',   bar: '#D97706' },
+  red:   { bar: '#EF4444' },
+  green: { bar: '#10B981' },
+  amber: { bar: '#F59E0B' },
+  default:{ bar: '#D97706' },
 }
 
 export function SembakoSummaryStrip({ items = [] }) {
@@ -22,34 +22,24 @@ export function SembakoSummaryStrip({ items = [] }) {
         return (
           <div
             key={item.label}
-            className="relative overflow-hidden rounded-2xl p-4 transition-all shadow-sm border"
+            className="relative overflow-hidden rounded-2xl p-4 transition-all shadow-tko-sm border border-l-4 bg-white dark:bg-[#0A0F16] border-slate-200/80 dark:border-white/10"
             style={{
-              background: c.bg,
-              borderColor: c.border,
+              borderLeftColor: c.bar,
             }}
           >
-            {/* Accent bar top */}
-            <div
-              className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
-              style={{ background: c.bar }}
-            />
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.bar }} />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-550 dark:text-slate-400">
+                {item.label}
+              </p>
+            </div>
 
-            <p
-              className="text-[11px] font-extrabold tracking-wider uppercase mb-1.5"
-              style={{ color: c.text }}
-            >
-              {item.label}
-            </p>
-
-            <p className="text-xl sm:text-2xl font-black text-foreground tracking-tight font-sans truncate">
+            <p className="text-xl sm:text-2xl font-black text-foreground tracking-tight font-sans truncate leading-tight">
               {displayValue}
             </p>
 
             {item.subLabel && (
-              <p
-                className="text-xs font-semibold mt-1.5 line-clamp-1"
-                style={{ color: c.text }}
-              >
+              <p className="text-[11px] font-semibold mt-1.5 text-slate-500 dark:text-slate-400 line-clamp-1">
                 {item.subLabel}
               </p>
             )}
