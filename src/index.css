@@ -532,6 +532,9 @@ html:not(.dark) .text-white[class*="bg-violet"],
 html:not(.dark) .text-white[class*="bg-purple"],
 html:not(.dark) .text-white[class*="bg-rose"],
 html:not(.dark) .text-white[class*="bg-red"],
+html:not(.dark) .text-white[class*="bg-slate"],
+html:not(.dark) .text-white[class*="bg-[#0F172A]"],
+html:not(.dark) .text-white[class*="bg-[#0f172a]"],
 html:not(.dark) a.text-white.bg-emerald-500,
 html:not(.dark) button.text-white.bg-emerald-500,
 html:not(.dark) a.text-white.bg-emerald-600,
@@ -566,14 +569,20 @@ html:not(.dark) a.text-white[class*="bg-rose"],
 html:not(.dark) button.text-white[class*="bg-rose"],
 html:not(.dark) a.text-white[class*="bg-red"],
 html:not(.dark) button.text-white[class*="bg-red"],
+html:not(.dark) a.text-white[class*="bg-slate"],
+html:not(.dark) button.text-white[class*="bg-slate"],
+html:not(.dark) a.text-white[class*="bg-[#0F172A]"],
+html:not(.dark) button.text-white[class*="bg-[#0F172A]"],
+html:not(.dark) a.text-white[class*="bg-[#0f172a]"],
+html:not(.dark) button.text-white[class*="bg-[#0f172a]"],
 html:not(.dark) a.text-white[class*="data-[state=active]:bg"],
 html:not(.dark) button.text-white[class*="data-[state=active]:bg"] {
   color: #FFFFFF !important;
 }
 
 /* Jika button/link tidak memiliki class bg solid di atas, text-white-nya berubah jadi gelap di light mode */
-html:not(.dark) a.text-white:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="data-[state=active]:bg"]):not(.dark *):not(.dark-preserve *),
-html:not(.dark) button.text-white:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="data-[state=active]:bg"]):not(.dark *):not(.dark-preserve *) {
+html:not(.dark) a.text-white:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="bg-slate"]):not([class*="bg-[#0F172A]"]):not([class*="bg-[#0f172a]"]):not([class*="data-[state=active]:bg"]):not(.dark *):not(.dark-preserve *),
+html:not(.dark) button.text-white:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="bg-slate"]):not([class*="bg-[#0F172A]"]):not([class*="bg-[#0f172a]"]):not([class*="data-[state=active]:bg"]):not(.dark *):not(.dark-preserve *) {
   color: #0F172A !important;
 }
 
@@ -600,6 +609,12 @@ html:not(.dark) a[class*="bg-rose"] span.text-white,
 html:not(.dark) button[class*="bg-rose"] span.text-white,
 html:not(.dark) a[class*="bg-red"] span.text-white,
 html:not(.dark) button[class*="bg-red"] span.text-white,
+html:not(.dark) a[class*="bg-slate"] span.text-white,
+html:not(.dark) button[class*="bg-slate"] span.text-white,
+html:not(.dark) a[class*="bg-[#0F172A]"] span.text-white,
+html:not(.dark) button[class*="bg-[#0F172A]"] span.text-white,
+html:not(.dark) a[class*="bg-[#0f172a]"] span.text-white,
+html:not(.dark) button[class*="bg-[#0f172a]"] span.text-white,
 html:not(.dark) a[class*="data-[state=active]:bg"] span.text-white,
 html:not(.dark) button[class*="data-[state=active]:bg"] span.text-white,
 
@@ -625,16 +640,22 @@ html:not(.dark) a[class*="bg-rose"] p.text-white,
 html:not(.dark) button[class*="bg-rose"] p.text-white,
 html:not(.dark) a[class*="bg-red"] p.text-white,
 html:not(.dark) button[class*="bg-red"] p.text-white,
+html:not(.dark) a[class*="bg-slate"] p.text-white,
+html:not(.dark) button[class*="bg-slate"] p.text-white,
+html:not(.dark) a[class*="bg-[#0F172A]"] p.text-white,
+html:not(.dark) button[class*="bg-[#0F172A]"] p.text-white,
+html:not(.dark) a[class*="bg-[#0f172a]"] p.text-white,
+html:not(.dark) button[class*="bg-[#0f172a]"] p.text-white,
 html:not(.dark) a[class*="data-[state=active]:bg"] p.text-white,
 html:not(.dark) button[class*="data-[state=active]:bg"] p.text-white {
   color: #FFFFFF !important;
 }
 
 /* Jika tidak ada background solid di atas, span/p di dalam button/link berubah jadi gelap di light mode */
-html:not(.dark) a:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="data-[state=active]:bg"]) span.text-white:not(.dark *):not(.dark-preserve *),
-html:not(.dark) button:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="data-[state=active]:bg"]) span.text-white:not(.dark *):not(.dark-preserve *),
-html:not(.dark) a:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="data-[state=active]:bg"]) p.text-white:not(.dark *):not(.dark-preserve *),
-html:not(.dark) button:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="data-[state=active]:bg"]) p.text-white:not(.dark *):not(.dark-preserve *) {
+html:not(.dark) a:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="bg-slate"]):not([class*="bg-[#0F172A]"]):not([class*="bg-[#0f172a]"]):not([class*="data-[state=active]:bg"]) span.text-white:not(.dark *):not(.dark-preserve *),
+html:not(.dark) button:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="bg-slate"]):not([class*="bg-[#0F172A]"]):not([class*="bg-[#0f172a]"]):not([class*="data-[state=active]:bg"]) span.text-white:not(.dark *):not(.dark-preserve *),
+html:not(.dark) a:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="bg-slate"]):not([class*="bg-[#0F172A]"]):not([class*="bg-[#0f172a]"]):not([class*="data-[state=active]:bg"]) p.text-white:not(.dark *):not(.dark-preserve *),
+html:not(.dark) button:not([class*="bg-emerald"]):not([class*="bg-em-"]):not([class*="bg-primary"]):not([class*="bg-[#021a02]"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-violet"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-red"]):not([class*="bg-slate"]):not([class*="bg-[#0F172A]"]):not([class*="bg-[#0f172a]"]):not([class*="data-[state=active]:bg"]) p.text-white:not(.dark *):not(.dark-preserve *) {
   color: #0F172A !important;
 }
 

@@ -82,21 +82,20 @@ export function BrokerMobileHeader({
 
   if (showGreeting) {
     return (
-      <header className="relative overflow-hidden lg:hidden">
+      <header className="relative overflow-hidden lg:hidden bg-background border-b border-border/40">
         <div
-          className="absolute inset-0"
-          style={{ background: `linear-gradient(135deg, #06090F 0%, ${color}22 100%)` }}
+          className="absolute inset-0 opacity-15 dark:opacity-25 pointer-events-none"
+          style={{ background: `radial-gradient(circle at 15% 15%, ${color} 0%, transparent 80%)` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#06090F] via-transparent to-transparent" />
 
         <div className="relative px-5 pt-[calc(env(safe-area-inset-top,24px)+16px)] pb-5 flex items-center justify-between">
           <div>
             {businessLabel && (
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style={{ color: `${color}99` }}>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style={{ color: `${color}cc` }}>
                 {businessLabel}
               </p>
             )}
-            <h1 className="font-['Sora'] font-black text-[22px] text-white tracking-tight leading-tight" suppressHydrationWarning>
+            <h1 className="font-['Sora'] font-black text-[22px] text-foreground tracking-tight leading-tight" suppressHydrationWarning>
               Selamat {getGreeting()},{' '}
               <span style={{ color }}>{firstName}</span> 👋
             </h1>

@@ -334,7 +334,7 @@ export function MobileBeranda({
               }}
               className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-xs active:scale-95 transition-all"
             >
-              <Plus size={12} className="text-slate-600 dark:text-tko-text-muted" /> + Produk
+              <Plus size={12} className="text-slate-600 dark:text-tko-text-muted" /> Produk
             </button>
             <button
               onClick={() => navigate(`${brokerBase}/toko-supplier?action=new`)}
@@ -346,7 +346,7 @@ export function MobileBeranda({
               }}
               className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-xs active:scale-95 transition-all"
             >
-              <Plus size={12} className="text-slate-600 dark:text-tko-text-muted" /> + Toko
+              <Plus size={12} className="text-slate-600 dark:text-tko-text-muted" /> Toko
             </button>
             <button
               onClick={() => navigate(`${brokerBase}/laporan`)}
@@ -358,7 +358,7 @@ export function MobileBeranda({
               }}
               className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-xs active:scale-95 transition-all"
             >
-              <Receipt size={12} className="text-slate-600 dark:text-tko-text-muted" /> + Pengeluaran
+              <Receipt size={12} className="text-slate-600 dark:text-tko-text-muted" /> Pengeluaran
             </button>
           </div>
         </div>
