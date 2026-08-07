@@ -348,17 +348,10 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
                 <Mail size={16} color="#786656" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
-                  placeholder="dev@sembako.id / owner@sembako.id / admin@sembako.id"
+                  placeholder="Ketik email Anda (contoh: owner@sembako.id)"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  style={{
-                    width: '100%', height: 44, padding: '0 14px 0 42px',
-                    background: '#1C130A', border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: 12, color: '#FFF', fontSize: 14, outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#EA580C'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.12)'}
+                  className="w-full h-11 pl-11 pr-4 bg-[#1C130A] border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#EA580C] placeholder:text-white/20 transition-all box-border"
                 />
               </div>
             </div>
@@ -377,14 +370,7 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  style={{
-                    width: '100%', height: 44, padding: '0 42px 0 42px',
-                    background: '#1C130A', border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: 12, color: '#FFF', fontSize: 14, outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#EA580C'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.12)'}
+                  className="w-full h-11 px-11 bg-[#1C130A] border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#EA580C] placeholder:text-white/20 transition-all box-border"
                 />
                 <button
                   type="button"
@@ -521,15 +507,10 @@ function MobileLoginView({ email, setEmail, password, setPassword, showPassword,
             </label>
             <input
               type="text"
-              placeholder="Email terdaftar"
+              placeholder="Ketik email Anda (contoh: owner@sembako.id)"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              style={{
-                width: '100%', height: 42, padding: '0 12px',
-                background: '#1C130A', border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: 10, color: '#FFF', fontSize: 14, outline: 'none',
-                boxSizing: 'border-box'
-              }}
+              className="w-full h-11 px-3 bg-[#1C130A] border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#EA580C] placeholder:text-white/20 transition-all box-border"
             />
           </div>
 
@@ -543,12 +524,7 @@ function MobileLoginView({ email, setEmail, password, setPassword, showPassword,
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                style={{
-                  width: '100%', height: 42, padding: '0 36px 0 12px',
-                  background: '#1C130A', border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: 10, color: '#FFF', fontSize: 14, outline: 'none',
-                  boxSizing: 'border-box'
-                }}
+                className="w-full h-11 pl-3 pr-10 bg-[#1C130A] border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#EA580C] placeholder:text-white/20 transition-all box-border"
               />
               <button
                 type="button"
