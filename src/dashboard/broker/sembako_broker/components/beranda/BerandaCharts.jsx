@@ -16,6 +16,17 @@ const chartConfig = {
   },
 }
 
+const salesChartConfig = {
+  grossProfit: {
+    label: "Gross Profit",
+    color: "#10B981",
+  },
+  netProfit: {
+    label: "Net Profit",
+    color: "#EA580C",
+  },
+}
+
 // ── Legend Dot ───────────────────────────────────────────────────────────────
 function LegendDot({ color, label }) {
   return (
@@ -164,42 +175,55 @@ export function SalesAndCashChart({
 
       {/* ── Chart Area ── */}
       <div style={{ width: '100%', height: isDesktop ? '200px' : '150px' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="grossGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#10B981" stopOpacity={0.25}/>
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#EA580C" stopOpacity={0.35}/>
-                <stop offset="95%" stopColor="#EA580C" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
+        <ChartContainer config={salesChartConfig} style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}>
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(234,88,12,0.12)" vertical={false} />
-            <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} minTickGap={16} />
-            <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false}
+            <XAxis
+              dataKey="name"
+              stroke={C.text}
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              minTickGap={16}
+            />
+            <YAxis
+              stroke={C.text}
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
               tickFormatter={v => v >= 1000000 ? (v/1000000).toFixed(1)+'jt' : v >= 1000 ? (v/1000).toFixed(0)+'rb' : v}
             />
             <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'rgba(234,88,12,0.2)', strokeWidth: 1 }} />
 
-            {/* Gross Profit — dashed line */}
-            <Area type="monotone" dataKey="grossProfit" name="Gross Profit"
-              stroke="#10B981" strokeWidth={1.5} strokeDasharray="5 3"
-              fillOpacity={1} fill="url(#grossGrad)"
+            {/* Gross Profit — natural curve, dashed line */}
+            <Area
+              type="natural"
+              dataKey="grossProfit"
+              name="Gross Profit"
+              stroke="var(--color-grossProfit)"
+              strokeWidth={1.5}
+              strokeDasharray="5 3"
+              fill="var(--color-grossProfit)"
+              fillOpacity={0.15}
               isAnimationActive={false}
               activeDot={{ r: 4, fill: '#10B981', stroke: C.card, strokeWidth: 2 }}
             />
 
-            {/* Net Profit — solid line, emphasis */}
-            <Area type="monotone" dataKey="netProfit" name="Net Profit"
-              stroke="#EA580C" strokeWidth={2.5}
-              fillOpacity={1} fill="url(#netGrad)"
+            {/* Net Profit — natural curve, solid line */}
+            <Area
+              type="natural"
+              dataKey="netProfit"
+              name="Net Profit"
+              stroke="var(--color-netProfit)"
+              strokeWidth={2.5}
+              fill="var(--color-netProfit)"
+              fillOpacity={0.25}
               isAnimationActive={false}
               activeDot={{ r: 5, fill: '#EA580C', stroke: C.card, strokeWidth: 2 }}
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </div>
     </div>
   )
