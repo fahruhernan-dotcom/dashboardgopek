@@ -66,46 +66,49 @@ export function KPICard({ icon: Icon, label, value, sub, accentColor = C.accent,
       animate={{ opacity: 1, y: 0 }}
       style={{
         background: C.card,
-        borderRadius: '16px',
-        padding: '16px 18px',
+        borderRadius: '14px',
+        padding: '12px 14px',
         border: `1px solid ${C.border}`,
         borderLeft: urgent ? `4px solid ${accentColor}` : `1px solid ${C.border}`,
         display: 'flex',
         flexDirection: 'column',
-        justify: 'space-between',
-        gap: '12px',
+        justifyContent: 'space-between',
+        gap: '8px',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+        fontFamily: 'inherit'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
         <p style={{
-          fontSize: '11px', color: C.muted, fontWeight: 800,
+          fontSize: '10px', color: C.muted, fontWeight: 800,
           letterSpacing: '0.06em', textTransform: 'uppercase',
           lineHeight: 1.3,
+          fontFamily: 'inherit'
         }}>{label}</p>
         <div style={{
-          width: '36px', height: '36px', borderRadius: '12px', flexShrink: 0,
+          width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
           background: `${accentColor}18`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           border: `1px solid ${accentColor}30`,
         }}>
-          <Icon size={18} color={accentColor} />
+          <Icon size={16} color={accentColor} />
         </div>
       </div>
 
       <div>
         <p style={{
-          fontSize: '20px', fontWeight: 900, color: C.text,
-          lineHeight: 1.2, fontFamily: 'DM Sans',
+          fontSize: '18px', fontWeight: 850, color: C.text,
+          lineHeight: 1.2, fontFamily: 'inherit',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           letterSpacing: '-0.02em',
         }}>{value}</p>
         {sub && (
           <p style={{
-            fontSize: '11px', color: C.muted, marginTop: '4px', lineHeight: 1.4,
+            fontSize: '10px', color: C.muted, marginTop: '3px', lineHeight: 1.4,
             fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+            fontFamily: 'inherit'
           }}>{sub}</p>
         )}
       </div>
