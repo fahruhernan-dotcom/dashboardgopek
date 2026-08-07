@@ -57,6 +57,7 @@ export function BerandaSkeleton({ isDesktop }) {
 }
 
 // ── KPI Card ───────────────────────────────────────────────────────────────────
+import { Card } from '@/components/ui/card'
 import { motion } from 'framer-motion'
 
 export function KPICard({ icon: Icon, label, value, sub, accentColor = C.accent, urgent, badge, trend }) {
@@ -64,76 +65,81 @@ export function KPICard({ icon: Icon, label, value, sub, accentColor = C.accent,
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{
-        background: C.card,
-        borderRadius: '14px',
-        padding: '12px 14px',
-        border: `1px solid ${C.border}`,
-        borderLeft: urgent ? `4px solid ${accentColor}` : `1px solid ${C.border}`,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        gap: '8px',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-        fontFamily: 'inherit'
-      }}
+      style={{ display: 'flex', flex: 1 }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <p style={{
-          fontSize: '10px', color: C.muted, fontWeight: 800,
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-          lineHeight: 1.3,
-          fontFamily: 'inherit'
-        }}>{label}</p>
-        <div style={{
-          width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-          background: `${accentColor}18`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: `1px solid ${accentColor}30`,
-        }}>
-          <Icon size={16} color={accentColor} />
-        </div>
-      </div>
-
-      <div>
-        <p style={{
-          fontSize: '18px', fontWeight: 850, color: C.text,
-          lineHeight: 1.2, fontFamily: 'inherit',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          letterSpacing: '-0.02em',
-        }}>{value}</p>
-        {sub && (
+      <Card
+        style={{
+          background: C.card,
+          borderRadius: '14px',
+          padding: '12px 14px',
+          border: `1px solid ${C.border}`,
+          borderLeft: urgent ? `4px solid ${accentColor}` : `1px solid ${C.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '8px',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+          fontFamily: "'Sora', 'Inter', sans-serif",
+          width: '100%',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <p style={{
-            fontSize: '10px', color: C.muted, marginTop: '3px', lineHeight: 1.4,
-            fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-            fontFamily: 'inherit'
-          }}>{sub}</p>
-        )}
-      </div>
-
-      {(trend != null || !!badge) && (
-        <div style={{ paddingTop: '8px', borderTop: `1px solid ${C.border}60`, marginTop: 'auto' }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '4px',
-            background: trend != null
-              ? (trend >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)')
-              : 'rgba(248, 150, 30, 0.12)', // Subtle amber/orange for custom badges
-            color: trend != null ? (trend >= 0 ? '#34D399' : '#F87171') : '#F59E0B',
-            fontSize: '10px', fontWeight: 800, padding: '3px 8px',
-            borderRadius: '6px', letterSpacing: '0.02em', whiteSpace: 'nowrap',
-            border: trend != null
-              ? (trend >= 0 ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)')
-              : '1px solid rgba(248, 150, 30, 0.25)',
+            fontSize: '10px', color: C.muted, fontWeight: 800,
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+            lineHeight: 1.3,
+            fontFamily: "'Sora', 'Inter', sans-serif"
+          }}>{label}</p>
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+            background: `${accentColor}18`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `1px solid ${accentColor}30`,
           }}>
-            {trend != null
-              ? `${trend >= 0 ? '↑' : '↓'} ${Math.abs(trend).toFixed(0)}% bln lalu`
-              : badge}
-          </span>
+            <Icon size={16} color={accentColor} />
+          </div>
         </div>
-      )}
 
+        <div>
+          <p style={{
+            fontSize: '18px', fontWeight: 850, color: C.text,
+            lineHeight: 1.2, fontFamily: "'Sora', 'Inter', sans-serif",
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            letterSpacing: '-0.02em',
+          }}>{value}</p>
+          {sub && (
+            <p style={{
+              fontSize: '10px', color: C.muted, marginTop: '3px', lineHeight: 1.4,
+              fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              fontFamily: "'Sora', 'Inter', sans-serif"
+            }}>{sub}</p>
+          )}
+        </div>
+
+        {(trend != null || !!badge) && (
+          <div style={{ paddingTop: '8px', borderTop: `1px solid ${C.border}60`, marginTop: 'auto' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              background: trend != null
+                ? (trend >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)')
+                : 'rgba(248, 150, 30, 0.12)',
+              color: trend != null ? (trend >= 0 ? '#34D399' : '#F87171') : '#F59E0B',
+              fontSize: '10px', fontWeight: 800, padding: '3px 8px',
+              borderRadius: '6px', letterSpacing: '0.02em', whiteSpace: 'nowrap',
+              border: trend != null
+                ? (trend >= 0 ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)')
+                : '1px solid rgba(248, 150, 30, 0.25)',
+              fontFamily: "'Sora', 'Inter', sans-serif"
+            }}>
+              {trend != null
+                ? `${trend >= 0 ? '↑' : '↓'} ${Math.abs(trend).toFixed(0)}% bln lalu`
+                : badge}
+            </span>
+          </div>
+        )}
+      </Card>
     </motion.div>
   )
 }

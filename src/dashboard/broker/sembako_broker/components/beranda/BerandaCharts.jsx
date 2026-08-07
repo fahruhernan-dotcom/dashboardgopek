@@ -9,6 +9,7 @@ import { C } from '../sembakoSaleUtils'
 import { ChartTooltip, StockChartTooltip } from './BerandaUtils'
 import { getSupplierRecommendation } from '@/lib/hooks/sembako/sembakoSupplierAssistant'
 import { ChartContainer } from '@/components/ui/chart'
+import { Button } from '@/components/ui/button'
 
 const chartConfig = {
   stok: {
@@ -95,13 +96,19 @@ export function SalesAndCashChart({
           padding: '3px', border: `1px solid ${C.border}`, alignSelf: isDesktop ? 'auto' : 'flex-start'
         }}>
           {[['weekly', 'Minggu'], ['monthly', 'Bulan']].map(([key, label]) => (
-            <button key={key} onClick={() => setChartPeriod(key)} style={{
-              padding: '5px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer',
-              fontSize: '10px', fontWeight: 800,
-              background: chartPeriod === key ? C.accent : 'transparent',
-              color: chartPeriod === key ? '#fff' : C.muted,
-              transition: 'all 0.15s',
-            }}>{label}</button>
+            <Button
+              key={key}
+              onClick={() => setChartPeriod(key)}
+              variant={chartPeriod === key ? 'default' : 'ghost'}
+              size="sm"
+              className="px-3 h-7 text-[10px] font-bold rounded-lg transition-all border-none"
+              style={{
+                background: chartPeriod === key ? C.accent : 'transparent',
+                color: chartPeriod === key ? '#fff' : C.muted,
+              }}
+            >
+              {label}
+            </Button>
           ))}
         </div>
       </div>
@@ -400,9 +407,42 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
           display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '10px',
           padding: '3px', border: `1px solid ${C.border}`, alignSelf: isDesktop ? 'auto' : 'flex-start'
         }}>
-          <button onClick={() => setFilter('semua')} style={filterBtnSt(filter === 'semua')}>Semua</button>
-          <button onClick={() => setFilter('kritis_menipis')} style={filterBtnSt(filter === 'kritis_menipis')}>Kritis/Menipis</button>
-          <button onClick={() => setFilter('overstock')} style={filterBtnSt(filter === 'overstock')}>Overstock</button>
+          <Button
+            onClick={() => setFilter('semua')}
+            variant={filter === 'semua' ? 'default' : 'ghost'}
+            size="sm"
+            className="px-2.5 h-6 text-[10px] font-bold rounded-lg transition-all border-none"
+            style={{
+              background: filter === 'semua' ? C.accent : 'transparent',
+              color: filter === 'semua' ? '#fff' : C.muted,
+            }}
+          >
+            Semua
+          </Button>
+          <Button
+            onClick={() => setFilter('kritis_menipis')}
+            variant={filter === 'kritis_menipis' ? 'default' : 'ghost'}
+            size="sm"
+            className="px-2.5 h-6 text-[10px] font-bold rounded-lg transition-all border-none"
+            style={{
+              background: filter === 'kritis_menipis' ? C.accent : 'transparent',
+              color: filter === 'kritis_menipis' ? '#fff' : C.muted,
+            }}
+          >
+            Kritis/Menipis
+          </Button>
+          <Button
+            onClick={() => setFilter('overstock')}
+            variant={filter === 'overstock' ? 'default' : 'ghost'}
+            size="sm"
+            className="px-2.5 h-6 text-[10px] font-bold rounded-lg transition-all border-none"
+            style={{
+              background: filter === 'overstock' ? C.accent : 'transparent',
+              color: filter === 'overstock' ? '#fff' : C.muted,
+            }}
+          >
+            Overstock
+          </Button>
         </div>
       </div>
 

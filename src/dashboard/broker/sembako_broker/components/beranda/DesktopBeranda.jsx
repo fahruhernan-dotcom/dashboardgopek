@@ -13,6 +13,7 @@ import { KPICard, InvoiceRow, QuickStatRow } from './BerandaUtils'
 import { SalesAndCashChart, StockTrendChart } from './BerandaCharts'
 import { AgendaSection } from './BerandaAgenda'
 import { CollectionReminders } from './CollectionReminders'
+import { Button } from '@/components/ui/button'
 
 export function DesktopBeranda({
   profile, products = [], stats, sales, employees, navigate, name, salesLoading,
@@ -49,21 +50,23 @@ export function DesktopBeranda({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <button
+          <Button
             onClick={() => setStokOpen(true)}
-            className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer shadow-sm"
+            variant="outline"
+            className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs border-amber-500/20 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 cursor-pointer shadow-sm"
           >
             <Package size={16} />
             <span>Tambah Stok</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => navigate(`${brokerBase}/penjualan?action=new`)}
-            className="flex items-center gap-2 px-5 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95"
+            variant="default"
+            className="flex items-center gap-2 px-5 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95"
           >
             <Plus size={16} />
             <span>Catat Penjualan</span>
-          </button>
+          </Button>
         </div>
       </div>
 
