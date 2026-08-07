@@ -98,7 +98,7 @@ export default function SembakoTokoSupplierDetail() {
     )
   }
 
-  const outstanding = isCustomer 
+  const outstanding = isCustomer
     ? (customerInvoices || []).reduce((sum, inv) => sum + (Number(inv.remaining_amount) || 0), 0)
     : 0
   const activeCount = isCustomer ? customerInvoices?.filter(i => i.remaining_amount > 0).length : 0
@@ -458,8 +458,8 @@ function CustomerInvoiceList({ invoices, onPay }) {
                 <Badge className={cn(
                   "border rounded-lg text-[10px] font-black uppercase px-2.5 py-1 tracking-wider shadow-none",
                   inv.payment_status === 'lunas' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
-                  inv.payment_status === 'sebagian' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                  "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                    inv.payment_status === 'sebagian' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                      "bg-rose-500/10 text-rose-500 border-rose-500/20"
                 )}>
                   {inv.payment_status?.replace('_', ' ')}
                 </Badge>
@@ -471,7 +471,7 @@ function CustomerInvoiceList({ invoices, onPay }) {
                   <span className="font-semibold text-muted-foreground">Total Tagihan</span>
                   <span className="font-black text-foreground tabular-nums">{formatIDR(inv.total_amount)}</span>
                 </div>
-                
+
                 {telahDibayar > 0 && (
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-muted-foreground">Telah Dibayar</span>
@@ -489,8 +489,8 @@ function CustomerInvoiceList({ invoices, onPay }) {
 
               {/* Pay Action Button */}
               {inv.payment_status !== 'lunas' && (
-                <Button 
-                  onClick={() => onPay(inv)} 
+                <Button
+                  onClick={() => onPay(inv)}
                   className="w-full bg-[#0F172A] hover:bg-slate-900 text-white dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 text-xs font-black h-10 rounded-xl shadow-tko-brand border-none transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
                 >
                   <CreditCard size={14} />
