@@ -238,25 +238,25 @@ function SpeedDial({ color, open, onToggle, items }) {
                     display: 'flex', alignItems: 'center', gap: '10px',
                     padding: '10px 14px 10px 12px',
                     borderRadius: '14px',
-                    background: 'rgba(10,15,22,0.95)',
-                    border: `1px solid ${color}40`,
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-soft)',
                     cursor: 'pointer',
                     WebkitTapHighlightColor: 'transparent',
                     whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                    boxShadow: 'var(--shadow-tko-sm)',
                     minWidth: '160px',
                   }}
                 >
                   <div style={{
                     width: 28, height: 28, borderRadius: '9px',
-                    background: `${color}18`,
-                    border: `1px solid ${color}30`,
+                    background: `${color}12`,
+                    border: `1px solid ${color}25`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
                   }}>
                     <item.icon size={14} color={color} strokeWidth={2.5} />
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.01em' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                     {t(item.label, item.label)}
                   </span>
                 </motion.button>
