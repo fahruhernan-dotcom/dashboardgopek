@@ -251,9 +251,11 @@ function KPICard({ icon: Icon, label, value, badge, color, subtitle }) {
 // Waterfall P&L
 // ═══════════════════════════════════════════════════════════════════════════
 function WaterfallPL({ summary: s }) {
-  const maxVal = Math.max(s.totalRevenue, 1)
+  const maxVal = Math.max(s.totalGrossRevenue || s.totalRevenue, 1)
   const rows = [
-    { label: 'Revenue', value: s.totalRevenue, type: 'positive' },
+    { label: 'Penjualan Kotor (Gross)', value: s.totalGrossRevenue || s.totalRevenue, type: 'positive' },
+    { label: 'Retur Penjualan (Returns)', value: -Math.abs(s.totalReturns || 0), type: 'negative' },
+    { label: 'Revenue Bersih', value: s.totalRevenue, type: 'subtotal' },
     { label: 'HPP (COGS)', value: -s.totalCOGS, type: 'negative' },
     { label: 'Gross Profit', value: s.grossProfit, type: 'subtotal' },
     { label: 'Biaya Kirim', value: -s.totalDeliveryCost, type: 'negative' },

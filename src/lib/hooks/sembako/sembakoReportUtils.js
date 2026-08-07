@@ -4,6 +4,8 @@ import { format } from 'date-fns'
  * 1. Laba Rugi (Accrual P&L)
  */
 export function calculatePL(sales, expenses, payroll, batches, supplierPayments, startDate, endDate) {
+  const totalGrossRevenue = sales.reduce((s, i) => s + (Number(i.subtotal) || 0), 0)
+  const totalReturns = sales.reduce((s, i) => s + (Number(i.totalReturnAmount) || 0), 0)
   const totalRevenue = sales.reduce((s, i) => s + (Number(i.total_amount) || 0), 0)
   const totalCOGS = sales.reduce((s, i) => s + (Number(i.total_cogs) || 0), 0)
   const totalDeliveryCost = sales.reduce((s, i) => s + (Number(i.delivery_cost) || 0), 0)
@@ -31,6 +33,8 @@ export function calculatePL(sales, expenses, payroll, batches, supplierPayments,
   const unpaidSupplierPeriod = Math.max(0, stockPurchasePeriod - supplierPaymentPeriod)
 
   return {
+    totalGrossRevenue,
+    totalReturns,
     totalRevenue,
     totalCOGS,
     totalDeliveryCost,
