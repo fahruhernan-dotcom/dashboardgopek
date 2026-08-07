@@ -12,17 +12,17 @@ import { ChartContainer } from '@/components/ui/chart'
 import { Button } from '@/components/ui/button'
 
 const MC = {
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  input: '#F1F5F9',
-  accent: '#0F172A',
+  bg: 'var(--bg-page)',
+  card: 'var(--bg-surface)',
+  input: 'var(--bg-subtle)',
+  accent: 'var(--brand-500)',
   amber: '#D97706',
   green: '#16A34A',
   red: '#DC2626',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  borderAm: '#F1F5F9',
+  text: 'var(--text-primary)',
+  muted: 'var(--text-muted)',
+  border: 'var(--border-soft)',
+  borderAm: 'var(--border-muted)',
 }
 
 const chartConfig = {
@@ -70,7 +70,8 @@ export function SalesAndCashChart({
   isDesktop, 
   unrealizedProfitSnapshot = 0,
   cashSummary = {},
-  stats
+  stats,
+  layout
 }) {
   const [hoveredChart, setHoveredChart] = useState(null)
   const data = chartPeriod === 'weekly' ? weeklyData : monthlyData
@@ -104,6 +105,8 @@ export function SalesAndCashChart({
   }
   const kpiLabelStyle = { fontSize: '10px', color: MC.muted, fontWeight: 700, letterSpacing: '0.02em', fontFamily: "'Sora', 'Inter', sans-serif" }
   const kpiValueStyle = { fontSize: '16px', fontWeight: 800, color: MC.text, fontFamily: "'Sora', 'Inter', sans-serif", marginTop: '3px', lineHeight: '1.2' }
+
+  const chartHeightPx = layout?.chartHeight ? `${layout.chartHeight}px` : (isDesktop ? '140px' : '110px')
 
   return (
     <div style={{
@@ -231,7 +234,7 @@ export function SalesAndCashChart({
             <LegendDot color="#DC2626" label="Uang Keluar" />
           </div>
         </div>
-        <div style={{ width: '100%', height: isDesktop ? '140px' : '110px' }}>
+        <div style={{ width: '100%', height: chartHeightPx }}>
           <ChartContainer config={salesChartConfig} style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}>
             <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
@@ -302,7 +305,7 @@ export function SalesAndCashChart({
             <LegendDot color="#EA580C" label="Net Profit" />
           </div>
         </div>
-        <div style={{ width: '100%', height: isDesktop ? '140px' : '110px' }}>
+        <div style={{ width: '100%', height: chartHeightPx }}>
           <ChartContainer config={salesChartConfig} style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}>
             <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>

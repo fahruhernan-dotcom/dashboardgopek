@@ -183,8 +183,8 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
             onClick={() => !quota.isAtLimit && setOpenWizard(true)}
             disabled={quota.isAtLimit}
             title={quota.isAtLimit ? 'Kuota transaksi bulan ini habis — Upgrade ke Pro' : undefined}
-            className="h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-950/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border-none flex items-center"
-            style={{ background: quota.isAtLimit ? '#6B7280' : '#EA580C' }}
+            className="h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-white dark:text-tko-forest-950 dark:font-black bg-[#EA580C] dark:bg-tko-brand-500 hover:opacity-95 shadow-tko-brand disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border-none flex items-center"
+            style={quota.isAtLimit ? { background: '#6B7280' } : {}}
           >
             {quota.isAtLimit ? <Lock size={14} className="mr-1" /> : <Plus size={15} className="mr-1" />}
             {quota.isAtLimit ? 'Kuota Habis' : 'Catat Penjualan'}

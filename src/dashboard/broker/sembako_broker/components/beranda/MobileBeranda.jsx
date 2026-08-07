@@ -19,17 +19,17 @@ import { SembakoOnboardingChecklist } from '../SembakoOnboardingChecklist'
 import { useSembakoProducts, useSembakoAllBatches, useSembakoCustomers, useSembakoSales } from '@/lib/hooks/useSembakoData'
 
 const MC = {
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  input: '#F1F5F9',
-  accent: '#0F172A',
+  bg: 'var(--bg-page)',
+  card: 'var(--bg-surface)',
+  input: 'var(--bg-subtle)',
+  accent: 'var(--brand-500)',
   amber: '#D97706',
   green: '#16A34A',
   red: '#DC2626',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  borderAm: '#F1F5F9',
+  text: 'var(--text-primary)',
+  muted: 'var(--text-muted)',
+  border: 'var(--border-soft)',
+  borderAm: 'var(--border-muted)',
 }
 
 function OnboardingWrapper({ setStokOpen }) {
@@ -55,6 +55,7 @@ export function MobileBeranda({
   cashSummary, unrealizedProfitSnapshot,
   selectedDate, setSelectedDate, currentMonth, setCurrentMonth,
   agendaFilter, setAgendaFilter, setStokOpen, salesLoading, onCatatPenjualanOpen,
+  layout,
 }) {
   const { brokerType } = useParams()
   const brokerBase = `/broker/${brokerType}`
@@ -135,18 +136,19 @@ export function MobileBeranda({
             <button
               onClick={() => setShowTodayDetail(!showTodayDetail)}
               style={{
-                background: MC.input,
-                border: `1px solid ${MC.border}`,
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-soft)',
                 borderRadius: '8px',
                 padding: '6px 10px',
                 fontSize: '11px',
                 fontWeight: 700,
-                color: MC.text,
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
               }}
+              className="hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all shadow-tko-xs"
             >
               {showTodayDetail ? 'Tutup' : 'Detail'}
               {showTodayDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -249,7 +251,7 @@ export function MobileBeranda({
               </div>
               <button
                 onClick={() => navigate(`${brokerBase}/gudang`)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: MC.accent, fontSize: '11px', fontWeight: 700, padding: 0 }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--brand-500)', fontSize: '11px', fontWeight: 700, padding: 0 }}
               >
                 Lihat semua
               </button>
@@ -270,11 +272,12 @@ export function MobileBeranda({
                 <button
                   onClick={() => navigate(`${brokerBase}/gudang?action=tambah&product=${p.id}`)}
                   style={{
-                    background: MC.input, border: `1px solid ${MC.border}`,
-                    color: MC.text, borderRadius: '7px', padding: '6px 12px',
+                    background: 'var(--bg-subtle)', border: '1px solid var(--border-soft)',
+                    color: 'var(--text-primary)', borderRadius: '7px', padding: '6px 12px',
                     fontSize: '11px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
                     minHeight: '32px'
                   }}
+                  className="hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all"
                 >
                   Tambah
                 </button>
@@ -298,12 +301,12 @@ export function MobileBeranda({
               onClick={onCatatPenjualanOpen}
               style={{
                 flex: 1, height: '48px', borderRadius: '12px',
-                background: MC.accent, border: 'none', cursor: 'pointer',
+                border: 'none', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                color: '#fff', fontWeight: 700, fontSize: '13px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                fontSize: '13px',
                 WebkitTapHighlightColor: 'transparent',
               }}
+              className="bg-[#0F172A] hover:bg-slate-900 text-white dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 dark:font-black shadow-tko-brand active:scale-95 transition-all"
             >
               <Plus size={16} /> Catat Jual
             </button>
@@ -311,12 +314,11 @@ export function MobileBeranda({
               onClick={() => setStokOpen(true)}
               style={{
                 flex: 1, height: '48px', borderRadius: '12px',
-                background: MC.card, border: `1px solid ${MC.border}`,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                color: MC.text, fontWeight: 700, fontSize: '13px',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                fontWeight: 700, fontSize: '13px',
                 WebkitTapHighlightColor: 'transparent',
               }}
+              className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-sm active:scale-95 transition-all"
             >
               <Package size={16} /> Tambah Stok
             </button>
@@ -326,37 +328,37 @@ export function MobileBeranda({
               onClick={() => navigate(`${brokerBase}/produk?action=new`)}
               style={{
                 flex: 1, height: '44px', borderRadius: '10px',
-                background: MC.card, border: `1px solid ${MC.border}`,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                color: MC.text, fontWeight: 700, fontSize: '11px',
+                fontWeight: 700, fontSize: '11px',
                 WebkitTapHighlightColor: 'transparent',
               }}
+              className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-xs active:scale-95 transition-all"
             >
-              <Plus size={12} className="text-slate-600" /> + Produk
+              <Plus size={12} className="text-slate-600 dark:text-tko-text-muted" /> + Produk
             </button>
             <button
               onClick={() => navigate(`${brokerBase}/toko-supplier?action=new`)}
               style={{
                 flex: 1, height: '44px', borderRadius: '10px',
-                background: MC.card, border: `1px solid ${MC.border}`,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                color: MC.text, fontWeight: 700, fontSize: '11px',
+                fontWeight: 700, fontSize: '11px',
                 WebkitTapHighlightColor: 'transparent',
               }}
+              className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-xs active:scale-95 transition-all"
             >
-              <Plus size={12} className="text-slate-600" /> + Toko
+              <Plus size={12} className="text-slate-600 dark:text-tko-text-muted" /> + Toko
             </button>
             <button
               onClick={() => navigate(`${brokerBase}/laporan`)}
               style={{
                 flex: 1, height: '44px', borderRadius: '10px',
-                background: MC.card, border: `1px solid ${MC.border}`,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                color: MC.text, fontWeight: 700, fontSize: '11px',
+                fontWeight: 700, fontSize: '11px',
                 WebkitTapHighlightColor: 'transparent',
               }}
+              className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-xs active:scale-95 transition-all"
             >
-              <Receipt size={12} className="text-slate-600" /> + Pengeluaran
+              <Receipt size={12} className="text-slate-600 dark:text-tko-text-muted" /> + Pengeluaran
             </button>
           </div>
         </div>
@@ -398,18 +400,19 @@ export function MobileBeranda({
             <button
               onClick={() => setShowInventoryDetail(!showInventoryDetail)}
               style={{
-                background: MC.input,
-                border: `1px solid ${MC.border}`,
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-soft)',
                 borderRadius: '8px',
                 padding: '6px 10px',
                 fontSize: '11px',
                 fontWeight: 700,
-                color: MC.text,
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
               }}
+              className="hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all shadow-tko-xs"
             >
               {showInventoryDetail ? 'Tutup' : 'Detail'}
               {showInventoryDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -430,7 +433,7 @@ export function MobileBeranda({
                   </p>
                   <button
                     onClick={() => navigate(`${brokerBase}/gudang`)}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', color: MC.accent, fontSize: '11px', fontWeight: 600 }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--brand-500)', fontSize: '11px', fontWeight: 600 }}
                   >
                     Gudang <ChevronRight size={11} />
                   </button>
@@ -515,18 +518,19 @@ export function MobileBeranda({
             <button
               onClick={() => setShowFinanceDetail(!showFinanceDetail)}
               style={{
-                background: MC.input,
-                border: `1px solid ${MC.border}`,
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-soft)',
                 borderRadius: '8px',
                 padding: '6px 10px',
                 fontSize: '11px',
                 fontWeight: 700,
-                color: MC.text,
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
               }}
+              className="hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all shadow-tko-xs"
             >
               {showFinanceDetail ? 'Tutup' : 'Detail'}
               {showFinanceDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -547,7 +551,7 @@ export function MobileBeranda({
                   </p>
                   <button
                     onClick={() => navigate(`${brokerBase}/laporan`)}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', color: MC.accent, fontSize: '11px', fontWeight: 600 }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--brand-500)', fontSize: '11px', fontWeight: 600 }}
                   >
                     Laporan <ChevronRight size={11} />
                   </button>
@@ -637,6 +641,7 @@ export function MobileBeranda({
           unrealizedProfitSnapshot={unrealizedProfitSnapshot}
           cashSummary={cashSummary}
           stats={stats}
+          layout={layout}
         />
 
         {/* Invoice Terbaru (Sliced to max 3 on mobile) */}
@@ -651,7 +656,8 @@ export function MobileBeranda({
             </span>
             <button
               onClick={() => navigate(`${brokerBase}/penjualan`)}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', color: MC.muted, fontSize: '11px', fontWeight: 600 }}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600 }}
+              className="hover:text-tko-text-primary transition-colors"
             >
               Lihat semua <ChevronRight size={11} />
             </button>

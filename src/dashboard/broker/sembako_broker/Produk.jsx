@@ -154,13 +154,13 @@ function ProductSheet({ product, onClose }) {
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 320, damping: 32 }}
         style={{
-          background: '#0E1420',
+          background: 'var(--bg-surface)',
           borderRadius: '24px 24px 0 0',
           width: '100%',
           maxWidth: '560px',
           padding: '0 0 32px',
-          borderTop: '2px solid #EA580C',
-          boxShadow: '0 -10px 40px rgba(0,0,0,0.8)',
+          borderTop: '2px solid var(--brand-500)',
+          boxShadow: 'var(--shadow-tko-lg)',
           maxHeight: '92vh',
           overflowY: 'auto'
         }}
@@ -168,24 +168,24 @@ function ProductSheet({ product, onClose }) {
       >
         {/* Handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 6px' }}>
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)' }} />
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border-soft)' }} />
         </div>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 20px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 20px 14px', borderBottom: '1px solid var(--border-soft)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(234,88,12,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(234,88,12,0.3)' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(234,88,12,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(234,88,12,0.3)' }}>
               <Package size={18} color="#EA580C" />
             </div>
             <div>
-              <h2 style={{ fontFamily: 'Sora', fontSize: 16, fontWeight: 800, color: '#F3F4F6', margin: 0 }}>
+              <h2 style={{ fontFamily: 'Sora', fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 {isEdit ? 'Edit Produk Rokok' : 'Tambah Produk Rokok Baru'}
               </h2>
-              <p style={{ fontSize: 11, color: '#94A3B8', margin: 0 }}>Katalog Distributor Gopek</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Katalog Distributor Gopek</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <X size={16} color="#94A3B8" />
+          <button onClick={onClose} style={{ background: 'var(--bg-subtle)', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={16} color="var(--text-muted)" />
           </button>
         </div>
 
@@ -240,7 +240,7 @@ function ProductSheet({ product, onClose }) {
                     exit={{ opacity: 0, y: -4 }}
                     style={{
                       position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                      background: '#161D2B', border: `1px solid rgba(255,255,255,0.12)`, borderRadius: 12,
+                      background: 'var(--bg-surface)', border: `1px solid var(--border-soft)`, borderRadius: 12,
                       marginTop: 6, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
                       maxHeight: '180px', overflowY: 'auto'
                     }}
@@ -254,10 +254,10 @@ function ProductSheet({ product, onClose }) {
                           style={{
                             display: 'block', width: '100%', padding: '12px 14px', border: 'none',
                             background: form.category === c ? 'rgba(234,88,12,0.15)' : 'transparent',
-                            color: form.category === c ? '#EA580C' : '#F3F4F6',
+                            color: form.category === c ? '#EA580C' : 'var(--text-primary)',
                             fontSize: 13, fontFamily: 'DM Sans', fontWeight: form.category === c ? 700 : 500, textAlign: 'left', cursor: 'pointer',
                             transition: 'background 0.2s',
-                            borderBottom: `1px solid rgba(255,255,255,0.03)`
+                            borderBottom: `1px solid var(--border-soft)`
                           }}
                         >
                           {c}
@@ -456,7 +456,7 @@ function CustomSelect({ value, onChange, options, placeholder, id }) {
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
               style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '8px',
-                background: '#130C06', border: `1px solid ${C.border}`, borderRadius: '14px',
+                background: 'var(--bg-surface)', border: `1px solid var(--border-soft)`, borderRadius: '14px',
                 zIndex: 999, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
                 backdropFilter: 'blur(10px)',
               }}
@@ -471,7 +471,7 @@ function CustomSelect({ value, onChange, options, placeholder, id }) {
                       background: value === opt.value ? 'rgba(234,88,12,0.1)' : 'transparent',
                       cursor: 'pointer', transition: 'all 0.2s',
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      borderBottom: `1px solid rgba(255,255,255,0.03)`
+                      borderBottom: `1px solid var(--border-soft)`
                     }}
                   >
                     <span>{opt.label}</span>

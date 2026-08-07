@@ -367,7 +367,7 @@ function TokoActions({ compact = false, autoOpen = false }) {
       <Button
         onClick={() => setOpen(true)}
         className={cn(
-          'bg-[#0F172A] hover:bg-slate-900 !text-white font-black uppercase tracking-widest shadow-md',
+          'bg-[#0F172A] hover:bg-slate-900 text-white dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 font-black uppercase tracking-widest shadow-tko-brand',
           compact ? 'h-10 rounded-xl px-4 text-[10px]' : 'h-12 rounded-2xl px-6 text-[11px]'
         )}
       >
@@ -376,12 +376,12 @@ function TokoActions({ compact = false, autoOpen = false }) {
       </Button>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="overflow-y-auto border-slate-200 bg-white p-6 text-left">
+        <SheetContent side="right" className="overflow-y-auto border-border/60 bg-card p-6 text-left text-foreground">
           <SheetHeader className="mb-6">
-            <SheetTitle className="text-left font-display text-2xl font-black uppercase tracking-tight text-slate-900">
+            <SheetTitle className="text-left font-display text-2xl font-black uppercase tracking-tight text-foreground">
               Tambah Toko Baru
             </SheetTitle>
-            <SheetDescription className="text-left text-xs text-slate-500">
+            <SheetDescription className="text-left text-xs text-muted-foreground">
               Simpan customer sembako baru untuk transaksi penjualan dan piutang.
             </SheetDescription>
           </SheetHeader>
@@ -389,7 +389,7 @@ function TokoActions({ compact = false, autoOpen = false }) {
           <div className="space-y-4 pb-16">
             <Field label="Nama Toko">
               <Input
-                className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900 placeholder:text-slate-400"
+                className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground placeholder:text-muted-foreground"
                 value={form.customer_name}
                 onChange={(event) => setForm({ ...form, customer_name: event.target.value })}
               />
@@ -397,12 +397,12 @@ function TokoActions({ compact = false, autoOpen = false }) {
 
             <Field label="Tipe Customer">
               <Select value={form.customer_type} onValueChange={(value) => setForm({ ...form, customer_type: value })}>
-                <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900">
+                <SelectTrigger className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-slate-200 bg-white text-slate-900">
+                <SelectContent className="border-border/60 bg-popover text-popover-foreground">
                   {CUSTOMER_TYPES.map((type) => (
-                    <SelectItem key={type} value={type} className="text-xs font-bold uppercase">
+                    <SelectItem key={type} value={type} className="text-xs font-bold uppercase hover:bg-muted focus:bg-muted">
                       {type.replaceAll('_', ' ')}
                     </SelectItem>
                   ))}
@@ -412,7 +412,7 @@ function TokoActions({ compact = false, autoOpen = false }) {
 
             <Field label="No. HP">
               <PhoneInput
-                className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900 placeholder:text-slate-400"
+                className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground placeholder:text-muted-foreground"
                 value={form.phone}
                 onChange={(event) => setForm({ ...form, phone: event.target.value })}
               />
@@ -420,7 +420,7 @@ function TokoActions({ compact = false, autoOpen = false }) {
 
             <Field label="Area">
               <Input
-                className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900 placeholder:text-slate-400"
+                className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground placeholder:text-muted-foreground"
                 value={form.area}
                 onChange={(event) => setForm({ ...form, area: event.target.value })}
               />
@@ -428,7 +428,7 @@ function TokoActions({ compact = false, autoOpen = false }) {
 
             <Field label="Alamat">
               <Input
-                className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900 placeholder:text-slate-400"
+                className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground placeholder:text-muted-foreground"
                 value={form.address}
                 onChange={(event) => setForm({ ...form, address: event.target.value })}
               />
@@ -436,12 +436,12 @@ function TokoActions({ compact = false, autoOpen = false }) {
 
             <Field label="Termin Bayar">
               <Select value={form.payment_terms} onValueChange={(value) => setForm({ ...form, payment_terms: value })}>
-                <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900">
+                <SelectTrigger className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-slate-200 bg-white text-slate-900">
+                <SelectContent className="border-border/60 bg-popover text-popover-foreground">
                   {PAYMENT_TERMS.map((term) => (
-                    <SelectItem key={term.value} value={term.value} className="text-xs font-bold uppercase">
+                    <SelectItem key={term.value} value={term.value} className="text-xs font-bold uppercase hover:bg-muted focus:bg-muted">
                       {term.label}
                     </SelectItem>
                   ))}
@@ -464,7 +464,7 @@ function TokoActions({ compact = false, autoOpen = false }) {
                         'transition-colors',
                         score <= form.reliability_score
                           ? 'fill-amber-400 text-amber-400'
-                          : 'fill-transparent text-slate-300'
+                          : 'fill-transparent text-slate-400/30'
                       )}
                     />
                   </button>
@@ -475,7 +475,7 @@ function TokoActions({ compact = false, autoOpen = false }) {
             <Button
               onClick={handleCreate}
               disabled={createCustomer.isPending}
-              className="mt-4 h-12 w-full rounded-2xl bg-[#0F172A] hover:bg-slate-900 !text-white font-black uppercase tracking-widest shadow-md disabled:opacity-50"
+              className="mt-4 h-12 w-full rounded-2xl bg-[#0F172A] hover:bg-slate-900 text-white dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 font-black uppercase tracking-widest shadow-tko-brand disabled:opacity-50"
             >
               {createCustomer.isPending ? 'Menyimpan...' : 'Simpan Toko'}
             </Button>
@@ -513,7 +513,7 @@ function SupplierActions({ compact = false }) {
       <Button
         onClick={() => setOpen(true)}
         className={cn(
-          'bg-[#0F172A] hover:bg-slate-900 !text-white font-black uppercase tracking-widest shadow-md',
+          'bg-[#0F172A] hover:bg-slate-900 text-white dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 font-black uppercase tracking-widest shadow-tko-brand',
           compact ? 'h-10 rounded-xl px-4 text-[10px]' : 'h-12 rounded-2xl px-6 text-[11px]'
         )}
       >
@@ -522,12 +522,12 @@ function SupplierActions({ compact = false }) {
       </Button>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="overflow-y-auto border-slate-200 bg-white p-6 text-left">
+        <SheetContent side="right" className="overflow-y-auto border-border/60 bg-card p-6 text-left text-foreground">
           <SheetHeader className="mb-6">
-            <SheetTitle className="text-left font-display text-2xl font-black uppercase tracking-tight text-slate-900">
+            <SheetTitle className="text-left font-display text-2xl font-black uppercase tracking-tight text-foreground">
               Tambah Supplier
             </SheetTitle>
-            <SheetDescription className="text-left text-xs text-slate-500">
+            <SheetDescription className="text-left text-xs text-muted-foreground">
               Tambahkan partner pengadaan baru untuk pembelian batch stok.
             </SheetDescription>
           </SheetHeader>
@@ -535,7 +535,7 @@ function SupplierActions({ compact = false }) {
           <div className="space-y-4 pb-16">
             <Field label="Nama Supplier">
               <Input
-                className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900 placeholder:text-slate-400"
+                className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground placeholder:text-muted-foreground"
                 value={form.supplier_name}
                 onChange={(event) => setForm({ ...form, supplier_name: event.target.value })}
               />
@@ -543,7 +543,7 @@ function SupplierActions({ compact = false }) {
 
             <Field label="No. HP">
               <PhoneInput
-                className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900 placeholder:text-slate-400"
+                className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground placeholder:text-muted-foreground"
                 value={form.phone}
                 onChange={(event) => setForm({ ...form, phone: event.target.value })}
               />
@@ -551,7 +551,7 @@ function SupplierActions({ compact = false }) {
 
             <Field label="Alamat">
               <Input
-                className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900 placeholder:text-slate-400"
+                className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground placeholder:text-muted-foreground"
                 value={form.address}
                 onChange={(event) => setForm({ ...form, address: event.target.value })}
               />
@@ -559,7 +559,7 @@ function SupplierActions({ compact = false }) {
 
             <Field label="Catatan">
               <Input
-                className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-900 placeholder:text-slate-400"
+                className="h-12 rounded-xl border-border/60 bg-muted font-bold text-foreground placeholder:text-muted-foreground"
                 value={form.notes}
                 onChange={(event) => setForm({ ...form, notes: event.target.value })}
               />
@@ -568,7 +568,7 @@ function SupplierActions({ compact = false }) {
             <Button
               onClick={handleCreate}
               disabled={createSupplier.isPending}
-              className="mt-4 h-12 w-full rounded-2xl bg-[#0F172A] hover:bg-slate-900 !text-white font-black uppercase tracking-widest shadow-md disabled:opacity-50"
+              className="mt-4 h-12 w-full rounded-2xl bg-[#0F172A] hover:bg-slate-900 text-white dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 font-black uppercase tracking-widest shadow-tko-brand disabled:opacity-50"
             >
               {createSupplier.isPending ? 'Menyimpan...' : 'Simpan Supplier'}
             </Button>

@@ -6,17 +6,17 @@ import { formatIDR } from '@/lib/format'
 import { C } from '../sembakoSaleUtils'
 
 const MC = {
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  input: '#F1F5F9',
-  accent: '#0F172A',
+  bg: 'var(--bg-page)',
+  card: 'var(--bg-surface)',
+  input: 'var(--bg-subtle)',
+  accent: 'var(--brand-500)',
   amber: '#D97706',
   green: '#16A34A',
   red: '#DC2626',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  borderAm: '#F1F5F9',
+  text: 'var(--text-primary)',
+  muted: 'var(--text-muted)',
+  border: 'var(--border-soft)',
+  borderAm: 'var(--border-muted)',
 }
 
 export function CollectionReminders({ sales, navigate, brokerBase, maxItems = 5, isMobile }) {

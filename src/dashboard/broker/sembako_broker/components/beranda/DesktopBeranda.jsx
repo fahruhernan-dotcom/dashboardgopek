@@ -16,17 +16,17 @@ import { CollectionReminders } from './CollectionReminders'
 import { Button } from '@/components/ui/button'
 
 const MC = {
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  input: '#F1F5F9',
-  accent: '#0F172A',
+  bg: 'var(--bg-page)',
+  card: 'var(--bg-surface)',
+  input: 'var(--bg-subtle)',
+  accent: 'var(--brand-500)',
   amber: '#D97706',
   green: '#16A34A',
   red: '#DC2626',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  borderAm: '#F1F5F9',
+  text: 'var(--text-primary)',
+  muted: 'var(--text-muted)',
+  border: 'var(--border-soft)',
+  borderAm: 'var(--border-muted)',
 }
 
 export function DesktopBeranda({
@@ -36,6 +36,7 @@ export function DesktopBeranda({
   deliveries, selectedDate, setSelectedDate, currentMonth, setCurrentMonth,
   agendaFilter, setAgendaFilter, setStokOpen,
   batches = [], suppliers = [], onCatatPenjualanOpen,
+  layout,
 }) {
   const { brokerType } = useParams()
   const brokerBase = `/broker/${brokerType}`
@@ -71,7 +72,7 @@ export function DesktopBeranda({
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           <button
             onClick={() => navigate(`${brokerBase}/gudang?action=add-stock`)}
-            className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shadow-sm active:scale-95"
+            className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shadow-tko-sm active:scale-95 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle"
           >
             <Package size={16} />
             <span>Tambah Stok</span>
@@ -79,8 +80,7 @@ export function DesktopBeranda({
 
           <button
             onClick={onCatatPenjualanOpen}
-            className="flex items-center gap-2 px-5 h-10 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white cursor-pointer shadow-md active:scale-95 border-none"
-            style={{ color: '#ffffff' }}
+            className="flex items-center gap-2 px-5 h-10 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white cursor-pointer shadow-tko-brand active:scale-95 border-none dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 dark:font-black"
           >
             <Plus size={16} />
             <span>Catat Penjualan</span>
@@ -140,6 +140,7 @@ export function DesktopBeranda({
                 unrealizedProfitSnapshot={unrealizedProfitSnapshot}
                 cashSummary={cashSummary}
                 stats={stats}
+                layout={layout}
               />
             </>
           )}

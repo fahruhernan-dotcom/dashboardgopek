@@ -285,11 +285,16 @@ function TabPegawai({ isDesktop }) {
                     onClick={() => setForm({ ...form, status: s.value })}
                     style={{
                       flex: 1, padding: '10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700,
-                      border: form.status === s.value ? `1.5px solid ${s.value === 'aktif' ? '#021a02' : '#F87171'}` : `1.5px solid rgba(255,255,255,0.07)`,
-                      background: form.status === s.value ? (s.value === 'aktif' ? 'rgba(2, 26, 2,0.1)' : 'rgba(239,68,68,0.1)') : 'rgba(255,255,255,0.04)',
-                      color: form.status === s.value ? (s.value === 'aktif' ? '#021a02' : '#F87171') : '#4B6478',
                       transition: 'all 0.2s'
                     }}
+                    className={cn(
+                      "border-2 font-bold transition-all duration-200",
+                      form.status === s.value
+                        ? (s.value === 'aktif'
+                            ? "border-tko-brand-500/40 bg-tko-brand-500/10 text-tko-brand-500"
+                            : "border-red-500/40 bg-red-500/10 text-red-500")
+                        : "border-tko-border-soft bg-tko-bg-subtle text-tko-text-muted hover:text-tko-text-primary"
+                    )}
                   >
                     {s.label}
                   </button>

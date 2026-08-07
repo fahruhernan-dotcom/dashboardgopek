@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
+import { useMediaQuery, useResponsiveLayout } from '@/lib/hooks/useMediaQuery'
 import {
   useSembakoDashboardStats,
   useSembakoSales,
@@ -29,23 +29,24 @@ import { DesktopBeranda } from './components/beranda/DesktopBeranda'
 import { MobileBeranda } from './components/beranda/MobileBeranda'
 
 const MC = {
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  input: '#F1F5F9',
-  accent: '#0F172A',
+  bg: 'var(--bg-page)',
+  card: 'var(--bg-surface)',
+  input: 'var(--bg-subtle)',
+  accent: 'var(--brand-500)',
   amber: '#D97706',
   green: '#16A34A',
   red: '#DC2626',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  borderAm: '#F1F5F9',
+  text: 'var(--text-primary)',
+  muted: 'var(--text-muted)',
+  border: 'var(--border-soft)',
+  borderAm: 'var(--border-muted)',
 }
 
 export default function SembakoBeranda() {
   const navigate    = useNavigate()
   const { profile, tenant, profiles, switchTenant } = useAuth()
   const isDesktop  = useMediaQuery('(min-width: 1024px)')
+  const layout     = useResponsiveLayout()
  
   const { data: stats, isLoading: statsLoading, isError: isStatsError, error: statsError, refetch: refetchStats } = useSembakoDashboardStats()
   const { data: sales = [],      isLoading: salesLoading } = useSembakoSales()
@@ -325,7 +326,8 @@ export default function SembakoBeranda() {
     setStokOpen,
     batches,
     suppliers,
-    onCatatPenjualanOpen: () => setSaleWizardOpen(true)
+    onCatatPenjualanOpen: () => setSaleWizardOpen(true),
+    layout,
   }
 
   return (

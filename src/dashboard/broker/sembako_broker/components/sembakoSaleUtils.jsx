@@ -6,10 +6,17 @@ import { formatIDR } from '@/lib/format'
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 export const C = {
-  bg: '#F8FAFC', card: '#FFFFFF', input: '#F1F5F9',
-  accent: '#0F172A', amber: '#D97706', green: '#16A34A', red: '#DC2626',
-  text: '#0F172A', muted: '#64748B',
-  border: '#E2E8F0', borderAm: '#CBD5E1',
+  bg: 'var(--bg-page)',
+  card: 'var(--bg-surface)',
+  input: 'var(--bg-subtle)',
+  accent: 'var(--brand-500)',
+  amber: '#D97706',
+  green: '#16A34A',
+  red: '#DC2626',
+  text: 'var(--text-primary)',
+  muted: 'var(--text-muted)',
+  border: 'var(--border-soft)',
+  borderAm: 'var(--border-muted)',
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -38,9 +45,10 @@ export const sInput = {
 }
 
 export const sBtn = (primary) => ({
-  background: primary ? C.accent : 'transparent',
-  border: primary ? 'none' : `1px solid ${C.border}`,
-  color: primary ? '#fff' : C.text, borderRadius: '10px',
+  background: primary ? 'var(--brand-500)' : 'transparent',
+  border: primary ? 'none' : '1px solid var(--border-soft)',
+  color: primary ? 'var(--bg-page)' : 'var(--text-primary)',
+  borderRadius: '10px',
   padding: '10px 18px', fontWeight: 700, fontSize: '13px', cursor: 'pointer',
 })
 

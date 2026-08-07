@@ -459,10 +459,10 @@ function AuditLogTab() {
         return (
           <div
             key={log.id}
-            className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all space-y-3"
+            className="p-4 rounded-2xl bg-card border border-border/60 hover:border-border transition-all space-y-3"
           >
             {/* Header: Action Badge & Actor */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2.5">
               <div className="flex items-center gap-2">
                 <span
                   style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}
@@ -470,16 +470,16 @@ function AuditLogTab() {
                 >
                   {badge.label}
                 </span>
-                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-300 flex items-center gap-1.5">
                   <span>👤 {log.user_name}</span>
                   {log.user_role && (
-                    <span className="text-[9px] font-black text-slate-400 bg-white/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                    <span className="text-[9px] font-black text-tko-text-muted bg-tko-bg-subtle border border-border/60 px-1.5 py-0.5 rounded uppercase tracking-wider">
                       {log.user_role}
                     </span>
                   )}
                 </span>
               </div>
-              <span className="text-[11px] font-medium text-slate-400">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                 📅 {fmtDate(log.timestamp)}
               </span>
             </div>
@@ -487,22 +487,22 @@ function AuditLogTab() {
             {/* Content: Product & Change Flow */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
               <div className="space-y-1">
-                <p className="font-display font-bold text-sm text-white leading-tight">
+                <p className="font-display font-bold text-sm text-foreground leading-tight">
                   {log.product_name}
                 </p>
                 {log.notes && (
-                  <p className="text-xs text-slate-400 font-medium leading-relaxed flex items-center gap-1.5">
+                  <p className="text-xs text-muted-foreground font-medium leading-relaxed flex items-center gap-1.5">
                     <span className="text-slate-500">💬</span> {log.notes}
                   </p>
                 )}
               </div>
 
               {/* Perubahan Stok / Value Card */}
-              <div className="shrink-0 bg-black/40 border border-white/10 px-3.5 py-2 rounded-xl text-right">
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Perubahan</p>
+              <div className="shrink-0 bg-tko-bg-subtle border border-border/60 px-3.5 py-2 rounded-xl text-right">
+                <p className="text-[9px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-widest mb-0.5">Perubahan</p>
                 {hasOldVal ? (
                   <div className="flex items-center gap-2 text-xs font-bold">
-                    <span className="text-slate-400 line-through">{log.old_value}</span>
+                    <span className="text-muted-foreground line-through">{log.old_value}</span>
                     <span className="text-orange-500 font-black">→</span>
                     <span className="text-orange-400 font-black">{log.new_value}</span>
                   </div>
@@ -840,7 +840,7 @@ function KartuStokSheet({ product, onClose }) {
     >
       <motion.div
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-        style={{ background: '#0A0F14', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: '540px', padding: '0 0 32px', borderTop: `1px solid ${C.border}`, height: '85vh', display: 'flex', flexDirection: 'column' }}
+        style={{ background: 'var(--bg-surface)', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: '540px', padding: '0 0 32px', borderTop: `1px solid ${C.border}`, height: '85vh', display: 'flex', flexDirection: 'column' }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
@@ -960,7 +960,7 @@ function AdjustStokSheet({ batch, product, onClose }) {
     >
       <motion.div
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-        style={{ background: '#100A03', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: '540px', padding: '0 0 32px', borderTop: `2px solid ${C.accent}`, maxHeight: '92vh', overflowY: 'auto' }}
+        style={{ background: 'var(--bg-surface)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: '540px', padding: '0 0 32px', borderTop: `2px solid ${C.accent}`, maxHeight: '92vh', overflowY: 'auto' }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
