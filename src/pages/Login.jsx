@@ -1,27 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { getOAuthRedirectUrl } from '@/lib/capacitor'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import {
   Eye, EyeOff, AlertCircle, Loader2,
-  TrendingUp, ShoppingCart, BarChart2, Clock, Shield, Users, Zap, Mail, Lock,
-  Package, FileText, CheckCircle2, Crown, Store, UserCheck
+  TrendingUp, ShoppingCart, Clock, Shield, Users, Zap, Mail, Lock,
+  Package, FileText, Crown, Store, UserCheck
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getBrokerBasePath, getPeternakBasePath, useAuth } from '../lib/hooks/useAuth'
-import { logError } from '@/lib/logger/errorLogger'
 import { setRememberMe as saveRememberMe } from '@/lib/supabaseStorage'
-import { useLanguage } from '@/lib/i18n/useLanguage'
-
-// Reactbits Components
-import AnimatedContent from '@/components/reactbits/AnimatedContent'
 import Particles from '@/components/reactbits/Particles'
+import { cn } from '@/lib/utils'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -154,26 +145,20 @@ export default function Login() {
 }
 
 // ─── DESKTOP LOGIN VIEW ───────────────────────────────────────
-
 function DesktopLoginView({ email, setEmail, password, setPassword, showPassword, setShowPassword, isLoading, error, handleLogin, handleQuickRoleFill, rememberMe, setRememberMe }) {
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0A07', display: 'flex', color: '#FDF8F3', fontFamily: "'Sora', sans-serif", overflowX: 'hidden' }}>
+    <div className="min-h-screen flex bg-background text-foreground font-sans selection:bg-orange-500/30 overflow-hidden relative text-left">
       
       {/* BRAND HEADER (Absolute Left) */}
-      <div style={{ position: 'absolute', top: 32, left: 48, zIndex: 50, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{
-          width: 42, height: 42, borderRadius: 12,
-          background: 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 20px rgba(234, 88, 12, 0.4)'
-        }}>
-          <ShoppingCart size={22} color="#FFFFFF" strokeWidth={2.5} />
+      <div className="absolute top-8 left-12 z-50 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0">
+          <ShoppingCart size={20} className="text-white" strokeWidth={2.5} />
         </div>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.3px', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 8 }}>
-            Gopek Sembako <span style={{ fontSize: 10, background: '#EA580C', color: '#FFF', padding: '2px 8px', borderRadius: 99, textTransform: 'uppercase', letterSpacing: 0.5 }}>OS v2.0</span>
+          <div className="font-extrabold text-sm text-foreground flex items-center gap-2">
+            Gopek Sembako <span className="text-[10px] bg-orange-600 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">OS v2.0</span>
           </div>
-          <div style={{ fontSize: 11, color: '#A18E7E', fontWeight: 500 }}>Dashboard Distributor & Broker Sembako</div>
+          <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Dashboard Distributor & Broker</div>
         </div>
       </div>
 
@@ -182,102 +167,79 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        style={{
-          width: '50%', position: 'relative', overflow: 'hidden',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          padding: '120px 48px 48px 48px',
-          background: 'radial-gradient(circle at 20% 20%, rgba(234, 88, 12, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(217, 119, 6, 0.12) 0%, transparent 50%), linear-gradient(135deg, #0D0A07 0%, #16100A 100%)'
-        }}
+        className="w-1/2 relative overflow-hidden hidden lg:flex flex-col justify-center px-16 py-20 bg-slate-50 dark:bg-slate-950/20 border-r border-border/40"
       >
-        {/* Glow Effects */}
-        <div style={{
-          position: 'absolute', top: '15%', left: '-10%',
-          width: 380, height: 380, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(234, 88, 12, 0.14) 0%, transparent 70%)',
-          filter: 'blur(60px)', pointerEvents: 'none'
-        }} />
+        <div className="absolute top-[15%] left-[-10%] w-[380px] h-[380px] rounded-full bg-radial-gradient from-orange-500/10 to-transparent blur-3xl pointer-events-none" />
 
         <Particles
-          particleCount={60}
+          particleCount={50}
           particleColors={['#EA580C', '#F59E0B', '#F97316', '#FCD34D']}
           particleBaseSize={2}
-          speed={0.25}
-          className="absolute inset-0 pointer-events-none"
+          speed={0.2}
+          className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-75"
         />
 
-        <div style={{ position: 'relative', zIndex: 10, maxWidth: 520, margin: '0 auto' }}>
-          
-          <h2 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.25, letterSpacing: '-0.5px', color: '#FFFFFF', marginBottom: 12 }}>
-            Kelola Operasional Sembako Lebih Cepat & Akurat.
-          </h2>
-          <p style={{ fontSize: 14, color: '#C4B5A5', lineHeight: 1.6, marginBottom: 32 }}>
-            Sistem manajemen POS toko, kasir grosir, kontrol stok gudang FIFO, dan transparansi laporan profit bersih real-time.
-          </p>
+        <div className="relative z-10 w-full max-w-[500px] mx-auto space-y-6">
+          <div className="space-y-3">
+            <h2 className="text-3xl font-black leading-tight text-foreground">
+              Kelola Operasional Sembako Lebih Cepat & Akurat.
+            </h2>
+            <p className="text-xs leading-relaxed text-muted-foreground font-semibold">
+              Sistem manajemen POS toko, kasir grosir, kontrol stok gudang FIFO, dan transparansi laporan profit bersih real-time.
+            </p>
+          </div>
 
           {/* STATS ROW */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { icon: <Clock size={16} color="#F97316" />, val: "< 1 Detik", label: "Cetak POS & Faktur" },
-              { icon: <Package size={16} color="#F59E0B" />, val: "FIFO Stok", label: "Gudang & Batch Expired" },
-              { icon: <Shield size={16} color="#10B981" />, val: "3 Role", label: "Dev, Owner & Admin" },
+              { icon: <Clock size={16} className="text-orange-500" />, val: "< 1 Detik", label: "Cetak POS & Faktur" },
+              { icon: <Package size={16} className="text-amber-500" />, val: "FIFO Stok", label: "Gudang & Batch" },
+              { icon: <Shield size={16} className="text-emerald-500" />, val: "3 Role", label: "Dev, Owner & Admin" },
             ].map((st, i) => (
               <div 
                 key={i} 
-                style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 14, padding: '14px', backdropFilter: 'blur(12px)'
-                }}
+                className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"
               >
                 {st.icon}
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#FFF', marginTop: 6 }}>{st.val}</div>
-                <div style={{ fontSize: 11, color: '#A18E7E', marginTop: 2 }}>{st.label}</div>
+                <div className="text-sm font-black text-foreground mt-2">{st.val}</div>
+                <div className="text-[10px] text-muted-foreground font-bold mt-0.5">{st.label}</div>
               </div>
             ))}
           </div>
 
           {/* FEATURE GRID */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
+          <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: <ShoppingCart size={15} color="#EA580C" />, title: "Kasir & Multi-Toko", desc: "Transaksi POS grosir kilat dengan opsi nota termal." },
-              { icon: <Package size={15} color="#F59E0B" />, title: "Stok FIFO Gudang", desc: "Kontrol varian dus/bal & penyesuaian stok otomatis." },
-              { icon: <TrendingUp size={15} color="#10B981" />, title: "Margin & Profit", desc: "Hitung otomatis keuntungan bersih dikurangi HPP." },
-              { icon: <FileText size={15} color="#3B82F6" />, title: "Log Audit Perubahan", desc: "Rekam setiap perubahan stok untuk keamanan transaksi." },
+              { icon: <ShoppingCart size={14} className="text-orange-500" />, title: "Kasir & Multi-Toko", desc: "Transaksi POS grosir kilat dengan nota termal." },
+              { icon: <Package size={14} className="text-amber-500" />, title: "Stok FIFO Gudang", desc: "Kontrol varian dus/bal & penyesuaian stok." },
+              { icon: <TrendingUp size={14} className="text-emerald-500" />, title: "Margin & Profit", desc: "Hitung otomatis laba bersih dikurangi HPP." },
+              { icon: <FileText size={14} className="text-blue-500" />, title: "Log Audit Perubahan", desc: "Rekam setiap perubahan stok untuk keamanan." },
             ].map((ft, i) => (
               <div 
                 key={i}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  borderRadius: 14, padding: '14px', backdropFilter: 'blur(12px)'
-                }}
+                className="bg-card border border-border/40 rounded-2xl p-4 shadow-sm"
               >
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(234, 88, 12, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center mb-2">
                   {ft.icon}
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF' }}>{ft.title}</div>
-                <div style={{ fontSize: 11, color: '#A18E7E', marginTop: 3, lineHeight: 1.4 }}>{ft.desc}</div>
+                <div className="text-xs font-black text-foreground">{ft.title}</div>
+                <div className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed font-semibold">{ft.desc}</div>
               </div>
             ))}
           </div>
 
           {/* TESTIMONIAL CARD */}
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, rgba(217, 119, 6, 0.03) 100%)',
-            border: '1px solid rgba(234, 88, 12, 0.2)',
-            borderLeft: '4px solid #EA580C',
-            borderRadius: 14, padding: '16px', backdropFilter: 'blur(12px)'
-          }}>
-            <p style={{ fontSize: 12, italic: true, color: '#E5D5C5', lineHeight: 1.6 }}>
+          <div className="bg-gradient-to-r from-orange-500/5 to-amber-500/5 border border-orange-500/20 border-l-4 border-l-orange-500 rounded-2xl p-4 backdrop-blur-sm shadow-sm">
+            <p className="text-[11px] italic text-foreground/80 leading-relaxed font-semibold">
               "Pencatatan grosir sembako dan piutang toko jadi sangat rapi. Selisih stok kasir otomatis terlacak dari log perubahan."
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 99, background: '#EA580C', color: '#FFF', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="flex items-center gap-2.5 mt-3">
+              <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-[10px] font-black flex items-center justify-center">
                 HS
               </div>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#FFF' }}>H. Subagyo</div>
-                <div style={{ fontSize: 10, color: '#A18E7E' }}>Distributor Sembako Jaya, Surabaya</div>
+                <div className="text-[11px] font-black text-foreground">H. Subagyo</div>
+                <div className="text-[9px] text-muted-foreground font-semibold">Distributor Sembako Jaya, Surabaya</div>
               </div>
             </div>
           </div>
@@ -286,28 +248,28 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
       </motion.div>
 
       {/* RIGHT PANEL - LOGIN FORM */}
-      <div style={{ width: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 32px', background: '#080604', borderLeft: '1px solid rgba(255, 255, 255, 0.06)' }}>
-        <div style={{ width: '100%', maxWidth: 440, background: '#130E09', border: '1px solid rgba(234, 88, 12, 0.22)', borderRadius: 24, padding: 36, boxShadow: '0 24px 60px rgba(0,0,0,0.7)', position: 'relative' }}>
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background border-l border-border/40">
+        <div className="w-full max-w-[420px] bg-card border border-border/60 rounded-3xl p-8 sm:p-10 shadow-xl relative">
           
-          <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.4px', color: '#FFF', marginBottom: 6 }}>
+          <div className="mb-6">
+            <h1 className="text-2xl font-black text-foreground mb-1.5">
               Selamat Datang Kembali
             </h1>
-            <p style={{ fontSize: 13, color: '#A18E7E', lineHeight: 1.5 }}>
+            <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
               Masukkan email dan password terdaftar untuk mengakses Dashboard Sembako OS.
             </p>
           </div>
 
           {/* QUICK ROLE SELECTOR BADGES */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#EA580C', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="mb-6">
+            <div className="text-[10px] font-black text-orange-600 dark:text-orange-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
               <Zap size={12} /> Pilih Mode Akses Login Cepat:
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { role: 'dev', label: 'Dev Mode', icon: <Crown size={12} color="#F59E0B" />, bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.3)' },
-                { role: 'owner', label: 'Owner Toko', icon: <Store size={12} color="#10B981" />, bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)' },
-                { role: 'admin', label: 'Admin Kasir', icon: <UserCheck size={12} color="#3B82F6" />, bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.3)' },
+                { role: 'dev', label: 'Dev Mode', icon: <Crown size={12} className="text-amber-500" />, bg: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400' },
+                { role: 'owner', label: 'Owner Toko', icon: <Store size={12} className="text-emerald-500" />, bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' },
+                { role: 'admin', label: 'Admin Kasir', icon: <UserCheck size={12} className="text-blue-500" />, bg: 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' },
               ].map(r => (
                 <button
                   key={r.role}
@@ -316,69 +278,60 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
                     handleQuickRoleFill(r.role)
                     handleLogin(r.role === 'dev' ? 'dev@sembako.id' : r.role === 'owner' ? 'owner@sembako.id' : 'admin@sembako.id', r.role + '123')
                   }}
-                  style={{
-                    padding: '8px 6px', borderRadius: 10, background: r.bg, border: `1px solid ${r.border}`,
-                    color: '#FFF', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                    transition: 'transform 120ms, background 120ms'
-                  }}
-                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.03)'}
-                  onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                  className={cn(
+                    "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center justify-center gap-1.5 hover:scale-[1.02] cursor-pointer",
+                    r.bg
+                  )}
                 >
-                  {r.icon} {r.label}
+                  {r.icon} <span>{r.label.split(' ')[0]}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255, 255, 255, 0.08)' }} />
-            <span style={{ fontSize: 11, color: '#786656', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>atau login email</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255, 255, 255, 0.08)' }} />
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px bg-border/40" />
+            <span className="text-[9px] text-muted-foreground/60 uppercase tracking-widest font-black">atau login email</span>
+            <div className="flex-1 h-px bg-border/40" />
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
             
             {/* EMAIL FIELD */}
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#C4B5A5', marginBottom: 8 }}>
+              <label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
                 Email Akun
               </label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={16} color="#786656" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+              <div className="relative">
+                <Mail size={16} className="text-muted-foreground/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Ketik email Anda (contoh: owner@sembako.id)"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full h-11 pl-11 pr-4 bg-[#1C130A] border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#EA580C] placeholder:text-white/20 transition-all box-border"
+                  className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-white/[0.02] border border-border/60 rounded-xl text-foreground text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 placeholder:text-muted-foreground/40 transition-all box-border"
                 />
               </div>
             </div>
 
             {/* PASSWORD FIELD */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#C4B5A5' }}>
-                  Password
-                </label>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <Lock size={16} color="#786656" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+              <label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <Lock size={16} className="text-muted-foreground/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full h-11 px-11 bg-[#1C130A] border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#EA580C] placeholder:text-white/20 transition-all box-border"
+                  className="w-full h-11 pl-10 pr-10 bg-slate-50 dark:bg-white/[0.02] border border-border/60 rounded-xl text-foreground text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 placeholder:text-muted-foreground/40 transition-all box-border"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer', color: '#786656', display: 'flex', padding: 0
-                  }}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground cursor-pointer flex p-0 border-none bg-transparent"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -386,27 +339,23 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
             </div>
 
             {/* REMEMBER ME */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="rememberMe"
                 checked={rememberMe}
                 onChange={e => setRememberMe(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#EA580C', cursor: 'pointer' }}
+                className="w-4 h-4 accent-orange-600 cursor-pointer"
               />
-              <label htmlFor="rememberMe" style={{ fontSize: 12, color: '#A18E7E', cursor: 'pointer' }}>
+              <label htmlFor="rememberMe" className="text-xs text-muted-foreground font-semibold cursor-pointer">
                 Ingat sesi login saya
               </label>
             </div>
 
             {error && (
-              <div style={{
-                padding: '10px 14px', background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 10,
-                fontSize: 12, color: '#F87171', display: 'flex', gap: 8, alignItems: 'center'
-              }}>
-                <AlertCircle size={15} style={{ flexShrink: 0 }} />
-                <span>{error}</span>
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 dark:text-red-400 flex gap-2 items-center">
+                <AlertCircle size={15} className="shrink-0" />
+                <span className="font-semibold">{error}</span>
               </div>
             )}
 
@@ -414,27 +363,19 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
             <button
               type="submit"
               disabled={isLoading || !email || !password}
-              style={{
-                width: '100%', height: 46, marginTop: 8,
-                background: isLoading || !email || !password ? 'rgba(234, 88, 12, 0.4)' : 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)',
-                border: 'none', borderRadius: 12, color: '#FFF',
-                fontSize: 14, fontWeight: 800, cursor: isLoading || !email || !password ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: isLoading || !email || !password ? 'none' : '0 6px 24px rgba(234, 88, 12, 0.35)',
-                transition: 'all 150ms'
-              }}
+              className="w-full h-11 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold rounded-xl shadow-lg shadow-orange-600/20 hover:from-orange-500 hover:to-amber-500 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <><Loader2 size={18} className="animate-spin" /> Memproses Login...</>
+                <><Loader2 size={18} className="animate-spin" /> Memproses...</>
               ) : (
                 <>Masuk ke Dashboard</>
               )}
             </button>
           </form>
 
-          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid rgba(255, 255, 255, 0.06)', textAlign: 'center' }}>
-            <p style={{ fontSize: 11, color: '#786656', lineHeight: 1.5 }}>
-              Akses akun terenkripsi & dikelola secara terpusat oleh <strong style={{ color: '#EA580C' }}>Developer Superadmin</strong>.
+          <div className="mt-6 pt-5 border-t border-border/40 text-center">
+            <p className="text-[10px] text-muted-foreground leading-relaxed font-semibold">
+              Akses akun terenkripsi & dikelola secara terpusat oleh <strong className="text-orange-600 dark:text-orange-500">Developer Superadmin</strong>.
             </p>
           </div>
 
@@ -445,40 +386,34 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
 }
 
 // ─── MOBILE LOGIN VIEW ────────────────────────────────────────
-
 function MobileLoginView({ email, setEmail, password, setPassword, showPassword, setShowPassword, isLoading, error, handleLogin, handleQuickRoleFill, rememberMe, setRememberMe }) {
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0A07', padding: '24px 16px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#FFF', fontFamily: "'Sora', sans-serif" }}>
+    <div className="min-h-screen bg-background text-foreground font-sans px-4 py-8 flex flex-col justify-center text-left">
       
       {/* BRAND HEADER MOBILE */}
-      <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: 16, margin: '0 auto 12px',
-          background: 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 6px 24px rgba(234, 88, 12, 0.4)'
-        }}>
-          <ShoppingCart size={28} color="#FFFFFF" strokeWidth={2.5} />
+      <div className="text-center mb-6">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20 mx-auto mb-3">
+          <ShoppingCart size={24} className="text-white" strokeWidth={2.5} />
         </div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#FFF', letterSpacing: '-0.3px', marginBottom: 4 }}>
-          Gopek Sembako <span style={{ fontSize: 10, background: '#EA580C', color: '#FFF', padding: '2px 8px', borderRadius: 99, verticalAlign: 'middle' }}>OS v2.0</span>
+        <h1 className="text-xl font-black text-foreground flex items-center justify-center gap-1.5">
+          Gopek Sembako <span className="text-[9px] bg-orange-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">OS v2.0</span>
         </h1>
-        <p style={{ fontSize: 12, color: '#A18E7E' }}>Dashboard Distributor & Broker Sembako</p>
+        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-1">Dashboard Distributor & Broker</p>
       </div>
 
       {/* FORM CARD */}
-      <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', background: '#130E09', border: '1px solid rgba(234, 88, 12, 0.22)', borderRadius: 20, padding: 24, boxShadow: '0 20px 50px rgba(0,0,0,0.6)' }}>
+      <div className="w-full max-w-[360px] mx-auto bg-card border border-border/60 rounded-3xl p-6 shadow-xl">
         
         {/* QUICK ROLE SELECTOR */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#EA580C', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Zap size={12} /> Pilih Role Login Cepat:
+        <div className="mb-5">
+          <div className="text-[10px] font-black text-orange-600 dark:text-orange-500 uppercase tracking-widest mb-2 flex items-center gap-1">
+            <Zap size={11} /> Pilih Role Login Cepat:
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+          <div className="grid grid-cols-3 gap-1.5">
             {[
-              { role: 'dev', label: 'Dev', icon: <Crown size={11} color="#F59E0B" />, bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.3)' },
-              { role: 'owner', label: 'Owner', icon: <Store size={11} color="#10B981" />, bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)' },
-              { role: 'admin', label: 'Admin', icon: <UserCheck size={11} color="#3B82F6" />, bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.3)' },
+              { role: 'dev', label: 'Dev', icon: <Crown size={11} className="text-amber-500" />, bg: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400' },
+              { role: 'owner', label: 'Owner', icon: <Store size={11} className="text-emerald-500" />, bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' },
+              { role: 'admin', label: 'Admin', icon: <UserCheck size={11} className="text-blue-500" />, bg: 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' },
             ].map(r => (
               <button
                 key={r.role}
@@ -487,22 +422,21 @@ function MobileLoginView({ email, setEmail, password, setPassword, showPassword,
                   handleQuickRoleFill(r.role)
                   handleLogin(r.role === 'dev' ? 'dev@sembako.id' : r.role === 'owner' ? 'owner@sembako.id' : 'admin@sembako.id', r.role + '123')
                 }}
-                style={{
-                  padding: '7px 4px', borderRadius: 8, background: r.bg, border: `1px solid ${r.border}`,
-                  color: '#FFF', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4
-                }}
+                className={cn(
+                  "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center justify-center gap-1 hover:scale-[1.02] cursor-pointer",
+                  r.bg
+                )}
               >
-                {r.icon} {r.label}
+                {r.icon} <span>{r.label}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
           
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C4B5A5', marginBottom: 6 }}>
+            <label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
               Email Akun
             </label>
             <input
@@ -510,29 +444,26 @@ function MobileLoginView({ email, setEmail, password, setPassword, showPassword,
               placeholder="Ketik email Anda (contoh: owner@sembako.id)"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full h-11 px-3 bg-[#1C130A] border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#EA580C] placeholder:text-white/20 transition-all box-border"
+              className="w-full h-11 px-3.5 bg-slate-555 dark:bg-white/[0.02] border border-border/60 rounded-xl text-foreground text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 placeholder:text-muted-foreground/40 transition-all box-border"
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C4B5A5', marginBottom: 6 }}>
+            <label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
               Password
             </label>
-            <div style={{ position: 'relative' }}>
+            <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full h-11 pl-3 pr-10 bg-[#1C130A] border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#EA580C] placeholder:text-white/20 transition-all box-border"
+                className="w-full h-11 pl-3.5 pr-10 bg-slate-555 dark:bg-white/[0.02] border border-border/60 rounded-xl text-foreground text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 placeholder:text-muted-foreground/40 transition-all box-border"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer', color: '#786656', padding: 0
-                }}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground cursor-pointer flex p-0 border-none bg-transparent"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -540,27 +471,23 @@ function MobileLoginView({ email, setEmail, password, setPassword, showPassword,
           </div>
 
           {error && (
-            <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 8, fontSize: 11, color: '#F87171' }}>
-              {error}
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 dark:text-red-400 flex gap-2 items-center">
+              <AlertCircle size={14} className="shrink-0" />
+              <span className="font-semibold">{error}</span>
             </div>
           )}
 
           <button
             type="submit"
             disabled={isLoading || !email || !password}
-            style={{
-              width: '100%', height: 44, marginTop: 4,
-              background: isLoading || !email || !password ? 'rgba(234, 88, 12, 0.4)' : 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)',
-              border: 'none', borderRadius: 10, color: '#FFF',
-              fontSize: 14, fontWeight: 800, cursor: 'pointer'
-            }}
+            className="w-full h-11 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold rounded-xl shadow-lg shadow-orange-600/20 hover:from-orange-500 hover:to-amber-500 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Memproses...' : 'Masuk ke Dashboard'}
           </button>
         </form>
 
-        <div style={{ marginTop: 18, textAlign: 'center' }}>
-          <p style={{ fontSize: 10, color: '#786656' }}>
+        <div className="mt-5 text-center">
+          <p className="text-[10px] text-muted-foreground font-semibold">
             Akses dikelola terpusat oleh Developer.
           </p>
         </div>
