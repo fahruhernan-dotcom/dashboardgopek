@@ -21,7 +21,7 @@ function LegendDot({ color, label }) {
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
       <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
-      <span style={{ fontSize: '10px', fontWeight: 600, color: '#94A3B8' }}>{label}</span>
+      <span style={{ fontSize: '10px', fontWeight: 800, color: C.text }}>{label}</span>
     </span>
   )
 }
@@ -360,6 +360,8 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
     transition: 'all 0.15s',
   })
 
+  const chartHeight = Math.min(isDesktop ? 300 : 240, Math.max(90, stockChartData.length * (isDesktop ? 44 : 38) + 15))
+
   return (
     <div style={{ background: C.card, borderRadius: '20px', padding: isDesktop ? '20px' : '16px', border: `1px solid ${C.border}`, marginBottom: '20px' }}>
       {/* Header & Filter Row */}
@@ -393,7 +395,7 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
           Tidak ada produk yang sesuai dengan filter ini.
         </div>
       ) : (
-        <div style={{ width: '100%', height: isDesktop ? '260px' : '220px' }}>
+        <div style={{ width: '100%', height: `${chartHeight}px` }}>
           <ChartContainer config={chartConfig} style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}>
             <BarChart
               data={stockChartData}
@@ -404,7 +406,7 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
               <YAxis dataKey="name" type="category" tickLine={false} tickMargin={10} axisLine={false} hide />
               <XAxis dataKey="stok" type="number" hide />
               <Tooltip content={<StockChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
-              <Bar dataKey="stok" radius={6} isAnimationActive={false}>
+              <Bar dataKey="stok" radius={6} barSize={isDesktop ? 22 : 18} isAnimationActive={false}>
                 {stockChartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
@@ -413,11 +415,10 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
                   position="insideLeft"
                   offset={10}
                   style={{
-                    fill: '#FFFFFF',
+                    fill: '#06090F', // Dark text color inside bright colored bars for maximum contrast
                     fontWeight: 900,
-                    fontSize: '10px',
-                    fontFamily: "'Sora', 'Inter', sans-serif",
-                    textShadow: '0 1px 2px rgba(0,0,0,0.6)'
+                    fontSize: '11px',
+                    fontFamily: "'Sora', 'Inter', sans-serif"
                   }}
                 />
                 <LabelList
@@ -425,8 +426,8 @@ export function StockTrendChart({ products = [], sales = [], batches = [], suppl
                   position="right"
                   offset={8}
                   style={{
-                    fill: '#94A3B8',
-                    fontWeight: 800,
+                    fill: C.text, // Warm light yellow text for high contrast on dark brown background
+                    fontWeight: 900,
                     fontSize: '11px',
                     fontFamily: "'Sora', 'Inter', sans-serif"
                   }}
