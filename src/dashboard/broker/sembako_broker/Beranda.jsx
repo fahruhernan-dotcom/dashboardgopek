@@ -118,7 +118,7 @@ export default function SembakoBeranda() {
     }, 0)
 
     // Cash Out: purchases + expenses + payroll
-    const totalCashOutPurchases = batches.reduce((sum, b) => sum + (Number(b.total_cost) || 0), 0)
+    const totalCashOutPurchases = suppliers.reduce((sum, s) => sum + (Number(s.total_paid_value) || 0), 0)
     const totalCashOutExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
     const totalCashOutPayroll = payroll.reduce((sum, p) => sum + (Number(p.total_pay) || 0), 0)
     const totalCashOut = totalCashOutPurchases + totalCashOutExpenses + totalCashOutPayroll
@@ -222,7 +222,7 @@ export default function SembakoBeranda() {
     console.groupEnd()
 
     return { weeklyChartData, monthlyChartData, insight, kpiTrends: { piutangTrend, txTrend }, cashSummary, unrealizedProfitSnapshot }
-  }, [sales, batches, expenses, payroll])
+  }, [sales, batches, expenses, payroll, suppliers])
 
   if (statsLoading && !!tenant?.id) {
     return (

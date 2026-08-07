@@ -20,48 +20,58 @@ function LegendDot({ color, label }) {
 }
 
 // ── Sales Performance Chart ──────────────────────────────────────────────────
-export function SalesChart({ weeklyData, monthlyData, chartPeriod, setChartPeriod, isDesktop, unrealizedProfitSnapshot = 0 }) {
+// ── Sales & Cash Flow Assistant Chart ────────────────────────────────────────
+export function SalesAndCashChart({ 
+  weeklyData, 
+  monthlyData, 
+  chartPeriod, 
+  setChartPeriod, 
+  isDesktop, 
+  unrealizedProfitSnapshot = 0,
+  cashSummary = {},
+  stats
+}) {
   const data = chartPeriod === 'weekly' ? weeklyData : monthlyData
   const totalGrossProfit = data.reduce((s, d) => s + (d.grossProfit || 0), 0)
   const totalNetProfit = data.reduce((s, d) => s + (d.netProfit || 0), 0)
 
+  const {
+    totalCashIn = 0,
+    totalCashOut = 0,
+    totalCashOutPurchases = 0,
+    totalCashOutExpenses = 0,
+    totalCashOutPayroll = 0,
+    cashBalance = 0,
+    realizedProfit = 0,
+  } = cashSummary
+
+  const kpiBoxStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '10px 12px',
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '12px',
+  }
+  const kpiLabelStyle = { fontSize: '10px', color: '#94A3B8', fontWeight: 600 }
+  const kpiValueStyle = { fontSize: '14px', fontWeight: 850, fontFamily: 'DM Sans', marginTop: '2px' }
+
   return (
     <div style={{
-      background: C.card, borderRadius: '16px', padding: '16px',
+      background: C.card, borderRadius: '18px', padding: '16px',
       border: `1px solid ${C.border}`, width: '100%', marginBottom: '20px',
     }}>
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '4px' }}>
+      <div style={{ display: 'flex', flexDirection: isDesktop ? 'row' : 'column', alignItems: isDesktop ? 'center' : 'stretch', justifyContent: 'space-between', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px', marginBottom: '16px' }}>
         <div>
-          <span style={{ fontSize: '10px', fontWeight: 800, color: C.muted, letterSpacing: '0.1em' }}>KINERJA PENJUALAN</span>
-          <p style={{ fontSize: '9px', color: '#64748B', marginTop: '1px', fontWeight: 500 }}>Berdasarkan tanggal penjualan</p>
-          {/* KPI figures */}
-          <div style={{ display: 'flex', gap: '16px', marginTop: '4px', flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600, marginBottom: '1px' }}>Gross Profit</p>
-              <p style={{ fontSize: '15px', fontWeight: 900, color: '#10B981', fontFamily: 'DM Sans', lineHeight: 1.1 }}>
-                {formatIDR(totalGrossProfit)}
-              </p>
-            </div>
-            <div>
-              <p style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600, marginBottom: '1px' }}>Net Profit</p>
-              <p style={{ fontSize: '15px', fontWeight: 900, color: '#EA580C', fontFamily: 'DM Sans', lineHeight: 1.1 }}>
-                {formatIDR(totalNetProfit)}
-              </p>
-            </div>
-            <div>
-              <p style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600, marginBottom: '1px' }}>Belum Terrealisasi</p>
-              <p style={{ fontSize: '15px', fontWeight: 900, color: '#EF4444', fontFamily: 'DM Sans', lineHeight: 1.1 }}>
-                {formatIDR(unrealizedProfitSnapshot)}
-              </p>
-            </div>
-          </div>
+          <span style={{ fontSize: '11px', fontWeight: 800, color: C.amber, letterSpacing: '0.1em' }}>KINERJA PENJUALAN & ALUR KAS</span>
+          <p style={{ fontSize: '11px', color: C.muted, marginTop: '2px' }}>Ringkasan akrual penjualan (Invoice) & arus kas riil (Pembayaran)</p>
         </div>
 
         {/* Period Switcher */}
         <div style={{
           display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '10px',
-          padding: '3px', border: `1px solid ${C.border}`,
+          padding: '3px', border: `1px solid ${C.border}`, alignSelf: isDesktop ? 'auto' : 'flex-start'
         }}>
           {[['weekly', 'Minggu'], ['monthly', 'Bulan']].map(([key, label]) => (
             <button key={key} onClick={() => setChartPeriod(key)} style={{
@@ -72,6 +82,68 @@ export function SalesChart({ weeklyData, monthlyData, chartPeriod, setChartPerio
               transition: 'all 0.15s',
             }}>{label}</button>
           ))}
+        </div>
+      </div>
+
+      {/* ── KPI Grid ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1.2fr' : '1fr', gap: '16px', marginBottom: '18px' }}>
+        {/* Kolom Penjualan */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.05em' }}>📊 PENJUALAN (AKRUAL)</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div style={kpiBoxStyle}>
+              <span style={kpiLabelStyle}>Gross Profit</span>
+              <span style={{ ...kpiValueStyle, color: '#10B981' }}>{formatIDR(totalGrossProfit)}</span>
+            </div>
+            <div style={kpiBoxStyle}>
+              <span style={kpiLabelStyle}>Net Profit</span>
+              <span style={{ ...kpiValueStyle, color: '#EA580C' }}>{formatIDR(totalNetProfit)}</span>
+            </div>
+          </div>
+          <div style={{ ...kpiBoxStyle, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '44px' }}>
+            <span style={kpiLabelStyle}>Belum Terealisasi (Piutang)</span>
+            <span style={{ ...kpiValueStyle, color: '#EF4444' }}>{formatIDR(unrealizedProfitSnapshot)}</span>
+          </div>
+        </div>
+
+        {/* Kolom Arus Kas */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.05em' }}>💸 ARUS KAS (RIIL)</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div style={kpiBoxStyle}>
+              <span style={kpiLabelStyle}>Kas Masuk</span>
+              <span style={{ ...kpiValueStyle, color: '#10B981' }}>{formatIDR(totalCashIn)}</span>
+            </div>
+            <div style={{ ...kpiBoxStyle, minHeight: '64px', justifyContent: 'space-between' }}>
+              <div>
+                <span style={kpiLabelStyle}>Kas Keluar</span>
+                {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0) && (
+                  <div style={{ display: 'flex', gap: '4px', marginTop: '2px', flexWrap: 'wrap', fontSize: '8px', color: '#64748B', fontFamily: 'DM Sans' }}>
+                    {totalCashOutPurchases > 0 && <span>Stok {formatIDR(totalCashOutPurchases)}</span>}
+                    {totalCashOutExpenses > 0 && <span>Ops {formatIDR(totalCashOutExpenses)}</span>}
+                    {totalCashOutPayroll > 0 && <span>Gaji {formatIDR(totalCashOutPayroll)}</span>}
+                  </div>
+                )}
+              </div>
+              <span style={{ ...kpiValueStyle, color: '#EF4444', alignSelf: 'flex-end', marginTop: 0 }}>{formatIDR(totalCashOut)}</span>
+            </div>
+            <div style={{
+              ...kpiBoxStyle,
+              background: cashBalance >= 0 ? 'rgba(16,185,129,0.04)' : 'rgba(239,68,68,0.04)',
+              border: cashBalance >= 0 ? '1px solid rgba(16,185,129,0.12)' : '1px solid rgba(239,68,68,0.12)',
+            }}>
+              <span style={{ ...kpiLabelStyle, color: cashBalance >= 0 ? '#10B981' : '#EF4444' }}>Saldo Kas</span>
+              <span style={{ ...kpiValueStyle, color: cashBalance >= 0 ? '#10B981' : '#EF4444' }}>{formatIDR(cashBalance)}</span>
+            </div>
+            <div style={{
+              ...kpiBoxStyle,
+              background: 'rgba(234,88,12,0.04)',
+              border: '1px solid rgba(234,88,12,0.12)',
+            }}>
+              <span style={{ ...kpiLabelStyle, color: '#EA580C' }}>Profit Direalisasi</span>
+              <span style={{ ...kpiValueStyle, color: '#EA580C' }}>{formatIDR(realizedProfit)}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -119,88 +191,6 @@ export function SalesChart({ weeklyData, monthlyData, chartPeriod, setChartPerio
             />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
-    </div>
-  )
-}
-
-// ── Cash Summary Card ────────────────────────────────────────────────────────
-export function CashSummaryCard({ cashSummary = {}, stats, isDesktop }) {
-  const {
-    totalCashIn = 0,
-    totalCashOut = 0,
-    totalCashOutPurchases = 0,
-    totalCashOutExpenses = 0,
-    totalCashOutPayroll = 0,
-    cashBalance = 0,
-    realizedProfit = 0,
-  } = cashSummary
-
-  const rowStyle = {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
-  }
-  const labelStyle = { fontSize: '11px', color: '#94A3B8', fontWeight: 600 }
-  const valueStyle = { fontSize: '13px', fontWeight: 800, color: C.text, fontFamily: 'DM Sans' }
-
-  return (
-    <div style={{
-      background: C.card, borderRadius: '16px', padding: '16px',
-      border: `1px solid ${C.border}`, width: '100%', marginBottom: '20px',
-    }}>
-      <div style={{ marginBottom: '12px' }}>
-        <span style={{ fontSize: '10px', fontWeight: 800, color: C.muted, letterSpacing: '0.1em' }}>RINGKASAN KAS</span>
-        <p style={{ fontSize: '9px', color: '#64748B', marginTop: '1px', fontWeight: 500 }}>Berdasarkan tanggal pembayaran</p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr', gap: '6px' }}>
-        {/* Kas Masuk */}
-        <div style={rowStyle}>
-          <span style={labelStyle}>Kas Masuk</span>
-          <span style={{ ...valueStyle, color: '#10B981' }}>{formatIDR(totalCashIn)}</span>
-        </div>
-
-        {/* Kas Keluar */}
-        <div style={rowStyle}>
-          <div>
-            <span style={labelStyle}>Kas Keluar</span>
-            {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0) && (
-              <div style={{ display: 'flex', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
-                {totalCashOutPurchases > 0 && <span style={{ fontSize: '9px', color: '#64748B' }}>Stok {formatIDR(totalCashOutPurchases)}</span>}
-                {totalCashOutExpenses > 0 && <span style={{ fontSize: '9px', color: '#64748B' }}>Ops {formatIDR(totalCashOutExpenses)}</span>}
-                {totalCashOutPayroll > 0 && <span style={{ fontSize: '9px', color: '#64748B' }}>Gaji {formatIDR(totalCashOutPayroll)}</span>}
-              </div>
-            )}
-          </div>
-          <span style={{ ...valueStyle, color: '#EF4444' }}>{formatIDR(totalCashOut)}</span>
-        </div>
-
-        {/* Saldo Kas */}
-        <div style={{
-          ...rowStyle,
-          background: cashBalance >= 0 ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
-          border: cashBalance >= 0 ? '1px solid rgba(16,185,129,0.15)' : '1px solid rgba(239,68,68,0.15)',
-        }}>
-          <span style={{ ...labelStyle, fontWeight: 700, color: cashBalance >= 0 ? '#10B981' : '#EF4444' }}>Saldo Kas</span>
-          <span style={{ ...valueStyle, fontSize: '15px', fontWeight: 900, color: cashBalance >= 0 ? '#10B981' : '#EF4444' }}>
-            {formatIDR(cashBalance)}
-          </span>
-        </div>
-
-        {/* Profit Direalisasi */}
-        <div style={{
-          ...rowStyle,
-          background: 'rgba(234,88,12,0.06)',
-          border: '1px solid rgba(234,88,12,0.15)',
-        }}>
-          <div>
-            <span style={{ ...labelStyle, fontWeight: 700, color: '#EA580C' }}>Profit Direalisasi</span>
-            <p style={{ fontSize: '9px', color: '#64748B', marginTop: '1px' }}>Dari pembayaran diterima</p>
-          </div>
-          <span style={{ ...valueStyle, fontSize: '15px', fontWeight: 900, color: '#EA580C' }}>
-            {formatIDR(realizedProfit)}
-          </span>
-        </div>
       </div>
     </div>
   )

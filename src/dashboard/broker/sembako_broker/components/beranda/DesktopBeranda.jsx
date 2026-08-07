@@ -10,7 +10,7 @@ import { formatIDR } from '@/lib/format'
 import SmartInsight from '@/dashboard/_shared/components/SmartInsight'
 import { C } from '../sembakoSaleUtils'
 import { KPICard, InvoiceRow, QuickStatRow } from './BerandaUtils'
-import { SalesChart, CashSummaryCard, StockTrendChart } from './BerandaCharts'
+import { SalesAndCashChart, StockTrendChart } from './BerandaCharts'
 import { AgendaSection } from './BerandaAgenda'
 import { CollectionReminders } from './CollectionReminders'
 
@@ -108,15 +108,16 @@ export function DesktopBeranda({
         <div className="lg:col-span-2 space-y-6 min-w-0">
           {showProfit && (
             <>
-              <SalesChart 
+              <SalesAndCashChart 
                 weeklyData={weeklyChartData} 
                 monthlyData={monthlyChartData} 
                 chartPeriod={chartPeriod} 
                 setChartPeriod={setChartPeriod} 
                 isDesktop={true}
                 unrealizedProfitSnapshot={unrealizedProfitSnapshot}
+                cashSummary={cashSummary}
+                stats={stats}
               />
-              <CashSummaryCard cashSummary={cashSummary} stats={stats} isDesktop={true} />
             </>
           )}
 
