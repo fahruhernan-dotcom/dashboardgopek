@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useOutletContext, Link } from 'react-router-dom'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
-import { motion } from 'framer-motion'
-import { Users, Plus, DollarSign, CalendarCheck, Check, Lock } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Users, Plus, DollarSign, CalendarCheck, Check, Lock, Pencil, Clock, CheckCircle2, ShieldAlert, X } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { getSubscriptionStatus } from '@/lib/subscriptionUtils'
 import {
@@ -11,7 +11,6 @@ import {
   useRecordPayroll, useMarkPayrollPaid,
 } from '@/lib/hooks/useSembakoData'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
-import { cn } from '@/lib/utils'
 import { formatIDR } from '@/lib/format'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
@@ -24,16 +23,22 @@ import {
   C, sInput, sBtn, sLabel, fmtDate, InputRupiah, CustomSelect,
 } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/SembakoUiPrimitives'
+import { SembakoPageHeader } from '@/dashboard/broker/sembako_broker/components/SembakoPageHeader'
+import { SembakoSummaryStrip } from '@/dashboard/broker/sembako_broker/components/SembakoSummaryStrip'
+import { cn } from '@/lib/utils'
 
 const SALARY_TYPES = [
   { value: 'harian', label: 'Harian', color: '#60A5FA' },
-  { value: 'bulanan', label: 'Bulanan', color: C.green },
-  { value: 'borongan', label: 'Borongan', color: C.amber },
+  { value: 'bulanan', label: 'Bulanan', color: '#10B981' },
+  { value: 'borongan', label: 'Borongan', color: '#F59E0B' },
   { value: 'komisi', label: 'Komisi', color: '#A78BFA' },
-  { value: 'campuran', label: 'Campuran', color: C.accent },
+  { value: 'campuran', label: 'Campuran', color: '#EA580C' },
 ]
-const STATUS_COLOR = { aktif: C.green, nonaktif: C.red, cuti: C.amber }
+const STATUS_COLOR = { aktif: '#10B981', nonaktif: '#EF4444', cuti: '#F59E0B' }
 const ROLES = ['gudang', 'sales', 'kurir', 'admin', 'lainnya']
+
+const inputClass = "w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 font-bold transition-all"
+const labelClass = "block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5"
 
 // ── MAIN ────────────────────────────────────────────────────────────────────
 export default function SembakoPegawai({ hideMobileHeader }) {
@@ -44,31 +49,33 @@ export default function SembakoPegawai({ hideMobileHeader }) {
   const isStarter = sub.status !== 'active' && sub.status !== 'trial'
   const [tab, setTab] = useState('pegawai')
 
+  const tabs = [
+    { id: 'pegawai', label: 'Data Karyawan' },
+    { id: 'payroll', label: 'Gaji & Payroll' },
+  ]
+
   if (isStarter) {
     return (
-      <div style={{ background: C.bg, minHeight: '100vh' }}>
+      <div className="bg-background min-h-screen">
         {(!isDesktop && !hideMobileHeader) && <BrokerMobileHeader title="Pegawai" onMenuClick={() => setSidebarOpen(true)} />}
         <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center gap-6">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(234,88,12,0.12)', border: '1px solid rgba(234,88,12,0.25)' }}>
-            <Lock size={28} style={{ color: '#EA580C' }} />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-amber-500/10 border border-amber-500/20">
+            <Lock size={28} className="text-amber-500" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3"
-              style={{ background: 'rgba(234,88,12,0.1)', border: '1px solid rgba(234,88,12,0.2)' }}>
-              <Users size={11} style={{ color: '#EA580C' }} />
-              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#EA580C' }}>Fitur Pro</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3 bg-amber-500/10 border border-amber-500/20">
+              <Users size={11} className="text-amber-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Fitur Pro</span>
             </div>
-            <h2 className="font-display font-black text-xl text-white mb-2">Karyawan & Payroll</h2>
-            <p className="text-sm max-w-xs leading-relaxed" style={{ color: '#64748B' }}>
+            <h2 className="font-sans font-black text-xl text-foreground mb-2">Karyawan & Payroll</h2>
+            <p className="text-sm max-w-xs leading-relaxed text-muted-foreground">
               Kelola data karyawan, jadwal gaji, dan rekap payroll tersedia di plan{' '}
-              <span className="text-white font-bold">Pro</span> dan <span className="text-white font-bold">Business</span>.
+              <span className="text-foreground font-bold">Pro</span> dan <span className="text-foreground font-bold">Business</span>.
             </p>
           </div>
           <Link
             to="/upgrade"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm text-white transition-colors"
-            style={{ background: '#EA580C', boxShadow: '0 4px 20px rgba(234,88,12,0.3)' }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm text-white transition-colors bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-600/30 active:scale-95 cursor-pointer"
           >
             Lihat Paket Pro →
           </Link>
@@ -78,26 +85,33 @@ export default function SembakoPegawai({ hideMobileHeader }) {
   }
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: '96px' }}>
-      {(!isDesktop && !hideMobileHeader) && <BrokerMobileHeader title="Pegawai" onMenuClick={() => setSidebarOpen(true)} />}
-      <div style={{ padding: isDesktop ? '32px 40px' : '20px 16px', maxWidth: '1200px', margin: '0 auto' }}>
-        <h1 style={{ display: isDesktop ? 'block' : 'none', fontSize: isDesktop ? '28px' : '22px', fontWeight: 900, color: C.text, fontFamily: 'DM Sans', marginBottom: '20px' }}>
-          Pegawai & Payroll
-        </h1>
+    <div className="bg-background min-h-screen text-foreground pb-28 text-left">
+      {(!isDesktop && !hideMobileHeader) && <BrokerMobileHeader title="Karyawan & Gaji" onMenuClick={() => setSidebarOpen(true)} />}
 
-        <div style={{ display: 'flex', gap: '4px', background: C.card, borderRadius: '12px', padding: '4px', marginBottom: '24px', border: `1px solid ${C.border}` }}>
-          {[{ id: 'pegawai', label: 'Data Pegawai' }, { id: 'payroll', label: 'Gaji & Payroll' }].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              flex: 1, padding: '10px 0', borderRadius: '10px', border: 'none', cursor: 'pointer',
-              background: tab === t.id ? C.accent : 'transparent',
-              color: tab === t.id ? '#fff' : C.muted,
-              fontWeight: 800, fontSize: '12px',
-              transition: 'all 0.2s',
-            }}>{t.label}</button>
-          ))}
+      <div className="mx-auto max-w-7xl">
+        <SembakoPageHeader
+          title="Karyawan & Gaji"
+          subtitle="Manajemen data pegawai, remunerasi, komisi sales, dan rekap payroll bulanan"
+          isDesktop={isDesktop}
+          filters={tabs}
+          activeFilter={tab}
+          onFilterChange={setTab}
+          actionButton={
+            tab === 'pegawai' ? (
+              <button
+                onClick={() => window.dispatchEvent(new Event('open-new-employee'))}
+                className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
+              >
+                <Plus size={16} />
+                <span>Tambah Karyawan</span>
+              </button>
+            ) : null
+          }
+        />
+
+        <div className="px-4 sm:px-6 pt-2">
+          {tab === 'pegawai' ? <TabPegawai isDesktop={isDesktop} /> : <TabPayroll isDesktop={isDesktop} />}
         </div>
-
-        {tab === 'pegawai' ? <TabPegawai isDesktop={isDesktop} /> : <TabPayroll isDesktop={isDesktop} />}
       </div>
     </div>
   )
@@ -124,6 +138,12 @@ function TabPegawai({ isDesktop }) {
     }
   });
 
+  useEffect(() => {
+    const handleOpen = () => openNew()
+    window.addEventListener('open-new-employee', handleOpen)
+    return () => window.removeEventListener('open-new-employee', handleOpen)
+  }, [employees])
+
   function openNew() {
     setForm({
       full_name: '', role: 'gudang', phone: '', address: '', join_date: new Date().toISOString().slice(0, 10),
@@ -143,77 +163,117 @@ function TabPegawai({ isDesktop }) {
     setEditing(null)
   }
 
+  // Summary Strip Stats
+  const activeCount = employees.filter(e => e.status === 'aktif').length
+  const avgSalary = Math.round(employees.reduce((acc, curr) => acc + (curr.base_salary || 0), 0) / (employees.length || 1))
+  const summaryItems = [
+    { label: 'Total Karyawan', value: `${employees.length} Orang`, color: 'amber', subLabel: 'Aktif & nonaktif' },
+    { label: 'Karyawan Aktif', value: `${activeCount} Orang`, color: 'green', subLabel: 'Siap bekerja' },
+    { label: 'Rata-rata Gaji', value: avgSalary, isCurrency: true, color: 'default', subLabel: 'Rata-rata Gaji Pokok' },
+  ]
+
   if (isError) return <SembakoErrorState error={error} onRetry={refetch} />
 
   return (
-    <div>
-      <button onClick={openNew} style={{ ...sBtn(true), marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <Plus size={14} /> Tambah Pegawai
-      </button>
+    <div className="space-y-6">
+      <SembakoSummaryStrip items={summaryItems} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(3,1fr)' : '1fr', gap: '12px' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {employees.map(emp => {
           const stColor = STATUS_COLOR[emp.status] || C.muted
           const salType = SALARY_TYPES.find(s => s.value === emp.salary_type)
           return (
-            <motion.div key={emp.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              onClick={() => openEdit(emp)} style={{
-                background: C.card, borderRadius: '14px', padding: '14px',
-                border: `1px solid ${C.border}`, cursor: 'pointer',
-              }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '12px',
-                  background: 'rgba(234,88,12,0.12)', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  fontSize: '15px', fontWeight: 800, color: C.accent,
-                }}>
-                  {(emp.full_name || '?')[0].toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '13px', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.full_name}</p>
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '3px' }}>
-                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(234,88,12,0.15)', color: C.accent }}>{emp.role}</span>
-                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: `${stColor}20`, color: stColor }}>
-                      {emp.status}
-                    </span>
+            <motion.div
+              key={emp.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => openEdit(emp)}
+              className="bg-card border border-border/60 hover:border-amber-500/30 rounded-2xl p-5 transition-all shadow-sm cursor-pointer flex flex-col justify-between group hover:shadow-md relative overflow-hidden"
+            >
+              <div>
+                <div className="flex items-center gap-3.5 mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-base font-black text-amber-500 shrink-0 uppercase">
+                    {(emp.full_name || '?')[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-black text-foreground group-hover:text-amber-500 transition-colors truncate">
+                      {emp.full_name}
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        {emp.role}
+                      </span>
+                      <span className={cn(
+                        "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border",
+                        emp.status === 'aktif'
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : emp.status === 'cuti'
+                            ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                            : "bg-red-500/10 text-red-400 border-red-500/20"
+                      )}>
+                        {emp.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {salType && (
-                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: `${salType.color}18`, color: salType.color }}>
-                    {salType.label}
-                  </span>
+
+                {emp.phone && (
+                  <p className="text-[11px] text-muted-foreground font-semibold mb-3 flex items-center gap-1.5">
+                    <span className="opacity-50">📱</span> {emp.phone}
+                  </p>
                 )}
-                <span style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>
+              </div>
+
+              <div className="flex items-center justify-between pt-3.5 border-t border-border/40 text-[11px] text-muted-foreground font-bold mt-2">
+                <span className="capitalize">{salType ? salType.label : emp.salary_type}</span>
+                <span className="text-foreground font-black text-xs">
                   {emp.base_salary > 0 ? formatIDR(emp.base_salary) : ''}
-                  {emp.commission_pct > 0 ? ` +${emp.commission_pct}%` : ''}
+                  {emp.commission_pct > 0 ? ` + ${emp.commission_pct}%` : ''}
                 </span>
               </div>
             </motion.div>
           )
         })}
+
         {employees.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: C.muted, gridColumn: '1/-1' }}>
-            <Users size={32} color={C.muted} style={{ margin: '0 auto 8px' }} />
-            <p style={{ fontSize: '13px', fontWeight: 600 }}>Belum ada pegawai</p>
+          <div className="bg-card border border-border/60 rounded-2xl p-12 text-center text-muted-foreground col-span-full">
+            <Users size={36} className="mx-auto mb-3 opacity-30 text-amber-500" />
+            <p className="text-base font-bold text-foreground">Belum ada data pegawai</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+              Klik "Tambah Karyawan" di atas untuk mulai menambahkan data pegawai gudang, sales, atau sopir Anda.
+            </p>
           </div>
         )}
       </div>
 
       {/* CRUD Sheet */}
       <Sheet open={editing !== null} onOpenChange={v => !v && setEditing(null)}>
-        <SheetContent side="right" style={{ background: C.bg, borderLeft: `1px solid ${C.border}`, maxWidth: '420px', width: '100%', padding: '24px', overflowY: 'auto' }}>
-          <SheetHeader>
-            <SheetTitle style={{ color: C.text, fontWeight: 900 }}>{editing === 'new' ? 'Tambah Pegawai' : 'Edit Pegawai'}</SheetTitle>
+        <SheetContent
+          side="right"
+          className="bg-card border-l border-border/60 p-6 overflow-y-auto w-full max-w-md flex flex-col h-full text-left"
+        >
+          <SheetHeader className="pb-4 border-b border-border/40">
+            <SheetTitle className="text-lg font-black text-foreground">
+              {editing === 'new' ? 'Tambah Karyawan' : 'Edit Karyawan'}
+            </SheetTitle>
             <SheetDescription className="sr-only">Form untuk mengelola data pegawai sales & gudang rokok.</SheetDescription>
           </SheetHeader>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', paddingBottom: '100px' }}>
-            <div><p style={sLabel}>NAMA LENGKAP *</p><input id="emp-name" name="full_name" style={sInput} value={form.full_name || ''} onChange={e => setForm({ ...form, full_name: e.target.value })} /></div>
+
+          <div className="flex-1 flex flex-col gap-4 pt-5 pb-20 text-xs">
+            <div>
+              <label className={labelClass}>Nama Lengkap *</label>
+              <input
+                id="emp-name"
+                name="full_name"
+                className={inputClass}
+                value={form.full_name || ''}
+                onChange={e => setForm({ ...form, full_name: e.target.value })}
+                placeholder="Ketik nama lengkap..."
+              />
+            </div>
 
             <div>
-              <p style={sLabel}>LINK KE AKUN TIM</p>
+              <label className={labelClass}>Link ke Akun Tim</label>
               <CustomSelect
                 id="emp-profile"
                 value={form.profile_id || 'none'}
@@ -224,49 +284,105 @@ function TabPegawai({ isDesktop }) {
                 ]}
                 placeholder="— Tidak terhubung —"
               />
-              <p style={{ fontSize: '10px', color: '#4B6478', marginTop: '6px' }}>
-                Hubungkan pegawai ke akun tim agar bisa menerima tugas otomatis.
+              <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">
+                Hubungkan pegawai ke akun tim agar mempermudah monitoring logistik dan pengiriman.
               </p>
             </div>
 
-            <div><p style={sLabel}>ROLE</p>
-              <CustomSelect
-                id="emp-role"
-                value={form.role || 'gudang'}
-                onChange={val => setForm({ ...form, role: val })}
-                options={ROLES.map(r => ({ value: r, label: r }))}
-                placeholder="Pilih role"
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Role</label>
+                <CustomSelect
+                  id="emp-role"
+                  value={form.role || 'gudang'}
+                  onChange={val => setForm({ ...form, role: val })}
+                  options={ROLES.map(r => ({ value: r, label: r.toUpperCase() }))}
+                  placeholder="Pilih role"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>No HP</label>
+                <PhoneInput
+                  id="emp-phone"
+                  name="phone"
+                  className={inputClass}
+                  value={form.phone || ''}
+                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Alamat</label>
+              <input
+                id="emp-addr"
+                name="address"
+                className={inputClass}
+                value={form.address || ''}
+                onChange={e => setForm({ ...form, address: e.target.value })}
+                placeholder="Alamat tempat tinggal..."
               />
             </div>
-            <div><p style={sLabel}>NO HP</p><PhoneInput id="emp-phone" name="phone" style={sInput} value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
-            <div><p style={sLabel}>ALAMAT</p><input id="emp-addr" name="address" style={sInput} value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
-            <div><p style={sLabel}>TANGGAL MASUK</p><DatePicker id="emp-join" value={form.join_date || ''} onChange={val => setForm({ ...form, join_date: val })} placeholder="Pilih tanggal" /></div>
-            <div><p style={sLabel}>TIPE GAJI</p>
-              <CustomSelect
-                value={form.salary_type || 'bulanan'}
-                onChange={val => setForm({ ...form, salary_type: val })}
-                options={SALARY_TYPES}
-                placeholder="Pilih tipe"
-              />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Tanggal Masuk</label>
+                <DatePicker
+                  id="emp-join"
+                  value={form.join_date || ''}
+                  onChange={val => setForm({ ...form, join_date: val })}
+                  placeholder="Pilih tanggal"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Tipe Gaji</label>
+                <CustomSelect
+                  value={form.salary_type || 'bulanan'}
+                  onChange={val => setForm({ ...form, salary_type: val })}
+                  options={SALARY_TYPES}
+                  placeholder="Pilih tipe"
+                />
+              </div>
             </div>
 
             {/* Dynamic salary fields */}
             {(form.salary_type === 'harian' || form.salary_type === 'bulanan' || form.salary_type === 'campuran') && (
-              <div><p style={sLabel}>GAJI POKOK {form.salary_type === 'harian' ? '(PER HARI)' : '(PER BULAN)'}</p><InputRupiah value={form.base_salary || 0} onChange={v => setForm({ ...form, base_salary: v })} /></div>
+              <div>
+                <label className={labelClass}>Gaji Pokok {form.salary_type === 'harian' ? '(Per Hari)' : '(Per Bulan)'}</label>
+                <InputRupiah value={form.base_salary || 0} onChange={v => setForm({ ...form, base_salary: v })} />
+              </div>
             )}
             {(form.salary_type === 'borongan' || form.salary_type === 'campuran') && (
-              <div><p style={sLabel}>TARIF PER TRIP</p><InputRupiah value={form.trip_rate || 0} onChange={v => setForm({ ...form, trip_rate: v })} /></div>
+              <div>
+                <label className={labelClass}>Tarif Per Trip</label>
+                <InputRupiah value={form.trip_rate || 0} onChange={v => setForm({ ...form, trip_rate: v })} />
+              </div>
             )}
             {(form.salary_type === 'komisi' || form.salary_type === 'campuran') && (
-              <>
-                <div><p style={sLabel}>KOMISI (%)</p><input type="number" min={0} max={100} step={0.1} style={sInput} value={form.commission_pct || ''} onChange={e => setForm({ ...form, commission_pct: parseFloat(e.target.value) || 0 })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Komisi (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    className={inputClass}
+                    value={form.commission_pct || ''}
+                    onChange={e => setForm({ ...form, commission_pct: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
                 {form.salary_type === 'komisi' && (
-                  <div><p style={sLabel}>GAJI POKOK (OPSIONAL)</p><InputRupiah value={form.base_salary || 0} onChange={v => setForm({ ...form, base_salary: v })} /></div>
+                  <div>
+                    <label className={labelClass}>Gaji Pokok (Opsional)</label>
+                    <InputRupiah value={form.base_salary || 0} onChange={v => setForm({ ...form, base_salary: v })} />
+                  </div>
                 )}
-              </>
+              </div>
             )}
 
-            <div><p style={sLabel}>TANGGAL GAJIAN</p>
+            <div>
+              <label className={labelClass}>Hari Gajian</label>
               <CustomSelect
                 value={form.pay_day || 'Tanggal 1'}
                 onChange={val => setForm({ ...form, pay_day: val })}
@@ -275,26 +391,24 @@ function TabPegawai({ isDesktop }) {
               />
             </div>
 
-            <div><p style={sLabel}>STATUS</p>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div>
+              <label className={labelClass}>Status Kerja</label>
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { value: 'aktif', label: '✅ Aktif' },
                   { value: 'nonaktif', label: '⛔ Nonaktif' },
                 ].map(s => (
                   <button
-                    key={s.value} type="button"
+                    key={s.value}
+                    type="button"
                     onClick={() => setForm({ ...form, status: s.value })}
-                    style={{
-                      flex: 1, padding: '10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700,
-                      transition: 'all 0.2s'
-                    }}
                     className={cn(
-                      "border-2 font-bold transition-all duration-200",
+                      "h-10 rounded-xl border font-bold transition-all text-xs cursor-pointer",
                       form.status === s.value
                         ? (s.value === 'aktif'
-                            ? "border-tko-brand-500/40 bg-tko-brand-500/10 text-tko-brand-500"
-                            : "border-red-500/40 bg-red-500/10 text-red-500")
-                        : "border-tko-border-soft bg-tko-bg-subtle text-tko-text-muted hover:text-tko-text-primary"
+                            ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                            : "border-red-500 bg-red-500/10 text-red-400")
+                        : "border-border/60 bg-slate-550 dark:bg-white/[0.01] text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {s.label}
@@ -303,9 +417,23 @@ function TabPegawai({ isDesktop }) {
               </div>
             </div>
 
-            <div><p style={sLabel}>CATATAN</p><textarea rows={2} style={{ ...sInput, resize: 'vertical' }} value={form.notes || ''} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
-            <button onClick={handleSave} style={{ ...sBtn(true), width: '100%', padding: '14px' }}>
-              {(createEmp.isPending || updateEmp.isPending) ? 'Menyimpan...' : 'Simpan'}
+            <div>
+              <label className={labelClass}>Catatan</label>
+              <textarea
+                rows={2}
+                className="w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 resize-none font-bold"
+                value={form.notes || ''}
+                onChange={e => setForm({ ...form, notes: e.target.value })}
+                placeholder="Catatan tambahan (opsional)..."
+              />
+            </div>
+
+            <button
+              onClick={handleSave}
+              disabled={createEmp.isPending || updateEmp.isPending}
+              className="w-full h-11 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-xl shadow-lg shadow-amber-600/30 transition-all mt-2 cursor-pointer flex items-center justify-center"
+            >
+              {(createEmp.isPending || updateEmp.isPending) ? 'Menyimpan...' : 'Simpan Karyawan'}
             </button>
           </div>
         </SheetContent>
@@ -348,12 +476,12 @@ function TabPayroll({ isDesktop }) {
     if (st === 'komisi') return selectedEmp.base_salary || 0
     if (st === 'campuran') return (workDays > 0 ? workDays * (selectedEmp.base_salary || 0) : (selectedEmp.base_salary || 0)) + tripCount * (selectedEmp.trip_rate || 0)
     return 0
-  }, [selectedEmp, workDays, tripCount]) // eslint-disable-line react-hooks/preserve-manual-memoization -- selectedEmp is a reference read inside memo, not mutated
+  }, [selectedEmp, workDays, tripCount])
 
-  const calcComm = useMemo(() => { // eslint-disable-line react-hooks/preserve-manual-memoization -- selectedEmp read-only in memo; cascade from calcBase skip
+  const calcComm = useMemo(() => {
     if (!selectedEmp || !selectedEmp.commission_pct) return 0
     return Math.round(salesAmount * selectedEmp.commission_pct / 100)
-  }, [selectedEmp, salesAmount]) // eslint-disable-line react-hooks/preserve-manual-memoization
+  }, [selectedEmp, salesAmount])
 
   const totalPay = calcBase + calcComm + bonus - deduction
 
@@ -387,6 +515,12 @@ function TabPayroll({ isDesktop }) {
   const totalPending = thisMonthPayrolls.filter(p => p.payment_status === 'pending').reduce((s, p) => s + (p.total_pay || 0), 0)
   const paidCount = new Set(thisMonthPayrolls.filter(p => p.payment_status === 'paid').map(p => p.employee_id)).size
 
+  const summaryItems = [
+    { label: 'Gaji Terbayar', value: totalPaid, isCurrency: true, color: 'green', subLabel: 'Kas keluar bulan ini' },
+    { label: 'Gaji Pending', value: totalPending, isCurrency: true, color: 'amber', subLabel: 'Perlu pembayaran' },
+    { label: 'Karyawan Digaji', value: `${paidCount} Orang`, color: 'default', subLabel: 'Telah menerima gaji' },
+  ]
+
   // Filtered history
   const filteredPayrolls = useMemo(() => {
     let list = [...payrolls]
@@ -399,251 +533,314 @@ function TabPayroll({ isDesktop }) {
       })
     }
     return list
-  }, [payrolls, filterEmp, filterMonth]) // eslint-disable-line react-hooks/preserve-manual-memoization -- payrolls spread prevents mutation; list is locally constructed
+  }, [payrolls, filterEmp, filterMonth])
 
   if (isEmpError) return <SembakoErrorState error={empError} onRetry={refetchEmp} />
   if (isPayError) return <SembakoErrorState error={payError} onRetry={refetchPay} />
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* SECTION A: Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(3,1fr)' : '1fr', gap: '12px' }}>
-        <SummaryCard icon={DollarSign} label="Gaji Terbayar" value={formatIDR(totalPaid)} color={C.green} />
-        <SummaryCard icon={CalendarCheck} label="Gaji Pending" value={formatIDR(totalPending)} color={C.amber} />
-        <SummaryCard icon={Users} label="Pegawai Digaji" value={paidCount} color={C.accent} />
-      </div>
+    <div className="space-y-6">
+      {/* Summary */}
+      <SembakoSummaryStrip items={summaryItems} />
 
-      {/* SECTION B: Input Gaji */}
-      <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}` }}>
-        <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '16px' }}>CATAT GAJI</p>
+      {/* Input Gaji */}
+      <div className="bg-card border border-border/60 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+        <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest border-b border-border/40 pb-3">
+          Catat Gaji / Rekap Harian Karyawan
+        </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr', gap: '12px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <p style={sLabel}>PEGAWAI</p>
+            <label className={labelClass}>Pilih Karyawan</label>
             <CustomSelect
               value={empId}
               onChange={handleSelectEmp}
               options={[
-                { value: '', label: '— Pilih pegawai —' },
+                { value: '', label: '— Pilih karyawan —' },
                 ...employees.filter(e => e.status === 'aktif').map(e => ({ value: e.id, label: `${e.full_name} (${e.salary_type})` }))
               ]}
-              placeholder="— Pilih pegawai —"
+              placeholder="— Pilih karyawan —"
             />
           </div>
           <div>
-            <p style={sLabel}>PERIODE</p>
+            <label className={labelClass}>Periode / Tanggal</label>
             <DatePicker value={periodDate} onChange={val => setPeriodDate(val)} placeholder="Pilih tanggal" />
           </div>
         </div>
 
         {selectedEmp && (
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4 pt-2"
+          >
             {/* Dynamic fields per salary_type */}
             {(selectedEmp.salary_type === 'harian' || selectedEmp.salary_type === 'campuran') && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p style={sLabel}>HARI KERJA</p>
-                  <input type="number" min={0} style={sInput} value={workDays || ''} onChange={e => setWorkDays(parseInt(e.target.value) || 0)} />
+                  <label className={labelClass}>Hari Kerja</label>
+                  <input
+                    type="number"
+                    min={0}
+                    className={inputClass}
+                    value={workDays || ''}
+                    onChange={e => setWorkDays(parseInt(e.target.value) || 0)}
+                  />
                 </div>
                 <div>
-                  <p style={{ ...sLabel, opacity: 0.6 }}>AUTO-CALC</p>
-                  <div style={{ ...sInput, opacity: 0.6 }}>{workDays} × {formatIDR(selectedEmp.base_salary || 0)} = {formatIDR(workDays * (selectedEmp.base_salary || 0))}</div>
+                  <label className="block text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest mb-1.5">Kalkulasi Gaji Harian</label>
+                  <div className="h-10 flex items-center px-3.5 bg-slate-550 dark:bg-white/[0.01] border border-border/40 rounded-xl text-xs font-semibold text-muted-foreground select-none">
+                    {workDays} × {formatIDR(selectedEmp.base_salary || 0)}
+                  </div>
                 </div>
               </div>
             )}
 
             {selectedEmp.salary_type === 'bulanan' && (
               <div>
-                <p style={sLabel}>GAJI POKOK (AUTO)</p>
-                <div style={{ ...sInput, opacity: 0.6 }}>{formatIDR(selectedEmp.base_salary || 0)}</div>
+                <label className={labelClass}>Gaji Pokok Bulanan (Auto)</label>
+                <div className="h-10 flex items-center px-3.5 bg-slate-550 dark:bg-white/[0.01] border border-border/40 rounded-xl text-xs font-black text-foreground">
+                  {formatIDR(selectedEmp.base_salary || 0)}
+                </div>
               </div>
             )}
 
             {(selectedEmp.salary_type === 'borongan' || selectedEmp.salary_type === 'campuran') && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p style={sLabel}>JUMLAH TRIP</p>
-                  <input type="number" min={0} style={sInput} value={tripCount || ''} onChange={e => setTripCount(parseInt(e.target.value) || 0)} />
+                  <label className={labelClass}>Jumlah Trip Pengiriman</label>
+                  <input
+                    type="number"
+                    min={0}
+                    className={inputClass}
+                    value={tripCount || ''}
+                    onChange={e => setTripCount(parseInt(e.target.value) || 0)}
+                  />
                 </div>
                 <div>
-                  <p style={{ ...sLabel, opacity: 0.6 }}>AUTO-CALC</p>
-                  <div style={{ ...sInput, opacity: 0.6 }}>{tripCount} × {formatIDR(selectedEmp.trip_rate || 0)} = {formatIDR(tripCount * (selectedEmp.trip_rate || 0))}</div>
+                  <label className="block text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest mb-1.5">Kalkulasi Borongan Trip</label>
+                  <div className="h-10 flex items-center px-3.5 bg-slate-550 dark:bg-white/[0.01] border border-border/40 rounded-xl text-xs font-semibold text-muted-foreground select-none">
+                    {tripCount} × {formatIDR(selectedEmp.trip_rate || 0)}
+                  </div>
                 </div>
               </div>
             )}
 
             {(selectedEmp.salary_type === 'komisi' || selectedEmp.salary_type === 'campuran') && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p style={sLabel}>TOTAL PENJUALAN</p>
+                  <label className={labelClass}>Total Penjualan Sales</label>
                   <InputRupiah value={salesAmount} onChange={setSalesAmount} />
                 </div>
                 <div>
-                  <p style={{ ...sLabel, opacity: 0.6 }}>KOMISI ({selectedEmp.commission_pct}%)</p>
-                  <div style={{ ...sInput, opacity: 0.6 }}>{formatIDR(calcComm)}</div>
+                  <label className="block text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest mb-1.5">Kalkulasi Komisi ({selectedEmp.commission_pct}%)</label>
+                  <div className="h-10 flex items-center px-3.5 bg-slate-550 dark:bg-white/[0.01] border border-border/40 rounded-xl text-xs font-black text-emerald-500">
+                    {formatIDR(calcComm)}
+                  </div>
                 </div>
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div><p style={sLabel}>BONUS</p><InputRupiah value={bonus} onChange={setBonus} /></div>
-              <div><p style={sLabel}>POTONGAN</p><InputRupiah value={deduction} onChange={setDeduction} /></div>
-            </div>
-
-            {/* Preview */}
-            <div style={{ background: C.input, borderRadius: '12px', padding: '14px', border: `1px solid ${C.border}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', color: C.muted }}>Base</span>
-                <span style={{ fontSize: '12px', color: C.text, fontWeight: 600 }}>{formatIDR(calcBase)}</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Bonus Tambahan</label>
+                <InputRupiah value={bonus} onChange={setBonus} />
               </div>
-              {calcComm > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', color: C.muted }}>Komisi</span>
-                <span style={{ fontSize: '12px', color: C.text, fontWeight: 600 }}>+ {formatIDR(calcComm)}</span>
-              </div>}
-              {bonus > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', color: C.muted }}>Bonus</span>
-                <span style={{ fontSize: '12px', color: C.green, fontWeight: 600 }}>+ {formatIDR(bonus)}</span>
-              </div>}
-              {deduction > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', color: C.muted }}>Potongan</span>
-                <span style={{ fontSize: '12px', color: C.red, fontWeight: 600 }}>- {formatIDR(deduction)}</span>
-              </div>}
-              <div style={{ borderTop: `1px solid ${C.border}`, marginTop: '8px', paddingTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', color: C.text, fontWeight: 800 }}>TOTAL</span>
-                <span style={{ fontSize: '16px', color: C.text, fontWeight: 900, fontFamily: 'DM Sans' }}>{formatIDR(totalPay)}</span>
+              <div>
+                <label className={labelClass}>Potongan Kasbon / Denda</label>
+                <InputRupiah value={deduction} onChange={setDeduction} />
               </div>
             </div>
 
-            <div><p style={sLabel}>CATATAN</p><textarea rows={2} style={{ ...sInput, resize: 'vertical' }} value={payNotes} onChange={e => setPayNotes(e.target.value)} /></div>
+            {/* Receipt Preview */}
+            <div className="bg-slate-555 dark:bg-white/[0.01] border border-border/60 rounded-2xl p-4 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span className="font-semibold">Base / Gaji Pokok</span>
+                <span className="font-bold text-foreground">{formatIDR(calcBase)}</span>
+              </div>
+              {calcComm > 0 && (
+                <div className="flex justify-between items-center text-muted-foreground">
+                  <span className="font-semibold">Komisi Penjualan</span>
+                  <span className="font-bold text-emerald-500">+ {formatIDR(calcComm)}</span>
+                </div>
+              )}
+              {bonus > 0 && (
+                <div className="flex justify-between items-center text-muted-foreground">
+                  <span className="font-semibold">Bonus</span>
+                  <span className="font-bold text-emerald-500">+ {formatIDR(bonus)}</span>
+                </div>
+              )}
+              {deduction > 0 && (
+                <div className="flex justify-between items-center text-muted-foreground">
+                  <span className="font-semibold">Potongan</span>
+                  <span className="font-bold text-rose-500">- {formatIDR(deduction)}</span>
+                </div>
+              )}
+              <div className="border-t border-border/50 pt-2.5 mt-2 flex justify-between items-center">
+                <span className="font-black text-foreground">TOTAL DITERIMA</span>
+                <span className="font-black text-sm text-foreground">{formatIDR(totalPay)}</span>
+              </div>
+            </div>
 
-            <button onClick={handleSubmit} disabled={recordPayroll.isPending} style={{ ...sBtn(true), width: '100%', padding: '14px' }}>
-              {recordPayroll.isPending ? 'Menyimpan...' : 'Catat Gaji'}
+            <div>
+              <label className={labelClass}>Catatan Slip Gaji</label>
+              <textarea
+                rows={2}
+                className="w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 resize-none font-bold"
+                value={payNotes}
+                onChange={e => setPayNotes(e.target.value)}
+                placeholder="Tulis rincian absen / lembur jika ada..."
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={recordPayroll.isPending}
+              className="w-full h-11 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-xl shadow-lg shadow-amber-600/30 transition-all mt-2 cursor-pointer flex items-center justify-center"
+            >
+              {recordPayroll.isPending ? 'Menyimpan...' : 'Catat & Simpan Slip Gaji'}
             </button>
-          </div>
+          </motion.div>
         )}
       </div>
 
-      {/* SECTION C: History */}
-      <div>
-        <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '12px' }}>RIWAYAT PAYROLL</p>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          <input type="month" style={{ ...sInput, width: 'auto', minWidth: '160px' }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)} />
-          <CustomSelect
-            style={{ width: 'auto', minWidth: '160px' }}
-            value={filterEmp}
-            onChange={setFilterEmp}
-            options={[
-              { value: '', label: 'Semua Pegawai' },
-              ...employees.map(e => ({ value: e.id, label: e.full_name }))
-            ]}
-            placeholder="Semua Pegawai"
+      {/* History */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+          Riwayat Penerimaan Gaji & Slip Payroll
+        </h3>
+
+        {/* Filter Bar */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          <input
+            type="month"
+            className="bg-card border border-border/60 rounded-xl px-3 h-10 text-xs font-bold text-foreground outline-none focus:border-amber-500 cursor-pointer"
+            value={filterMonth}
+            onChange={e => setFilterMonth(e.target.value)}
           />
+          <div className="min-w-[180px]">
+            <CustomSelect
+              value={filterEmp}
+              onChange={setFilterEmp}
+              options={[
+                { value: '', label: 'Semua Karyawan' },
+                ...employees.map(e => ({ value: e.id, label: e.full_name }))
+              ]}
+              placeholder="Semua Karyawan"
+            />
+          </div>
         </div>
 
         {/* Desktop Table */}
         {isDesktop ? (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                  {['Pegawai', 'Periode', 'Tipe', 'Hari/Trip', 'Base', 'Komisi', 'Bonus', 'Potongan', 'Total', 'Status', ''].map((h, i) => (
-                    <th key={i} style={{ textAlign: 'left', padding: '8px 6px', color: C.muted, fontWeight: 700, fontSize: '10px', letterSpacing: '0.06em' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPayrolls.map(p => {
-                  const isPending = p.payment_status === 'pending'
-                  return (
-                    <tr key={p.id} style={{ borderBottom: `1px solid rgba(234,88,12,0.08)` }}>
-                      <td style={{ padding: '8px 6px', color: C.text, fontWeight: 600 }}>{p.sembako_employees?.full_name || '-'}</td>
-                      <td style={{ padding: '8px 6px', color: C.muted }}>{fmtDate(p.period_date)}</td>
-                      <td style={{ padding: '8px 6px', color: C.muted }}>{p.period_type}</td>
-                      <td style={{ padding: '8px 6px', color: C.text }}>{p.work_days || p.trip_count || '-'}</td>
-                      <td style={{ padding: '8px 6px', color: C.text }}>{formatIDR(p.base_amount)}</td>
-                      <td style={{ padding: '8px 6px', color: C.text }}>{p.commission_amount ? formatIDR(p.commission_amount) : '-'}</td>
-                      <td style={{ padding: '8px 6px', color: C.green }}>{p.bonus ? `+${formatIDR(p.bonus)}` : '-'}</td>
-                      <td style={{ padding: '8px 6px', color: C.red }}>{p.deduction ? `-${formatIDR(p.deduction)}` : '-'}</td>
-                      <td style={{ padding: '8px 6px', color: C.text, fontWeight: 700 }}>{formatIDR(p.total_pay)}</td>
-                      <td style={{ padding: '8px 6px' }}>
-                        <span style={{
-                          fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px',
-                          background: isPending ? 'rgba(245,158,11,0.12)' : 'rgba(2, 26, 2,0.12)',
-                          color: isPending ? C.amber : C.green,
-                        }}>{isPending ? 'Pending' : 'Paid'}</span>
-                      </td>
-                      <td style={{ padding: '8px 6px' }}>
-                        {isPending && (
-                          <button onClick={() => markPaid.mutate(p.id)} style={{
-                            background: 'rgba(2, 26, 2,0.15)', border: 'none', borderRadius: '6px',
-                            padding: '4px 10px', cursor: 'pointer', color: C.green, fontSize: '10px', fontWeight: 700,
-                            display: 'flex', alignItems: 'center', gap: '4px',
-                          }}>
-                            <Check size={10} /> Lunas
-                          </button>
-                        )}
+          <div className="border border-border/60 rounded-2xl overflow-hidden bg-card shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr className="border-b border-border/60 bg-slate-50 dark:bg-white/[0.01]">
+                    {['Pegawai', 'Periode', 'Tipe Gaji', 'Hari/Trip', 'Base', 'Komisi', 'Bonus', 'Potongan', 'Total Gaji', 'Status', 'Aksi'].map((h, i) => (
+                      <th key={i} className="p-3.5 font-black text-[10px] text-muted-foreground uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {filteredPayrolls.map(p => {
+                    const isPending = p.payment_status === 'pending'
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                        <td className="p-3.5 font-bold text-foreground">{p.sembako_employees?.full_name || '-'}</td>
+                        <td className="p-3.5 text-muted-foreground font-semibold">{fmtDate(p.period_date)}</td>
+                        <td className="p-3.5 text-muted-foreground font-semibold capitalize">{p.period_type}</td>
+                        <td className="p-3.5 text-foreground font-bold">{p.work_days || p.trip_count || '—'}</td>
+                        <td className="p-3.5 text-foreground font-semibold">{formatIDR(p.base_amount)}</td>
+                        <td className="p-3.5 text-foreground font-semibold">{p.commission_amount ? formatIDR(p.commission_amount) : '—'}</td>
+                        <td className="p-3.5 text-emerald-500 font-bold">{p.bonus ? `+${formatIDR(p.bonus)}` : '—'}</td>
+                        <td className="p-3.5 text-rose-500 font-bold">{p.deduction ? `-${formatIDR(p.deduction)}` : '—'}</td>
+                        <td className="p-3.5 text-foreground font-black">{formatIDR(p.total_pay)}</td>
+                        <td className="p-3.5">
+                          <span className={cn(
+                            "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border",
+                            isPending
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                              : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          )}>
+                            {isPending ? 'Pending' : 'Lunas'}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          {isPending && (
+                            <button
+                              onClick={() => markPaid.mutate(p.id)}
+                              className="px-3 h-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold cursor-pointer transition-all active:scale-95 flex items-center gap-1"
+                            >
+                              <Check size={12} />
+                              <span>Lunas</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+
+                  {filteredPayrolls.length === 0 && (
+                    <tr>
+                      <td colSpan={11} className="p-8 text-center text-muted-foreground italic font-semibold">
+                        Tidak ada riwayat slip gaji ditemukan.
                       </td>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           /* Mobile cards */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="space-y-3">
             {filteredPayrolls.map(p => {
               const isPending = p.payment_status === 'pending'
               return (
-                <div key={p.id} style={{ background: C.card, borderRadius: '12px', padding: '12px', border: `1px solid ${C.border}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: C.text, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.sembako_employees?.full_name || '-'}</span>
+                <div key={p.id} className="bg-card border border-border/60 rounded-2xl p-4 space-y-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-black text-foreground truncate">{p.sembako_employees?.full_name || '-'}</h4>
+                      <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">
+                        {fmtDate(p.period_date)} · <span className="capitalize">{p.period_type}</span>
+                      </p>
                     </div>
-                    <span style={{
-                      fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px',
-                      background: isPending ? 'rgba(245,158,11,0.12)' : 'rgba(2, 26, 2,0.12)',
-                      color: isPending ? C.amber : C.green,
-                    }}>{isPending ? 'Pending' : 'Paid'}</span>
+                    <span className={cn(
+                      "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0",
+                      isPending
+                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    )}>
+                      {isPending ? 'Pending' : 'Lunas'}
+                    </span>
                   </div>
-                  <p style={{ fontSize: '11px', color: C.muted }}>{fmtDate(p.period_date)} · {p.period_type}</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: C.text, fontFamily: 'DM Sans' }}>{formatIDR(p.total_pay)}</span>
+
+                  <div className="flex justify-between items-center pt-2.5 border-t border-border/40">
+                    <span className="text-sm font-black text-foreground">{formatIDR(p.total_pay)}</span>
                     {isPending && (
-                      <button onClick={() => markPaid.mutate(p.id)} style={{
-                        background: 'rgba(2, 26, 2,0.15)', border: 'none', borderRadius: '8px',
-                        padding: '6px 12px', cursor: 'pointer', color: C.green, fontSize: '11px', fontWeight: 700,
-                      }}>Tandai Lunas</button>
+                      <button
+                        onClick={() => markPaid.mutate(p.id)}
+                        className="px-4 h-8 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+                      >
+                        <Check size={14} />
+                        <span>Tandai Lunas</span>
+                      </button>
                     )}
                   </div>
                 </div>
               )
             })}
             {filteredPayrolls.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
-                <DollarSign size={28} color={C.muted} style={{ margin: '0 auto 8px' }} />
-                <p style={{ fontSize: '13px', fontWeight: 600 }}>Belum ada data payroll</p>
+              <div className="bg-card border border-border/60 rounded-2xl p-8 text-center text-muted-foreground">
+                <DollarSign size={32} className="mx-auto mb-2 opacity-30 text-amber-500" />
+                <p className="text-xs font-bold text-foreground">Belum ada data payroll</p>
               </div>
             )}
           </div>
         )}
       </div>
     </div>
-  )
-}
-
-// ── Shared ───────────────────────────────────────────────────────────────────
-function SummaryCard({ icon: Icon, label, value, color }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{
-      background: C.card, borderRadius: '14px', padding: '14px',
-      border: `1px solid ${C.border}`, borderLeft: `3px solid ${color}`,
-    }}>
-      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-        <Icon size={14} color={color} />
-      </div>
-      <p style={{ fontSize: '10px', color: C.muted, fontWeight: 700, letterSpacing: '0.06em' }}>{label.toUpperCase()}</p>
-      <p style={{ fontSize: '18px', fontWeight: 800, color: C.text, fontFamily: 'DM Sans' }}>{value}</p>
-    </motion.div>
   )
 }
