@@ -48,7 +48,7 @@ export default function SembakoPenjualan() {
   return (
     <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: '96px' }}>
       {!isDesktop && <BrokerMobileHeader title="Penjualan" onMenuClick={() => setSidebarOpen(true)} />}
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto', fontFamily: "'Sora', 'Inter', sans-serif" }}>
         <TabInvoice isDesktop={isDesktop} openWizard={openWizard} setOpenWizard={setOpenWizard} />
       </div>
     </div>
@@ -195,7 +195,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
       {!isDesktop && <SembakoSummaryStrip isDesktop={isDesktop} items={summaryItems} />}
 
       {isDesktop && (
-        <div style={{ padding: '20px 20px 0', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ padding: '20px 24px 0', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '20px' }}>
           <SembakoStatCard icon={CreditCard} label="Piutang" value={formatIDR(stats.piutang)} color="red" subLabel="Sisa tagihan aktif" />
           <SembakoStatCard icon={CheckCircle2} label="Lunas" value={stats.lunas} color="green" subLabel="Invoice selesai" />
           <SembakoStatCard icon={AlertTriangle} label="Jatuh Tempo" value={stats.overdue} color={stats.overdue > 0 ? 'red' : 'green'} subLabel="Butuh follow-up" />
@@ -204,7 +204,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
 
       {/* Quota Banner — Starter only */}
       {quota.isStarter && (
-        <div style={{ padding: '0 20px', marginBottom: '12px' }}>
+        <div style={{ padding: isDesktop ? '0 24px' : '0 16px', marginBottom: '12px' }}>
           <div
             className="px-4 py-3 rounded-xl flex items-center justify-between gap-3"
             style={{
@@ -270,7 +270,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
         </div>
       )}
 
-      <div style={{ padding: '0 20px' }}>
+      <div style={{ padding: isDesktop ? '0 24px' : '0 16px' }}>
         {isLoading ? <LoadingSkeleton /> : paged.length === 0 ? (
           sales.length === 0 && invoiceFilter === 'all' && !search ? (
             <EmptyBox
@@ -305,7 +305,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px', padding: '0 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px', padding: isDesktop ? '0 24px' : '0 16px' }}>
           {Array.from({ length: totalPages }, (_, i) => (
             <button key={i} onClick={() => setPage(i)} style={{
               width: '32px', height: '32px', borderRadius: '8px', border: 'none', cursor: 'pointer',

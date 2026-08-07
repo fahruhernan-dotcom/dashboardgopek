@@ -73,6 +73,7 @@ export function MobileBeranda({
   const todayCash = useMemo(() => todaySales.reduce((sum, s) => sum + Number(s.paid_amount || 0), 0), [todaySales])
   const todayPiutang = useMemo(() => todaySales.reduce((sum, s) => sum + Number(s.remaining_amount || 0), 0), [todaySales])
   const cashPct = useMemo(() => todayOmzet > 0 ? (todayCash / todayOmzet) * 100 : 0, [todayCash, todayOmzet])
+  const piutangPct = useMemo(() => todayOmzet > 0 ? (todayPiutang / todayOmzet) * 100 : 0, [todayPiutang, todayOmzet])
 
   const topProducts = useMemo(() => {
     return [...products]
@@ -170,11 +171,11 @@ export function MobileBeranda({
                   </div>
                   <div style={{ background: '#E2E8F0', height: '8px', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
                     <div style={{ width: `${cashPct}%`, background: MC.amber, height: '100%' }} />
-                    <div style={{ flex: 1, background: MC.red, height: '100%' }} />
+                    <div style={{ width: `${piutangPct}%`, background: MC.red, height: '100%' }} />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: MC.muted, marginTop: '4px' }}>
                     <span>{cashPct.toFixed(0)}% Cash</span>
-                    <span>{(100 - cashPct).toFixed(0)}% Piutang</span>
+                    <span>{piutangPct.toFixed(0)}% Piutang</span>
                   </div>
                 </div>
 

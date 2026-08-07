@@ -11,36 +11,32 @@ export function SembakoStatCard({ label, value, icon: Icon, color = 'accent', su
 
   const colorStyles = {
     accent: {
-      bg: '#F8FAFC',
-      border: '#E2E8F0',
-      title: '#64748B',
-      value: '#0F172A',
-      sub: '#64748B',
-      icon: '#64748B',
+      cardClass: 'bg-card border-border/60',
+      titleClass: 'text-muted-foreground',
+      valueClass: 'text-foreground',
+      subClass: 'text-muted-foreground',
+      iconClass: 'text-muted-foreground/30',
     },
     amber: {
-      bg: '#FFFBEB',
-      border: '#FDE68A',
-      title: '#B45309',
-      value: '#0F172A',
-      sub: '#B45309',
-      icon: '#D97706',
+      cardClass: 'bg-amber-500/[0.04] dark:bg-amber-500/[0.07] border-amber-500/20 dark:border-amber-500/30',
+      titleClass: 'text-amber-600 dark:text-amber-400',
+      valueClass: 'text-foreground',
+      subClass: 'text-amber-700/80 dark:text-amber-500',
+      iconClass: 'text-amber-500/20 dark:text-amber-400/25',
     },
     green: {
-      bg: '#F0FDF4',
-      border: '#BBF7D0',
-      title: '#15803D',
-      value: '#0F172A',
-      sub: '#15803D',
-      icon: '#16A34A',
+      cardClass: 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07] border-emerald-500/20 dark:border-emerald-500/30',
+      titleClass: 'text-emerald-600 dark:text-emerald-400',
+      valueClass: 'text-foreground',
+      subClass: 'text-emerald-700/80 dark:text-emerald-500',
+      iconClass: 'text-emerald-500/20 dark:text-emerald-400/25',
     },
     red: {
-      bg: '#FEF2F2',
-      border: '#FEE2E2',
-      title: '#B91C1C',
-      value: '#0F172A',
-      sub: '#B91C1C',
-      icon: '#EF4444',
+      cardClass: 'bg-rose-500/[0.04] dark:bg-rose-500/[0.07] border-rose-500/20 dark:border-rose-500/30',
+      titleClass: 'text-rose-600 dark:text-rose-450',
+      valueClass: 'text-foreground',
+      subClass: 'text-rose-700/80 dark:text-rose-500',
+      iconClass: 'text-rose-500/20 dark:text-rose-400/25',
     },
   }
 
@@ -48,14 +44,13 @@ export function SembakoStatCard({ label, value, icon: Icon, color = 'accent', su
 
   return (
     <Card
-      className="relative overflow-hidden shadow-sm rounded-[22px] p-5 group transition-all hover:scale-[1.02] border"
-      style={{
-        background: cs.bg,
-        borderColor: cs.border,
-      }}
+      className={cn(
+        "relative overflow-hidden shadow-tko-sm rounded-[22px] p-5 group transition-all hover:scale-[1.02] border",
+        cs.cardClass
+      )}
     >
       {Icon && (
-        <div className="absolute top-3 right-3 p-2.5 opacity-20 group-hover:opacity-40 transition-opacity" style={{ color: cs.icon }}>
+        <div className={cn("absolute top-3 right-3 p-2.5 opacity-80 group-hover:opacity-100 transition-opacity", cs.iconClass)}>
           <Icon size={40} strokeWidth={1.8} />
         </div>
       )}
@@ -63,23 +58,21 @@ export function SembakoStatCard({ label, value, icon: Icon, color = 'accent', su
       <div className="relative z-10 flex flex-col items-start text-left">
         <p
           className={cn(
-            'font-black uppercase tracking-[0.18em] mb-1.5',
-            isDesktop ? 'text-[11px]' : 'text-[11px]'
+            'font-black uppercase tracking-[0.18em] mb-1.5 text-[11px]',
+            cs.titleClass
           )}
-          style={{ color: cs.title }}
         >
           {label}
         </p>
-        <h3 className="text-2xl font-black tabular-nums tracking-tight mb-1" style={{ color: cs.value }}>
+        <h3 className={cn("text-2xl font-black tabular-nums tracking-tight mb-1", cs.valueClass)}>
           {value}
         </h3>
         {subLabel && (
           <p
             className={cn(
-              'font-bold uppercase tracking-widest italic',
-              isDesktop ? 'text-[10px]' : 'text-[10px]'
+              'font-bold uppercase tracking-widest italic text-[10px]',
+              cs.subClass
             )}
-            style={{ color: cs.sub }}
           >
             {subLabel}
           </p>

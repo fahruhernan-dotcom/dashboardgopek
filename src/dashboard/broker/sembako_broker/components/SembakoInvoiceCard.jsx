@@ -64,9 +64,9 @@ function MiniDeliveryRow({ delivery, onStart, onComplete, onNavigate }) {
     <div
       onClick={e => { e.stopPropagation(); onNavigate?.(delivery.id) }}
       style={{
-        background: 'rgba(255,255,255,0.03)',
+        background: 'var(--bg-surface)',
         borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid var(--border-soft)',
         padding: '10px 12px',
         display: 'flex',
         flexDirection: 'column',
@@ -91,20 +91,20 @@ function MiniDeliveryRow({ delivery, onStart, onComplete, onNavigate }) {
           )}
           {meta.label}
         </span>
-        <span style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 700 }}>{fmtDate(delivery.delivery_date)}</span>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700 }}>{fmtDate(delivery.delivery_date)}</span>
       </div>
 
       {/* Row 2: driver + vehicle */}
       <div style={{ display: 'flex', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }}>
-          <User size={10} color="#94A3B8" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <User size={10} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {isDirect ? 'Diserahkan Langsung' : (driverName || '—')}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-          <Truck size={10} color="#94A3B8" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700 }}>
+          <Truck size={10} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
             {isDirect ? 'Tanpa Kurir' : (vehicleName || '—')}
           </span>
         </div>
@@ -307,18 +307,17 @@ function SaleDeliveryPanel({ sale, onOpenDetail, onEdit }) {
 
   return (
     <div style={{
-      background: '#0F1A10',
-      borderRadius: '0 0 18px 18px',
-      border: `1px solid ${C.border}`,
-      borderTop: 'none',
+      background: 'var(--bg-subtle)',
+      borderRadius: '16px',
+      border: `1px solid var(--border-soft)`,
       padding: '12px 14px 14px',
     }}>
       {/* Section header */}
       <p style={{
         fontSize: '9px', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase',
-        color: '#94A3B8', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px',
+        color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px',
       }}>
-        <Truck size={11} color="#94A3B8" />
+        <Truck size={11} color="var(--text-muted)" />
         {isDirectSale ? `Penyerahan Barang (${saleDeliveries.length})` : `Pengiriman (${saleDeliveries.length})`}
       </p>
 
@@ -697,31 +696,34 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
     : () => setExpanded(v => !v)
 
   return (
-    <div>
-      <BrokerBaseCard
-        onClick={handleCardClick}
-        isLoss={false}
-        header={isDesktop ? desktopHeader : mobileHeader}
-        footer={footer}
-        isDesktop={isDesktop}
-        className={!isDesktop && expanded ? 'rounded-b-none border-b-0' : ''}
-      >
-        {isDesktop ? desktopBody : mobileBody}
-      </BrokerBaseCard>
+    <BrokerBaseCard
+      onClick={handleCardClick}
+      isLoss={false}
+      header={isDesktop ? desktopHeader : mobileHeader}
+      footer={footer}
+      isDesktop={isDesktop}
+    >
+      {isDesktop ? desktopBody : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {mobileBody}
 
-      <AnimatePresence>
-        {!isDesktop && expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-            style={{ overflow: 'hidden' }}
-          >
-            <SaleDeliveryPanel sale={sale} onOpenDetail={onOpenDetail} onEdit={onEdit} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          <AnimatePresence>
+            {!isDesktop && expanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: '12px', marginTop: '4px' }}>
+                  <SaleDeliveryPanel sale={sale} onOpenDetail={onOpenDetail} onEdit={onEdit} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+    </BrokerBaseCard>
   )
 }
