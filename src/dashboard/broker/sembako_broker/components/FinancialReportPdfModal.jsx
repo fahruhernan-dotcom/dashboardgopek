@@ -98,29 +98,60 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
               className="w-full max-w-[210mm] bg-white text-slate-900 p-8 sm:p-10 shadow-2xl rounded-sm text-left font-sans text-xs leading-normal font-normal"
               style={{ minHeight: '297mm', colorScheme: 'light' }}
             >
-              {/* CSS Rule for Native Print */}
+              {/* CSS Rule for Multi-Page Native Print */}
               <style>{`
                 @media print {
+                  /* Hide non-printable UI overlays */
                   body * {
                     visibility: hidden !important;
                   }
+
+                  /* Reset fixed modal parent containers so print engine flows across pages */
+                  html, body, #root, [class*="fixed"], [class*="overflow-"] {
+                    overflow: visible !important;
+                    height: auto !important;
+                    position: static !important;
+                    background: white !important;
+                  }
+
+                  /* Make printable document & children visible */
                   #printable-financial-report, #printable-financial-report * {
                     visibility: visible !important;
                   }
+
                   #printable-financial-report {
-                    position: absolute !important;
+                    position: relative !important;
                     left: 0 !important;
                     top: 0 !important;
                     width: 100% !important;
                     max-width: none !important;
                     margin: 0 !important;
-                    padding: 15mm !important;
+                    padding: 8mm 12mm !important;
                     box-shadow: none !important;
                     border-radius: 0 !important;
+                    background: white !important;
+                    color: black !important;
+                    height: auto !important;
+                    min-height: auto !important;
+                    overflow: visible !important;
                   }
+
+                  /* Prevent table rows and section headers from awkward page breaks */
+                  tr, table {
+                    page-break-inside: auto !important;
+                  }
+                  tr {
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                  }
+                  h1, h2, h3 {
+                    page-break-after: avoid !important;
+                    break-after: avoid !important;
+                  }
+
                   @page {
                     size: A4 portrait;
-                    margin: 0;
+                    margin: 10mm 10mm 10mm 10mm;
                   }
                 }
               `}</style>
