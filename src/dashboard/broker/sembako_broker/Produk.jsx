@@ -616,6 +616,7 @@ export default function Produk() {
   const [sheet, setSheet] = useState(null) // null | 'new' | product object
   const [showInactive, setShowInactive] = useState(false)
   const [productToDelete, setProductToDelete] = useState(null)
+  const [importCsvOpen, setImportCsvOpen] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -673,8 +674,6 @@ export default function Produk() {
     { label: 'Stok Menipis', value: stats.lowStock > 0 ? `${stats.lowStock} produk` : 'Stok Aman', color: stats.lowStock > 0 ? 'red' : 'green', subLabel: stats.lowStock > 0 ? 'perlu restock' : 'semua aman' },
     { label: 'Total Nilai Stok', value: stats.nilaiStok, isCurrency: true, color: 'amber' },
   ]
-
-  const [importCsvOpen, setImportCsvOpen] = useState(false)
 
   const categoryFilters = categories.map(c => ({ id: c, label: c }))
 

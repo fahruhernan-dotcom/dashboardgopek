@@ -100,6 +100,7 @@ export default function SembakoTokoSupplier() {
   const [search, setSearch] = useState('')
   const [selectedArea, setSelectedArea] = useState('Semua Area')
   const [onlyHutang, setOnlyHutang] = useState(false)
+  const [importCsvOpen, setImportCsvOpen] = useState(false)
 
   const { data: customers = [], isError: isCustError, error: custError, refetch: refetchCust } = useSembakoCustomers()
   const { data: suppliers = [], isError: isSuppError, error: suppError, refetch: refetchSupp } = useSembakoSuppliers()
@@ -215,8 +216,6 @@ export default function SembakoTokoSupplier() {
   if (isSuppError) return <SembakoErrorState error={suppError} onRetry={refetchSupp} />
   if (isSalesError) return <SembakoErrorState error={salesError} onRetry={refetchSales} />
   if (isBatchError) return <SembakoErrorState error={batchError} onRetry={refetchBatch} />
-
-  const [importCsvOpen, setImportCsvOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-background pb-24 text-left">
