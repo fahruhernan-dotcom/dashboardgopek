@@ -1,0 +1,5 @@
+invoice_number,transaction_date,customer_name,product_name,quantity,sell_price,paid_amount,notes
+INV-20260801-001,2026-08-01,Toko Barokah Jaya,Sampoerna Mild 16,10,32000,320000,Penjualan Lunas
+INV-20260801-001,2026-08-01,Toko Barokah Jaya,Minyak Goreng Kita 1L,20,16500,320000,Penjualan Lunas
+INV-20260802-002,2026-08-02,Warung Kelontong Pak Eko,Garam Filter 12,5,24000,60000,Bayar Sebagian (DP)
+INV-20260803-003,2026-08-03,Agen Sembako Makmur,Gula Pasir Kristal 1kg,50,17500,0,Tempo 7 Hari

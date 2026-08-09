@@ -1,0 +1,4 @@
+batch_number,purchase_date,supplier_name,product_name,qty_masuk,buy_price,notes
+BATCH-20260801-A1,2026-08-01,PT HM Sampoerna Tbk,Sampoerna Mild 16,200,28500,Restock awal bulan
+BATCH-20260801-A2,2026-08-01,PT Indofood Sukses Makmur,Minyak Goreng Kita 1L,500,14000,Pengadaan dari distributor
+BATCH-20260802-A3,2026-08-02,CV Distributor Sembako Nusantara,Gula Pasir Kristal 1kg,300,15000,Restock gula kristal
