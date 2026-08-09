@@ -154,7 +154,8 @@ export const useSembakoLaporan = (startDate, endDate) => {
           allSupplierPaymentsRes,
           allExpensesRes,
           allPayrollRes,
-          allSalesRes
+          allSalesRes,
+          allSuppliersRes
         ] = await Promise.all([
           // Period Sales
           supabase.from('sembako_sales')
@@ -175,12 +176,12 @@ export const useSembakoLaporan = (startDate, endDate) => {
             .gte('period_date', startDate).lte('period_date', endDate),
           // All Stock Batches (active & historical)
           supabase.from('sembako_stock_batches')
-            .select('qty_masuk, buy_price, total_cost, qty_sisa, purchase_date')
+            .select('*, sembako_suppliers(supplier_name)')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false),
           // Period Supplier Payments
           supabase.from('sembako_supplier_payments')
-            .select('*')
+            .select('*, sembako_suppliers(supplier_name)')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false)
             .gte('payment_date', startDate)
@@ -197,7 +198,7 @@ export const useSembakoLaporan = (startDate, endDate) => {
             .eq('is_deleted', false),
           // All Supplier Payments (historical + period)
           supabase.from('sembako_supplier_payments')
-            .select('amount, payment_method, payment_date')
+            .select('amount, payment_method, payment_date, supplier_id')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false),
           // All Expenses (historical + period)
@@ -215,6 +216,11 @@ export const useSembakoLaporan = (startDate, endDate) => {
             .select('remaining_amount')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false),
+          // All Suppliers for ID to Name mapping
+          supabase.from('sembako_suppliers')
+            .select('id, supplier_name')
+            .eq('tenant_id', tenant.id)
+            .eq('is_deleted', false),
         ])
 
         if (salesRes.error) console.error('Sembako Report (Sales):', salesRes.error)
@@ -229,8 +235,20 @@ export const useSembakoLaporan = (startDate, endDate) => {
         const sales = (salesRes.data || []).map(sale => processSaleRow(sale, returnsList))
         const expenses = expensesRes.data || []
         const payroll = payrollRes.data || []
-        const batches = batchesRes.data || []
-        const supplierPayments = supplierPaymentsRes.data || []
+        const supplierMap = (allSuppliersRes?.data || []).reduce((acc, s) => {
+          if (s.id) acc[s.id] = s.supplier_name
+          return acc
+        }, {})
+
+        const supplierPayments = (supplierPaymentsRes.data || []).map(sp => ({
+          ...sp,
+          supplier_name: sp.supplier_name || sp.sembako_suppliers?.supplier_name || supplierMap[sp.supplier_id] || 'Supplier'
+        }))
+
+        const batches = (batchesRes.data || []).map(b => ({
+          ...b,
+          supplier_name: b.supplier_name || b.sembako_suppliers?.supplier_name || supplierMap[b.supplier_id] || 'Supplier'
+        }))
 
         const allPayments = allPaymentsRes.data || []
         const allSupplierPayments = allSupplierPaymentsRes.data || []
@@ -315,6 +333,8 @@ export const useSembakoLaporan = (startDate, endDate) => {
           sales,
           expenses,
           payroll,
+          supplierPayments,
+          batches,
         }
       } catch (err) {
         throw normalizeSupabaseError(err)
