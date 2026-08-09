@@ -3,8 +3,9 @@ import { useLocation, useNavigate, useOutletContext, Link } from 'react-router-d
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
 import {
   Plus, CreditCard, CheckCircle2, AlertTriangle,
-  History, Lock,
+  History, Lock, FileSpreadsheet,
 } from 'lucide-react'
+import ImportCsvModal from '@/components/ui/ImportCsvModal'
 import { useSembakoSales, useSembakoReturns, useSembakoProducts } from '@/lib/hooks/useSembakoData'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatIDR } from '@/lib/format'
@@ -70,6 +71,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
   const [selectedSaleId, setSelectedSaleId] = useState(null)
   const [showDetail, setShowDetail] = useState(false)
   const [editSaleId, setEditSaleId] = useState(null)
+  const [importCsvOpen, setImportCsvOpen] = useState(false)
 
   // Context preservation: auto-open sale detail sheet if saleId is passed
   useEffect(() => {
@@ -178,17 +180,27 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
         activeFilter={invoiceFilter}
         onFilterChange={setInvoiceFilter}
         actionButton={
-          <button
-            type="button"
-            onClick={() => !quota.isAtLimit && setOpenWizard(true)}
-            disabled={quota.isAtLimit}
-            title={quota.isAtLimit ? 'Kuota transaksi bulan ini habis — Upgrade ke Pro' : undefined}
-            className="h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-white dark:text-tko-forest-950 dark:font-black bg-[#EA580C] dark:bg-tko-brand-500 hover:opacity-95 shadow-tko-brand disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border-none flex items-center"
-            style={quota.isAtLimit ? { background: '#6B7280' } : {}}
-          >
-            {quota.isAtLimit ? <Lock size={14} className="mr-1" /> : <Plus size={15} className="mr-1" />}
-            {quota.isAtLimit ? 'Kuota Habis' : 'Catat Penjualan'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setImportCsvOpen(true)}
+              className="h-10 rounded-xl px-3 text-[10px] font-bold text-foreground bg-card border border-border/60 hover:bg-muted transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <FileSpreadsheet size={15} className="text-amber-500" />
+              <span>Import CSV</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => !quota.isAtLimit && setOpenWizard(true)}
+              disabled={quota.isAtLimit}
+              title={quota.isAtLimit ? 'Kuota transaksi bulan ini habis — Upgrade ke Pro' : undefined}
+              className="h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-white dark:text-tko-forest-950 dark:font-black bg-[#EA580C] dark:bg-tko-brand-500 hover:opacity-95 shadow-tko-brand disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border-none flex items-center"
+              style={quota.isAtLimit ? { background: '#6B7280' } : {}}
+            >
+              {quota.isAtLimit ? <Lock size={14} className="mr-1" /> : <Plus size={15} className="mr-1" />}
+              {quota.isAtLimit ? 'Kuota Habis' : 'Catat Penjualan'}
+            </button>
+          </div>
         }
       />
 
@@ -322,6 +334,11 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
         onOpenChange={setShowDetail}
         sale={selectedSale}
         onEdit={handleOpenEdit}
+      />
+      <ImportCsvModal
+        open={importCsvOpen}
+        onClose={() => setImportCsvOpen(false)}
+        defaultEntity="sales"
       />
     </div>
   )

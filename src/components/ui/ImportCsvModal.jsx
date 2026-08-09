@@ -91,6 +91,37 @@ const ENTITIES = {
     sampleRow: ['PT Indofood Sukses', 'Budi Sales', '081987654321', 'Kawasan Industri Blok C'],
     queryKeys: ['sembako-suppliers', 'sembako-toko-supplier'],
   },
+  sales: {
+    label: 'Riwayat Transaksi Penjualan',
+    table: 'sembako_sales',
+    fields: [
+      { key: 'invoice_number', label: 'No. Invoice / Nota', required: true, aliases: ['invoice', 'no_invoice', 'nota', 'no_nota', 'invoice_number'] },
+      { key: 'transaction_date', label: 'Tanggal Transaksi (YYYY-MM-DD)', required: false, aliases: ['tanggal', 'tgl', 'transaction_date', 'date'] },
+      { key: 'customer_name', label: 'Nama Toko / Pelanggan', required: true, aliases: ['nama_toko', 'toko', 'pelanggan', 'customer', 'customer_name'] },
+      { key: 'product_name', label: 'Nama Produk', required: true, aliases: ['nama_produk', 'produk', 'item', 'product_name'] },
+      { key: 'quantity', label: 'Jumlah Qty', required: true, aliases: ['qty', 'jumlah', 'quantity', 'banyak'], isNumber: true },
+      { key: 'sell_price', label: 'Harga Jual (Rp)', required: true, aliases: ['harga', 'harga_jual', 'price', 'sell_price'], isNumber: true },
+      { key: 'paid_amount', label: 'Total Dibayar (Rp)', required: false, aliases: ['dibayar', 'bayar', 'paid', 'paid_amount'], isNumber: true },
+      { key: 'notes', label: 'Catatan', required: false, aliases: ['catatan', 'notes', 'keterangan'] },
+    ],
+    sampleRow: ['INV-2026-001', '2026-08-01', 'Toko Barokah Jaya', 'Minyak Goreng Kita 1L', '10', '16500', '165000', 'Penjualan Lunas'],
+    queryKeys: ['sembako-sales', 'sembako-customers', 'sembako-dashboard-stats', 'sembako-customer-invoices'],
+  },
+  purchases: {
+    label: 'Riwayat Pembelian Stok / Batch',
+    table: 'sembako_stock_batches',
+    fields: [
+      { key: 'batch_number', label: 'No. Batch / Nota Beli', required: true, aliases: ['batch', 'no_batch', 'nota_beli', 'batch_number'] },
+      { key: 'purchase_date', label: 'Tanggal Beli (YYYY-MM-DD)', required: false, aliases: ['tanggal', 'tgl', 'purchase_date', 'date'] },
+      { key: 'supplier_name', label: 'Nama Supplier', required: false, aliases: ['supplier', 'nama_supplier', 'vendor', 'supplier_name'] },
+      { key: 'product_name', label: 'Nama Produk', required: true, aliases: ['nama_produk', 'produk', 'item', 'product_name'] },
+      { key: 'qty_masuk', label: 'Qty Stok Masuk', required: true, aliases: ['qty', 'stok_masuk', 'qty_masuk', 'quantity'], isNumber: true },
+      { key: 'buy_price', label: 'Harga Beli HPP (Rp)', required: true, aliases: ['harga_beli', 'hpp', 'buy_price', 'price'], isNumber: true },
+      { key: 'notes', label: 'Catatan', required: false, aliases: ['catatan', 'notes', 'keterangan'] },
+    ],
+    sampleRow: ['BATCH-2026-001', '2026-08-01', 'PT Indofood Sukses', 'Minyak Goreng Kita 1L', '100', '14000', 'Restock Bulanan'],
+    queryKeys: ['sembako-all-batches', 'sembako-products', 'sembako-suppliers', 'sembako-dashboard-stats'],
+  },
 }
 
 export function downloadCsvTemplate(entityType) {
@@ -199,6 +230,7 @@ export default function ImportCsvModal({ open, onClose, defaultEntity = 'product
     }).length
   }, [preparePayloads, config])
 
+  // ── Submit logic with support for sales & purchases ───────────────────────
   const handleImportSubmit = async () => {
     if (!tenant?.id) return toast.error('ID Bisnis tidak ditemukan')
 
@@ -215,49 +247,187 @@ export default function ImportCsvModal({ open, onClose, defaultEntity = 'product
     const toastId = toast.loading(`Meng-import ${validPayloads.length} data ${config.label}...`)
 
     try {
-      // Clean and add tenant_id
-      const finalPayloads = validPayloads.map(p =>
-        sanitizeDBPayload({ ...p, tenant_id: tenant.id }, config.table)
-      )
-
-      // Chunk in batches of 50
-      const BATCH_SIZE = 50
       let insertedCount = 0
 
-      for (let i = 0; i < finalPayloads.length; i += BATCH_SIZE) {
-        const batch = finalPayloads.slice(i, i + BATCH_SIZE)
-        const { data: insertedData, error } = await supabase
-          .from(config.table)
-          .insert(batch)
-          .select('id, product_name, current_stock, avg_buy_price')
+      // ── ENTITY: SALES (Penjualan / Invoice & Item Penjualan) ──────────────
+      if (entityType === 'sales') {
+        // Fetch existing customers & products for matching
+        const [custRes, prodRes] = await Promise.all([
+          supabase.from('sembako_customers').select('id, customer_name').eq('tenant_id', tenant.id),
+          supabase.from('sembako_products').select('id, product_name, unit, avg_buy_price').eq('tenant_id', tenant.id)
+        ])
 
-        if (error) throw error
-        insertedCount += batch.length
+        const customerMap = {}
+        const productMap = {}
+        ;(custRes.data || []).forEach(c => { customerMap[c.customer_name.toLowerCase().trim()] = c.id })
+        ;(prodRes.data || []).forEach(p => { productMap[p.product_name.toLowerCase().trim()] = p })
 
-        // If importing products with initial stock > 0, also create initial stock batches!
-        if (entityType === 'products' && insertedData) {
-          const batchInserts = insertedData
-            .filter(p => (Number(p.current_stock) || 0) > 0)
-            .map(p => ({
-              tenant_id: tenant.id,
-              product_id: p.id,
-              batch_number: `INIT-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
-              qty_masuk: Number(p.current_stock),
-              qty_sisa: Number(p.current_stock),
-              buy_price: Number(p.avg_buy_price || 0),
-              total_cost: Number(p.current_stock) * Number(p.avg_buy_price || 0),
-              purchase_date: new Date().toISOString().slice(0, 10),
-              notes: 'Stok awal import CSV'
-            }))
+        // Group rows by invoice_number
+        const invoiceGroups = {}
+        validPayloads.forEach(row => {
+          const invNum = String(row.invoice_number || `INV-${Date.now()}`).trim()
+          if (!invoiceGroups[invNum]) invoiceGroups[invNum] = []
+          invoiceGroups[invNum].push(row)
+        })
 
-          if (batchInserts.length > 0) {
-            await supabase.from('sembako_stock_batches').insert(batchInserts)
+        for (const [invNum, items] of Object.entries(invoiceGroups)) {
+          const firstRow = items[0]
+          const custName = String(firstRow.customer_name || 'Pelanggan General').trim()
+          
+          // Match or create Customer
+          let customerId = customerMap[custName.toLowerCase()]
+          if (!customerId) {
+            const { data: newCust } = await supabase
+              .from('sembako_customers')
+              .insert(sanitizeDBPayload({ tenant_id: tenant.id, customer_name: custName }, 'sembako_customers'))
+              .select('id').single()
+            if (newCust) {
+              customerId = newCust.id
+              customerMap[custName.toLowerCase()] = customerId
+            }
+          }
+
+          // Calculate totals
+          const totalAmount = items.reduce((s, it) => s + (Number(it.quantity || 0) * Number(it.sell_price || 0)), 0)
+          const totalCogs = items.reduce((s, it) => {
+            const p = productMap[String(it.product_name || '').toLowerCase().trim()]
+            const cogs = Number(p?.avg_buy_price || 0)
+            return s + (Number(it.quantity || 0) * cogs)
+          }, 0)
+
+          const rawPaid = firstRow.paid_amount !== undefined && firstRow.paid_amount !== null
+            ? Number(firstRow.paid_amount)
+            : totalAmount
+          const paidAmount = Math.min(totalAmount, Math.max(0, rawPaid))
+          const remainingAmount = Math.max(0, totalAmount - paidAmount)
+          const paymentStatus = remainingAmount <= 0 ? 'lunas' : (paidAmount > 0 ? 'sebagian' : 'belum_lunas')
+          const txDate = firstRow.transaction_date || new Date().toISOString().slice(0, 10)
+
+          // Insert Sale Header (Opsi A: Historical record, no immediate FIFO deduct)
+          const salePayload = sanitizeDBPayload({
+            tenant_id: tenant.id,
+            invoice_number: invNum,
+            customer_id: customerId,
+            customer_name: custName,
+            transaction_date: txDate,
+            total_amount: totalAmount,
+            total_cogs: totalCogs,
+            net_profit: Math.max(0, totalAmount - totalCogs),
+            paid_amount: paidAmount,
+            remaining_amount: remainingAmount,
+            payment_status: paymentStatus,
+            notes: firstRow.notes || 'Import riwayat CSV',
+          }, 'sembako_sales')
+
+          const { data: saleData, error: saleErr } = await supabase.from('sembako_sales').insert(salePayload).select('id').single()
+          if (saleErr) throw saleErr
+
+          // Insert Sale Items
+          const saleItemsToInsert = items.map(it => {
+            const prod = productMap[String(it.product_name || '').toLowerCase().trim()]
+            const qty = Number(it.quantity || 0)
+            const price = Number(it.sell_price || 0)
+            const cogs = Number(prod?.avg_buy_price || 0)
+            return sanitizeDBPayload({
+              sale_id: saleData.id,
+              product_id: prod?.id || null,
+              product_name: String(it.product_name || 'Produk').trim(),
+              unit: prod?.unit || 'pcs',
+              quantity: qty,
+              sell_price: price,
+              subtotal: qty * price,
+              cogs_per_unit: cogs,
+              cogs_total: qty * cogs,
+            }, 'sembako_sale_items')
+          })
+
+          await supabase.from('sembako_sale_items').insert(saleItemsToInsert)
+          insertedCount += items.length
+        }
+      } 
+      // ── ENTITY: PURCHASES (Pembelian Stok / Stock Batches) ──────────────────
+      else if (entityType === 'purchases') {
+        const [suppRes, prodRes] = await Promise.all([
+          supabase.from('sembako_suppliers').select('id, supplier_name').eq('tenant_id', tenant.id),
+          supabase.from('sembako_products').select('id, product_name, current_stock, avg_buy_price').eq('tenant_id', tenant.id)
+        ])
+
+        const supplierMap = {}
+        const productMap = {}
+        ;(suppRes.data || []).forEach(s => { supplierMap[s.supplier_name.toLowerCase().trim()] = s.id })
+        ;(prodRes.data || []).forEach(p => { productMap[p.product_name.toLowerCase().trim()] = p })
+
+        const batchInserts = []
+        for (const row of validPayloads) {
+          const prodName = String(row.product_name || '').trim()
+          const prod = productMap[prodName.toLowerCase()]
+          const suppName = String(row.supplier_name || '').trim()
+          const suppId = supplierMap[suppName.toLowerCase()] || null
+
+          const qty = Number(row.qty_masuk || 0)
+          const buyPrice = Number(row.buy_price || 0)
+
+          batchInserts.push(sanitizeDBPayload({
+            tenant_id: tenant.id,
+            supplier_id: suppId,
+            product_id: prod?.id || null,
+            batch_number: String(row.batch_number || `BATCH-${Date.now()}`).trim(),
+            purchase_date: row.purchase_date || new Date().toISOString().slice(0, 10),
+            qty_masuk: qty,
+            qty_sisa: qty,
+            buy_price: buyPrice,
+            total_cost: qty * buyPrice,
+            notes: row.notes || 'Import riwayat pembelian CSV',
+          }, 'sembako_stock_batches'))
+        }
+
+        if (batchInserts.length > 0) {
+          const { error } = await supabase.from('sembako_stock_batches').insert(batchInserts)
+          if (error) throw error
+          insertedCount = batchInserts.length
+        }
+      } 
+      // ── DEFAULT ENTITIES (PRODUCTS, CUSTOMERS, SUPPLIERS) ─────────────────
+      else {
+        const finalPayloads = validPayloads.map(p =>
+          sanitizeDBPayload({ ...p, tenant_id: tenant.id }, config.table)
+        )
+
+        const BATCH_SIZE = 50
+        for (let i = 0; i < finalPayloads.length; i += BATCH_SIZE) {
+          const batch = finalPayloads.slice(i, i + BATCH_SIZE)
+          const { data: insertedData, error } = await supabase
+            .from(config.table)
+            .insert(batch)
+            .select('id, product_name, current_stock, avg_buy_price')
+
+          if (error) throw error
+          insertedCount += batch.length
+
+          if (entityType === 'products' && insertedData) {
+            const batchInserts = insertedData
+              .filter(p => (Number(p.current_stock) || 0) > 0)
+              .map(p => ({
+                tenant_id: tenant.id,
+                product_id: p.id,
+                batch_number: `INIT-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                qty_masuk: Number(p.current_stock),
+                qty_sisa: Number(p.current_stock),
+                buy_price: Number(p.avg_buy_price || 0),
+                total_cost: Number(p.current_stock) * Number(p.avg_buy_price || 0),
+                purchase_date: new Date().toISOString().slice(0, 10),
+                notes: 'Stok awal import CSV'
+              }))
+
+            if (batchInserts.length > 0) {
+              await supabase.from('sembako_stock_batches').insert(batchInserts)
+            }
           }
         }
       }
 
       config.queryKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }))
-      toast.success(`Berhasil meng-import ${insertedCount} ${config.label}!`, { id: toastId })
+      toast.success(`Berhasil meng-import ${insertedCount} data ${config.label}!`, { id: toastId })
 
       setImportSummary({ total: validPayloads.length, inserted: insertedCount })
       setStep(3)
@@ -305,7 +475,7 @@ export default function ImportCsvModal({ open, onClose, defaultEntity = 'product
                   Import Data (.CSV / Google Sheets)
                 </h3>
                 <p className="text-xs text-muted-foreground m-0 mt-0.5">
-                  Migrasi katalog produk, toko pelanggan & supplier dengan mudah
+                  Migrasi produk, toko, supplier, & riwayat transaksi dengan mudah
                 </p>
               </div>
             </div>
@@ -326,7 +496,7 @@ export default function ImportCsvModal({ open, onClose, defaultEntity = 'product
                   <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
                     1. Pilih Jenis Data Yang Ingin Di-Import
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {Object.entries(ENTITIES).map(([key, item]) => (
                       <button
                         key={key}
@@ -442,7 +612,7 @@ export default function ImportCsvModal({ open, onClose, defaultEntity = 'product
                     </h4>
                     {invalidCount > 0 && (
                       <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-md border border-red-500/20">
-                        ⚠️ {invalidCount} baris tidak memiliki nama (akan dilewati)
+                        ⚠️ {invalidCount} baris tidak valid (akan dilewati)
                       </span>
                     )}
                   </div>
