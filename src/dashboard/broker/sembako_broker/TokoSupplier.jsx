@@ -12,7 +12,9 @@ import {
   Store,
   TrendingDown,
   Wallet,
+  FileSpreadsheet,
 } from 'lucide-react'
+import ImportCsvModal from '@/components/ui/ImportCsvModal'
 import {
   useCreateSembakoCustomer,
   useCreateSembakoSupplier,
@@ -214,6 +216,8 @@ export default function SembakoTokoSupplier() {
   if (isSalesError) return <SembakoErrorState error={salesError} onRetry={refetchSales} />
   if (isBatchError) return <SembakoErrorState error={batchError} onRetry={refetchBatch} />
 
+  const [importCsvOpen, setImportCsvOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-background pb-24 text-left">
       {!isDesktop && <BrokerMobileHeader title="Toko & Supplier" onMenuClick={() => setSidebarOpen(true)} />}
@@ -250,10 +254,26 @@ export default function SembakoTokoSupplier() {
             isDesktop ? (
               <div className="flex items-center gap-2">
                 <SegmentSwitch sub={sub} setSub={handleTabChange} />
+                <button
+                  onClick={() => setImportCsvOpen(true)}
+                  className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/60 hover:bg-muted text-foreground transition-all cursor-pointer shrink-0"
+                >
+                  <FileSpreadsheet size={15} className="text-amber-500" />
+                  <span>Import CSV</span>
+                </button>
                 {sub === 'toko' ? <TokoActions compact autoOpen={autoOpenToko} /> : <SupplierActions compact />}
               </div>
             ) : (
-              sub === 'toko' ? <TokoActions compact autoOpen={autoOpenToko} /> : <SupplierActions compact />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setImportCsvOpen(true)}
+                  className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/60 hover:bg-muted text-foreground transition-all cursor-pointer shrink-0"
+                >
+                  <FileSpreadsheet size={15} className="text-amber-500" />
+                  <span>Import CSV</span>
+                </button>
+                {sub === 'toko' ? <TokoActions compact autoOpen={autoOpenToko} /> : <SupplierActions compact />}
+              </div>
             )
           }
         />
@@ -303,6 +323,11 @@ export default function SembakoTokoSupplier() {
         </div>
 
       </div>
+      <ImportCsvModal
+        open={importCsvOpen}
+        onClose={() => setImportCsvOpen(false)}
+        defaultEntity={sub === 'toko' ? 'customers' : 'suppliers'}
+      />
     </div>
   )
 }

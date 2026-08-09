@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Plus, Search, X, ChevronDown, ToggleLeft, ToggleRight, Trash2, Package } from 'lucide-react'
+import { Plus, Search, X, ChevronDown, ToggleLeft, ToggleRight, Trash2, Package, FileSpreadsheet } from 'lucide-react'
+import ImportCsvModal from '@/components/ui/ImportCsvModal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import {
@@ -673,6 +674,8 @@ export default function Produk() {
     { label: 'Total Nilai Stok', value: stats.nilaiStok, isCurrency: true, color: 'amber' },
   ]
 
+  const [importCsvOpen, setImportCsvOpen] = useState(false)
+
   const categoryFilters = categories.map(c => ({ id: c, label: c }))
 
   return (
@@ -691,13 +694,22 @@ export default function Produk() {
           activeFilter={catFilter}
           onFilterChange={setCatFilter}
           actionButton={
-            <button
-              onClick={() => setSheet('new')}
-              className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
-            >
-              <Plus size={16} />
-              <span>Tambah Produk</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setImportCsvOpen(true)}
+                className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-muted hover:bg-muted/80 text-foreground border border-border transition-all cursor-pointer shrink-0"
+              >
+                <FileSpreadsheet size={15} className="text-amber-500" />
+                <span>Import CSV</span>
+              </button>
+              <button
+                onClick={() => setSheet('new')}
+                className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
+              >
+                <Plus size={16} />
+                <span>Tambah Produk</span>
+              </button>
+            </div>
           }
         />
 
@@ -782,6 +794,11 @@ export default function Produk() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ImportCsvModal
+        open={importCsvOpen}
+        onClose={() => setImportCsvOpen(false)}
+        defaultEntity="products"
+      />
     </div>
   )
 }
