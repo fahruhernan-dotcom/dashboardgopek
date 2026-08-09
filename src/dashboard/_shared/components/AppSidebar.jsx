@@ -873,34 +873,49 @@ export default function AppSidebar({ open, onClose }) {
               : 'bg-orange-500/5 dark:bg-orange-500/10 border-orange-500/20'
             }`}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[10px] font-bold text-slate-500 dark:text-[#6B8CAA] uppercase tracking-[0.8px] m-0">
                 {isSuperadmin ? 'Status Akun' : 'Masa Aktif Server'}
               </p>
-              <p className={`font-['Sora'] text-[13px] font-extrabold mt-0.5 flex items-center gap-1 ${isSuperadmin
+              <p className={`font-['Sora'] text-[13px] font-extrabold mt-0.5 flex items-center gap-1 ${
+                isSuperadmin
                   ? 'text-amber-650 dark:text-amber-500'
+                  : sub.isGrace || sub.isWarning
+                  ? 'text-amber-500 dark:text-amber-400'
                   : 'text-orange-500 dark:text-orange-400'
                 }`}>
                 {isSuperadmin ? (
                   <><Shield size={14} className="text-amber-550 dark:text-amber-500" /> PLATFORM ADMIN</>
+                ) : sub.isGrace ? (
+                  'MASA TENGGANG'
                 ) : (
                   'AKTIF'
                 )}
               </p>
+              {sub.expiresAt && (
+                <p className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 m-0 mt-0.5">
+                  s.d. {sub.expiresAt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              )}
             </div>
 
             {/* Status badge */}
-            {(!isSuperadmin && !isDevUser(profile)) && (
-              <span className="text-[10px] font-extrabold rounded-md px-2.5 py-0.5 border uppercase tracking-wider bg-orange-500/15 text-orange-400 border-orange-500/30">
-                {sub.daysLeft ? `${sub.daysLeft} Hari` : 'Aktif'}
-              </span>
-            )}
-            {(isSuperadmin || isDevUser(profile)) && (
-              <span className="text-[10px] font-extrabold rounded-md px-2.5 py-0.5 border uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
-                Dev Unlimited
-              </span>
-            )}
+            <div className="flex flex-col items-end gap-0.5">
+              {isDevUser(profile) || isSuperadmin ? (
+                <span className="text-[10px] font-extrabold rounded-md px-2 py-0.5 border uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                  {sub.daysLeft && sub.daysLeft < 90000 ? `DEV (${sub.daysLeft} Hari)` : 'DEV UNLIMITED'}
+                </span>
+              ) : (
+                <span className={`text-[10px] font-extrabold rounded-md px-2.5 py-0.5 border uppercase tracking-wider ${
+                  sub.isGrace || sub.isWarning
+                    ? 'bg-amber-500/15 text-amber-500 border-amber-500/30'
+                    : 'bg-orange-500/15 text-orange-500 dark:text-orange-400 border-orange-500/30'
+                }`}>
+                  {sub.daysLeft ? `${sub.daysLeft} Hari Lagi` : 'Aktif'}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* WhatsApp Button Perpanjang Server - hanya untuk non-Dev/non-Superadmin */}

@@ -57,6 +57,13 @@ const throttleLastSeenUpdate = async (userId, tenantId) => {
   }
 }
 
+const getFallbackExpiryDate = (days = 30) => {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  d.setHours(23, 59, 59, 999)
+  return d.toISOString()
+}
+
 export const REGISTERED_ROLES = {
   dev: {
     user: { id: '00000000-0000-0000-0000-000000000001', email: 'dev@sembako.id' },
@@ -75,8 +82,12 @@ export const REGISTERED_ROLES = {
       tenants: {
         id: '00000000-0000-0000-0000-000000000002',
         name: 'Broker Dashboard Sembako',
+        business_name: 'Broker Dashboard Sembako',
         sub_type: 'sembako_broker',
-        business_vertical: 'distributor_sembako'
+        business_vertical: 'distributor_sembako',
+        plan: 'pro',
+        license_activated_at: new Date().toISOString(),
+        plan_expires_at: getFallbackExpiryDate(30)
       }
     }
   },
@@ -97,8 +108,12 @@ export const REGISTERED_ROLES = {
       tenants: {
         id: '00000000-0000-0000-0000-000000000002',
         name: 'Broker Dashboard Sembako',
+        business_name: 'Broker Dashboard Sembako',
         sub_type: 'sembako_broker',
-        business_vertical: 'distributor_sembako'
+        business_vertical: 'distributor_sembako',
+        plan: 'pro',
+        license_activated_at: new Date().toISOString(),
+        plan_expires_at: getFallbackExpiryDate(30)
       }
     }
   },
@@ -119,8 +134,12 @@ export const REGISTERED_ROLES = {
       tenants: {
         id: '00000000-0000-0000-0000-000000000002',
         name: 'Broker Dashboard Sembako',
+        business_name: 'Broker Dashboard Sembako',
         sub_type: 'sembako_broker',
-        business_vertical: 'distributor_sembako'
+        business_vertical: 'distributor_sembako',
+        plan: 'pro',
+        license_activated_at: new Date().toISOString(),
+        plan_expires_at: getFallbackExpiryDate(30)
       }
     }
   }
@@ -236,14 +255,48 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const loadLocalRoleSession = () => {
+  const loadLocalRoleSession = async () => {
     const savedRole = localStorage.getItem('sembako_active_role')
     if (savedRole && REGISTERED_ROLES[savedRole]) {
       const config = REGISTERED_ROLES[savedRole]
+      const savedTenantId = getPersistedTenantId() || config.profile.tenant_id
+
+      let liveTenant = config.profile.tenants
+      if (savedTenantId) {
+        try {
+          const { data: dbTenant } = await supabase
+            .from('tenants')
+            .select('*')
+            .eq('id', savedTenantId)
+            .maybeSingle()
+
+          if (dbTenant) {
+            liveTenant = dbTenant
+          } else {
+            const { data: firstTenant } = await supabase
+              .from('tenants')
+              .select('*')
+              .order('created_at', { ascending: true })
+              .limit(1)
+              .maybeSingle()
+
+            if (firstTenant) {
+              liveTenant = firstTenant
+            }
+          }
+        } catch { /* use default fallback */ }
+      }
+
+      const updatedProfile = {
+        ...config.profile,
+        tenant_id: liveTenant?.id || config.profile.tenant_id,
+        tenants: liveTenant
+      }
+
       setUser(config.user)
-      setProfile(config.profile)
-      setProfiles([config.profile])
-      setOwnerTenant(config.profile.tenants)
+      setProfile(updatedProfile)
+      setProfiles([updatedProfile])
+      setOwnerTenant(liveTenant)
       setLoading(false)
       return true
     }
@@ -256,14 +309,15 @@ export function AuthProvider({ children }) {
         setUser(session.user)
         fetchAuthData(session.user.id)
       } else {
-        const loadedLocal = loadLocalRoleSession()
-        if (!loadedLocal) {
-          setUser(null)
-          setProfile(null)
-          setProfiles([])
-          setOwnerTenant(null)
-          setLoading(false)
-        }
+        loadLocalRoleSession().then(loadedLocal => {
+          if (!loadedLocal) {
+            setUser(null)
+            setProfile(null)
+            setProfiles([])
+            setOwnerTenant(null)
+            setLoading(false)
+          }
+        })
       }
     })
 
@@ -273,19 +327,44 @@ export function AuthProvider({ children }) {
           setUser(session.user)
           fetchAuthData(session.user.id)
         } else {
-          const loadedLocal = loadLocalRoleSession()
-          if (!loadedLocal) {
-            setUser(null)
-            setProfile(null)
-            setProfiles([])
-            setOwnerTenant(null)
-            setLoading(false)
-          }
+          loadLocalRoleSession().then(loadedLocal => {
+            if (!loadedLocal) {
+              setUser(null)
+              setProfile(null)
+              setProfiles([])
+              setOwnerTenant(null)
+              setLoading(false)
+            }
+          })
         }
       }
     )
     return () => subscription.unsubscribe()
   }, [])
+
+  // Realtime subscription untuk mendengarkan perubahan lisensi di tabel tenants secara live
+  useEffect(() => {
+    const activeTenantId = profile?.tenants?.id || ownerTenant?.id
+    if (!activeTenantId) return
+
+    const channel = supabase
+      .channel(`public:tenants:${activeTenantId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'tenants', filter: `id=eq.${activeTenantId}` },
+        (payload) => {
+          if (payload.new) {
+            setProfile(prev => prev ? { ...prev, tenants: payload.new } : prev)
+            setOwnerTenant(payload.new)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [profile?.tenants?.id, ownerTenant?.id])
 
   const switchTenant = async (tenantId) => {
     const target = profiles.find(p => p.tenant_id === tenantId)
@@ -311,15 +390,10 @@ export function AuthProvider({ children }) {
     profile?.role === 'superadmin' ||
     profiles.some(p => p.app_role === 'superadmin' || p.role === 'superadmin')
 
-  const loginAsRole = (roleKey) => {
+  const loginAsRole = async (roleKey) => {
     if (REGISTERED_ROLES[roleKey]) {
-      const config = REGISTERED_ROLES[roleKey]
       localStorage.setItem('sembako_active_role', roleKey)
-      setUser(config.user)
-      setProfile(config.profile)
-      setProfiles([config.profile])
-      setOwnerTenant(config.profile.tenants)
-      setLoading(false)
+      await loadLocalRoleSession()
       return true
     }
     return false
@@ -336,6 +410,15 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }
 
+  const refetchProfile = async () => {
+    const savedRole = localStorage.getItem('sembako_active_role')
+    if (savedRole) {
+      await loadLocalRoleSession()
+    } else if (user) {
+      await fetchAuthData(user.id)
+    }
+  }
+
   const value = {
     user,
     profile,
@@ -347,7 +430,7 @@ export function AuthProvider({ children }) {
     switchTenant,
     loginAsRole,
     logout,
-    refetchProfile: () => user && fetchAuthData(user.id),
+    refetchProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

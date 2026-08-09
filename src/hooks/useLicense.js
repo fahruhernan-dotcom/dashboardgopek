@@ -8,7 +8,7 @@ import { DEVELOPER_WA, GRACE_DAYS } from '@/lib/license/licenseConstants'
 import { toast } from 'sonner'
 
 export function useLicense() {
-  const { tenant, profile } = useAuth()
+  const { tenant, profile, refetchProfile } = useAuth()
   const tenantId = tenant?.id
 
   const [loading, setLoading] = useState(true)
@@ -145,6 +145,7 @@ export function useLicense() {
 
       setLicenseExpiresAt(newExpiry)
       setLicenseActivatedAt(newActivatedAt)
+      if (refetchProfile) refetchProfile()
       toast.success('Lisensi server berhasil diperbarui!', { id: toastId })
       fetchHistory()
     } catch (e) {

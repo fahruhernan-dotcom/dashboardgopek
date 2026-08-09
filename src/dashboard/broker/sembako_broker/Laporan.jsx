@@ -656,7 +656,8 @@ function CashFlowStatement({ summary: s }) {
   const payrollOut = s.payrollOutPeriodTunai
   const opsOut = s.regularExpensesOutPeriodTunai
   const priveOut = s.priveOutPeriodTunai
-  const totalOut = supplierOut + payrollOut + opsOut + priveOut
+  const deliveryOut = s.deliveryOutPeriodTunai || 0
+  const totalOut = supplierOut + payrollOut + opsOut + priveOut + deliveryOut
   
   const endingCash = s.endingCashOnHand + s.endingBankBalance
 
@@ -699,7 +700,7 @@ function CashFlowStatement({ summary: s }) {
           <span>Bank: {formatIDR(s.cashInPeriodTransfer)}</span>
         </div>
 
-        {/* Cash Out Flow (Penjualan, Supplier, Gaji, Ops, Prive) */}
+        {/* Cash Out Flow (Penjualan, Supplier, Gaji, Ops, Prive, Delivery) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '12px', borderLeft: `2px solid ${C.border}` }}>
           {/* Supplier */}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text }}>
@@ -716,6 +717,14 @@ function CashFlowStatement({ summary: s }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
               <span style={{ color: C.muted }}>− Gaji Pegawai Terbayar (Asumsi Tunai)</span>
               <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(payrollOut)}</span>
+            </div>
+          )}
+
+          {/* Biaya Kirim / Pengiriman */}
+          {deliveryOut > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
+              <span style={{ color: C.muted }}>− Biaya Pengiriman & Armada (Asumsi Tunai)</span>
+              <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(deliveryOut)}</span>
             </div>
           )}
 

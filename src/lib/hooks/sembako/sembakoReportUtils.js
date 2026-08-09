@@ -162,6 +162,9 @@ export function calculateCashFlow(
   const priveOutPeriodTunai = priveExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0)
   const regularExpensesOutPeriodTunai = regularExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0)
 
+  // Biaya Kirim / Pengiriman Armada dari transaksi penjualan (diasumsikan Tunai)
+  const deliveryOutPeriodTunai = sales.reduce((s, i) => s + (Number(i.delivery_cost) || 0), 0)
+
   // Net Cash Flow Period
   const cashInTotal = cashInPeriodTunai + cashInPeriodTransfer
   const cashOutTotal =
@@ -169,12 +172,13 @@ export function calculateCashFlow(
     supplierOutPeriodTransfer +
     payrollOutPeriodTunai +
     priveOutPeriodTunai +
-    regularExpensesOutPeriodTunai
+    regularExpensesOutPeriodTunai +
+    deliveryOutPeriodTunai
 
   const netCashFlowPeriod = cashInTotal - cashOutTotal
 
   // Ending Cash Balances
-  const endingCashOnHand = openingCashOnHand + (cashInPeriodTunai - supplierOutPeriodTunai - payrollOutPeriodTunai - priveOutPeriodTunai - regularExpensesOutPeriodTunai)
+  const endingCashOnHand = openingCashOnHand + (cashInPeriodTunai - supplierOutPeriodTunai - payrollOutPeriodTunai - priveOutPeriodTunai - regularExpensesOutPeriodTunai - deliveryOutPeriodTunai)
   const endingBankBalance = openingBankBalance + (cashInPeriodTransfer - supplierOutPeriodTransfer)
 
   return {
@@ -187,6 +191,7 @@ export function calculateCashFlow(
     payrollOutPeriodTunai,
     priveOutPeriodTunai,
     regularExpensesOutPeriodTunai,
+    deliveryOutPeriodTunai,
     netCashFlowPeriod,
     endingCashOnHand,
     endingBankBalance,

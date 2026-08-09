@@ -98,16 +98,19 @@ const ScrollToTop = () => {
   return null
 }
 
+import { isDevUser } from '@/lib/auth/business-roles'
+
 function ProtectedRoute({ children }) {
   const { loading, user, tenant, profile } = useAuth()
   if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
 
   const sub = getSubscriptionStatus(tenant)
-  const isExpired = sub.status === 'expired'
-  const isDev = profile?.role === 'dev'
+  const isLocked = sub.isLocked || sub.status === 'expired'
+  // Logic Dev: Akun dev tidak boleh pernah terkunci sama sekali
+  const isDev = profile?.role === 'dev' || profile?.app_role === 'dev' || isDevUser(profile)
 
-  if (isExpired && !isDev) {
+  if (isLocked && !isDev) {
     return <LockedServerPage />
   }
 
