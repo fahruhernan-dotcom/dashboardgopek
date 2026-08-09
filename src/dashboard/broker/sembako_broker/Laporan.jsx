@@ -4,8 +4,9 @@ import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/Broker
 import { motion } from 'framer-motion'
 import {
   TrendingUp, TrendingDown, DollarSign, Receipt,
-  ChevronDown, ChevronUp, Calendar, Lock, BarChart3,
+  ChevronDown, ChevronUp, Calendar, Lock, BarChart3, Printer, FileText,
 } from 'lucide-react'
+import FinancialReportPdfModal from '@/dashboard/broker/sembako_broker/components/FinancialReportPdfModal'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { getSubscriptionStatus } from '@/lib/subscriptionUtils'
 import {
@@ -49,6 +50,7 @@ export default function SembakoLaporan() {
   const [startDate, setStartDate] = useState(bulanStart)
   const [endDate, setEndDate] = useState(bulanEnd)
   const [preset, setPreset] = useState('bulan_ini')
+  const [pdfModal, setPdfModal] = useState({ open: false, type: 'business_result' })
 
   const { data, isLoading, isFetching, isError, error, refetch } = useSembakoLaporan(startDate, endDate)
 
@@ -155,6 +157,26 @@ export default function SembakoLaporan() {
                 <DatePicker id="end-date" value={endDate} onChange={val => setEndDate(val)} placeholder="End" />
               </div>
             )}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setPdfModal({ open: true, type: 'business_result' })}
+                disabled={!data}
+                className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 disabled:opacity-50 border-0"
+              >
+                <Printer size={14} />
+                <span>PDF Hasil Bisnis</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPdfModal({ open: true, type: 'cashflow' })}
+                disabled={!data}
+                className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/60 hover:bg-muted text-foreground transition-all cursor-pointer disabled:opacity-50"
+              >
+                <FileText size={14} className="text-amber-500" />
+                <span>PDF Arus Kas</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -216,6 +238,15 @@ export default function SembakoLaporan() {
           </div>
         )}
       </div>
+
+      <FinancialReportPdfModal
+        open={pdfModal.open}
+        onClose={() => setPdfModal(prev => ({ ...prev, open: false }))}
+        reportType={pdfModal.type}
+        data={data}
+        startDate={startDate}
+        endDate={endDate}
+      />
     </div>
   )
 }
