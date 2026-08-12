@@ -601,18 +601,18 @@ export default function DevAdminHubPage() {
       {/* Modals Konfirmasi Reset Database */}
       {/* Konfirmasi 1 */}
       <AlertDialog open={showConfirm1} onOpenChange={setShowConfirm1}>
-        <AlertDialogContent className="bg-[#0C1319] border-white/10 rounded-[32px] p-8 max-w-md text-left">
+        <AlertDialogContent className="!bg-slate-900 !border-slate-800 rounded-[28px] p-6 max-w-md text-left text-slate-100 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white font-display font-black tracking-tight uppercase text-xl flex items-center gap-2">
-              <ShieldAlert size={24} className="text-red-500" />
+              <ShieldAlert size={24} className="text-red-500 shrink-0" />
               Reset Database (Konfirmasi 1 dari 2)
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400 font-bold mt-3 leading-relaxed">
+            <AlertDialogDescription className="text-slate-300 font-semibold mt-3 text-xs leading-relaxed">
               Apakah Anda benar-benar yakin ingin melakukan reset data bisnis Anda? Tindakan ini akan menghapus semua data operasional yang dipilih. Ini bersifat permanen dan tidak dapat dibatalkan di masa depan.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-3 mt-8">
-            <AlertDialogCancel className="bg-white/5 border-none hover:bg-white/10 text-slate-400 rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] cursor-pointer">
+          <AlertDialogFooter className="gap-3 mt-6">
+            <AlertDialogCancel className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 rounded-xl h-11 font-bold text-xs cursor-pointer">
               Batal
             </AlertDialogCancel>
             <Button 
@@ -620,7 +620,7 @@ export default function DevAdminHubPage() {
                 setShowConfirm1(false)
                 setTimeout(() => setShowConfirm2(true), 300)
               }}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] border-none cursor-pointer flex-1"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl h-11 font-bold text-xs cursor-pointer flex-1"
             >
               Lanjutkan ke Konfirmasi Akhir
             </Button>
@@ -630,13 +630,13 @@ export default function DevAdminHubPage() {
 
       {/* Konfirmasi 2 */}
       <AlertDialog open={showConfirm2} onOpenChange={(v) => { if (!v && !isResetting) { setShowConfirm2(false); setConfirmText(''); } }}>
-        <AlertDialogContent className="bg-[#0C1319] border-white/10 rounded-[32px] p-8 max-w-md text-left">
+        <AlertDialogContent className="!bg-slate-900 !border-slate-800 rounded-[28px] p-6 max-w-md text-left text-slate-100 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-500 font-display font-black tracking-tight uppercase text-xl flex items-center gap-2">
-              <AlertTriangle size={24} className="text-red-500 animate-bounce" />
+              <AlertTriangle size={24} className="text-red-500 animate-bounce shrink-0" />
               PERINGATAN KERAS! (Konfirmasi 2 dari 2)
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-300 font-bold mt-3 leading-relaxed">
+            <AlertDialogDescription className="text-slate-200 font-semibold mt-3 text-xs leading-relaxed">
               Ini adalah langkah terakhir. Seluruh transaksi operasional, sisa hutang/piutang, serta riwayat stok akan bersih total. 
               <br /><br />
               Ketik kata kunci <strong className="text-red-400 font-black">"RESET GOPEK"</strong> di bawah untuk mengonfirmasi:
@@ -649,21 +649,21 @@ export default function DevAdminHubPage() {
               onChange={e => setConfirmText(e.target.value)}
               placeholder="Ketik RESET GOPEK di sini..."
               disabled={isResetting}
-              className="bg-[#111C24] border-white/10 h-14 text-sm font-black text-white rounded-2xl focus:border-red-500 focus:ring-red-500/20"
+              className="bg-slate-950 border-slate-700 h-12 text-sm font-black text-white rounded-xl focus:border-red-500 focus:ring-red-500/20 placeholder:text-slate-500"
             />
           </div>
 
-          <AlertDialogFooter className="gap-3 mt-8">
+          <AlertDialogFooter className="gap-3 mt-6">
             <AlertDialogCancel 
               disabled={isResetting}
-              className="bg-white/5 border-none hover:bg-white/10 text-slate-400 rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] cursor-pointer"
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 rounded-xl h-11 font-bold text-xs cursor-pointer"
             >
               Batal
             </AlertDialogCancel>
             <Button 
               disabled={isResetting || confirmText !== 'RESET GOPEK'}
               onClick={handleResetDatabase}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-2xl h-14 font-black uppercase tracking-widest text-[11px] border-none cursor-pointer flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl h-11 font-bold text-xs cursor-pointer flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isResetting ? 'Mereset Database...' : 'Ya, Reset Seluruh Database Sekarang!'}
             </Button>
