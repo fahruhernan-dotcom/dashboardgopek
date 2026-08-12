@@ -140,7 +140,7 @@ export const BUSINESS_MODELS = {
       { slug: 'toko-supplier',icon: 'Store',          label: 'Toko'      },
     ]),
     drawerMenu: [
-      { path: '/broker/distributor_sembako/produk',        icon: 'Package',  label: 'Inventori & Produk' },
+      { path: '/broker/distributor_sembako/produk',        icon: 'Package',  label: 'Produk & Stok' },
       { path: '/broker/distributor_sembako/toko-supplier', icon: 'Store',    label: 'Toko & Supplier'  },
       { path: '/broker/distributor_sembako/gudang',        icon: 'Warehouse',label: 'Stok & Gudang'    },
       { path: '/broker/distributor_sembako/retur',         icon: 'RotateCcw',label: 'Retur Produk'     },

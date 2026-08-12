@@ -57,7 +57,7 @@ export default function DrawerLainnya({ isOpen, onClose, userType }) {
     if (isOwner(profile) || isSuperadmin) return true
     if (isStaff(profile)) {
       if (profile?.sub_type?.includes('sembako') || tenant?.business_vertical === 'distributor_sembako') {
-        return ['Dashboard', 'Manajemen Produk', 'Riwayat Penjualan', 'Gudang & Stok', 'Manajemen Pegawai', 'Laporan Bisnis', 'Akun & Profil'].includes(item.label)
+        return ['Dashboard', 'Produk & Stok', 'Inventori & Produk', 'Inventori & HPP', 'Manajemen Produk', 'Produk', 'Riwayat Penjualan', 'Gudang & Stok', 'Toko & Supplier', 'Stok & Gudang', 'Retur Produk', 'Manajemen Pegawai', 'Karyawan', 'Laporan Bisnis', 'Laporan', 'Akun & Profil'].includes(item.label)
       }
       return ['Pengiriman & Loss', 'Harga Pasar', 'Akun & Profil'].includes(item.label)
     }

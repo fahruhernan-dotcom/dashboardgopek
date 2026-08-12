@@ -349,7 +349,7 @@ export default function AppSidebar({ open, onClose }) {
           { title: 'Toko & Supplier', url: `${brokerBase}/toko-supplier`, icon: Store, dataTutorial: 'sembako-toko' },
           { title: 'Gudang', url: `${brokerBase}/gudang`, icon: Warehouse, dataTutorial: 'sembako-gudang' },
           { title: 'Retur Produk', url: `${brokerBase}/retur`, icon: RotateCcw, badge: pendingRetursCount > 0 ? String(pendingRetursCount) : null },
-          { title: 'Inventori & HPP', url: `${brokerBase}/produk`, icon: Package, roles: ['owner', 'staff'] },
+          { title: 'Produk & Stok', url: `${brokerBase}/produk`, icon: Package, roles: ['owner', 'staff', 'dev', 'admin', 'manajer'] },
         ] : []),
       ]
     },
@@ -437,7 +437,7 @@ export default function AppSidebar({ open, onClose }) {
     ...group,
     items: group.items.filter(item => {
       if (!item.roles) return true // default accessible to all roles
-      return item.roles.includes(profile?.role) || isSuperadmin
+      return item.roles.includes(profile?.role) || isSuperadmin || isDevUser(profile) || isOwnerUser(profile)
     })
   })).filter(group => group.items.length > 0)
 

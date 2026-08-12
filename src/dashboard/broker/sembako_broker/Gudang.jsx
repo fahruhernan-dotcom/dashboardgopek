@@ -81,7 +81,7 @@ function StokSaatIni({ products, allBatches = [], onTambah, onAdjust, onShowHist
           <Package size={40} color="#4B5563" style={{ margin: '0 auto 12px', opacity: 0.4 }} />
           <p style={{ fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600, color: TEXT_SEC }}>Belum ada produk aktif</p>
           <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: '#4B5563', marginTop: 6, opacity: 0.7 }}>
-            Tambahkan produk terlebih dahulu di halaman Inventori & HPP
+            Tambahkan produk terlebih dahulu di halaman Produk & Stok
           </p>
         </div>
       )}
