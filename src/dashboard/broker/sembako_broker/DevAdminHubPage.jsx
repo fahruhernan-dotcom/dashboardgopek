@@ -422,7 +422,7 @@ export default function DevAdminHubPage() {
                     </div>
                     <Button 
                       onClick={handleFlushCache}
-                      className="bg-[#EA580C] hover:bg-[#D44E0A] rounded-xl text-xs font-bold h-10 px-4 cursor-pointer"
+                      className="!bg-[#EA580C] hover:!bg-[#D44E0A] !text-white rounded-xl text-xs font-bold h-10 px-4 cursor-pointer border-none"
                     >
                       Flush Cache
                     </Button>
@@ -581,8 +581,9 @@ export default function DevAdminHubPage() {
 
                 <Button 
                   onClick={() => setShowConfirm1(true)}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl h-12 font-black uppercase tracking-widest text-xs shadow-md shadow-red-600/20 transition-all active:scale-[0.98] cursor-pointer"
+                  className="w-full !bg-red-600 hover:!bg-red-700 !text-white rounded-2xl h-12 font-black uppercase tracking-widest text-xs shadow-md shadow-red-600/20 transition-all active:scale-[0.98] cursor-pointer border-none flex items-center justify-center gap-2"
                 >
+                  <ShieldAlert size={16} />
                   Mulai Reset Data Bisnis
                 </Button>
               </div>
