@@ -51,10 +51,31 @@ export default function Login() {
     const cleanEmail = targetEmail.trim().toLowerCase()
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@sembako.id`,
+      let resolvedEmail = cleanEmail
+      if (!cleanEmail.includes('@')) {
+        const { data: matchedProf } = await supabase
+          .from('profiles')
+          .select('email')
+          .ilike('email', `${cleanEmail}%`)
+          .limit(1)
+          .maybeSingle()
+
+        resolvedEmail = matchedProf?.email || `${cleanEmail}@sembako.id`
+      }
+
+      let { data, error } = await supabase.auth.signInWithPassword({
+        email: resolvedEmail,
         password: targetPass
       })
+
+      if (error && !cleanEmail.includes('@') && resolvedEmail !== `${cleanEmail}@sembako.id`) {
+        const fallbackRes = await supabase.auth.signInWithPassword({
+          email: `${cleanEmail}@sembako.id`,
+          password: targetPass
+        })
+        data = fallbackRes.data
+        error = fallbackRes.error
+      }
 
       if (error) {
         setError('Email atau password salah. Silakan coba lagi.')
