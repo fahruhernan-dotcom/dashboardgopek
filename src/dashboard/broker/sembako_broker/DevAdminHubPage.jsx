@@ -4,7 +4,7 @@ import {
   Terminal, ShieldCheck, Users, Activity, Trash2, RefreshCw, 
   Search, AlertTriangle, CheckCircle2, Cpu, Database, 
   KeyRound, ShieldAlert, HardDrive, Wifi, Server,
-  Copy, Check, FileText, ArrowRight, CornerDownRight
+  Copy, Check, FileText, ArrowRight, CornerDownRight, Zap
 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
