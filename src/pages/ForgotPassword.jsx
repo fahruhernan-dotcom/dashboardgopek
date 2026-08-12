@@ -39,12 +39,16 @@ export default function ForgotPassword() {
     setIsLoading(true)
     setError('')
 
+    const cleanEmail = email.trim().toLowerCase()
+    const targetEmail = cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@sembako.id`
+
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
         redirectTo: window.location.origin + '/reset-password'
       })
 
       if (error) throw error
+      setEmail(targetEmail)
       setSent(true)
       onSubmitted() // start cooldown + record attempt
     } catch (err) {
@@ -55,11 +59,13 @@ export default function ForgotPassword() {
         actionName: 'auth.password.reset_request',
         error: err,
         metadata: {
-          email_length: email?.trim().length,
+          email_length: targetEmail?.length,
         }
       });
       if (err.message?.includes('rate limit')) {
-        setError('Terlalu banyak percobaan. Coba lagi dalam beberapa menit.')
+        setError('Terlalu banyak percobaan reset password. Coba lagi dalam beberapa menit.')
+      } else if (err.message?.includes('SMTP') || err.message?.includes('email provider')) {
+        setError('Layanan email belum dikonfigurasi di Supabase SMTP. Hubungi Developer Superadmin.')
       } else {
         setError(err.message || 'Gagal mengirim email reset. Coba lagi.')
       }
