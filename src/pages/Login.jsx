@@ -23,7 +23,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
 
-  const { user, profile, loading: authLoading, isSuperadmin, loginAsRole } = useAuth()
+  const { user, profile, loading: authLoading, isSuperadmin } = useAuth()
 
   useEffect(() => {
     if (authLoading || !user || !profile) return
@@ -35,19 +35,6 @@ export default function Login() {
     }
     navigate(getBrokerBasePath(profile.tenants, profile) + '/beranda', { replace: true })
   }, [authLoading, user, profile, isSuperadmin]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleQuickRoleFill = (roleKey) => {
-    if (roleKey === 'dev') {
-      setEmail('dev@sembako.id')
-      setPassword('dev123')
-    } else if (roleKey === 'owner') {
-      setEmail('owner@sembako.id')
-      setPassword('owner123')
-    } else if (roleKey === 'admin') {
-      setEmail('admin@sembako.id')
-      setPassword('admin123')
-    }
-  }
 
   const handleLogin = async (overrideEmail, overridePass) => {
     const targetEmail = overrideEmail || email
@@ -62,29 +49,6 @@ export default function Login() {
     saveRememberMe(rememberMe)
 
     const cleanEmail = targetEmail.trim().toLowerCase()
-
-    // Demo / Quick Role Bypasses
-    if (cleanEmail === 'dev@sembako.id' || cleanEmail === 'dev') {
-      loginAsRole('dev')
-      toast.success('Masuk sebagai Developer!')
-      navigate('/beranda')
-      setIsLoading(false)
-      return
-    }
-    if (cleanEmail === 'owner@sembako.id' || cleanEmail === 'owner') {
-      loginAsRole('owner')
-      toast.success('Masuk sebagai Owner Toko!')
-      navigate('/beranda')
-      setIsLoading(false)
-      return
-    }
-    if (cleanEmail === 'admin@sembako.id' || cleanEmail === 'admin') {
-      loginAsRole('admin')
-      toast.success('Masuk sebagai Admin Kasir!')
-      navigate('/beranda')
-      setIsLoading(false)
-      return
-    }
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -103,10 +67,38 @@ export default function Login() {
         return
       }
 
-      const { data: profiles } = await supabase
+      let { data: profiles } = await supabase
         .from('profiles')
         .select('*, tenants(sub_type, business_vertical)')
         .eq('auth_user_id', data.user.id)
+
+      if (!profiles || profiles.length === 0) {
+        const { data: profilesByEmail } = await supabase
+          .from('profiles')
+          .select('*, tenants(sub_type, business_vertical)')
+          .eq('email', cleanEmail)
+
+        if (profilesByEmail && profilesByEmail.length > 0) {
+          profiles = profilesByEmail
+          await supabase.from('profiles').update({ auth_user_id: data.user.id }).eq('id', profilesByEmail[0].id)
+        } else if (cleanEmail === 'fahruhernansakti@gmail.com' || cleanEmail.startsWith('dev@')) {
+          const defaultTenantId = '00000000-0000-0000-0000-000000000002'
+          const { data: newProfile } = await supabase.from('profiles').insert({
+            auth_user_id: data.user.id,
+            tenant_id: defaultTenantId,
+            full_name: data.user.user_metadata?.full_name || 'Developer Superadmin',
+            email: cleanEmail,
+            role: 'dev',
+            app_role: 'dev',
+            user_type: 'broker',
+            sub_type: 'distributor_sembako',
+            business_name: 'Broker Dashboard Sembako',
+            onboarded: true
+          }).select('*, tenants(sub_type, business_vertical)').single()
+
+          if (newProfile) profiles = [newProfile]
+        }
+      }
 
       if (!profiles || profiles.length === 0) {
         setError('Akun tidak terdaftar. Hubungi Developer untuk mendaftarkan akun.')
@@ -133,7 +125,7 @@ export default function Login() {
 
   const propsBag = {
     email, setEmail, password, setPassword, showPassword, setShowPassword,
-    isLoading, error, handleLogin, handleQuickRoleFill, navigate,
+    isLoading, error, handleLogin, navigate,
     rememberMe, setRememberMe
   }
 
@@ -145,7 +137,7 @@ export default function Login() {
 }
 
 // ─── DESKTOP LOGIN VIEW ───────────────────────────────────────
-function DesktopLoginView({ email, setEmail, password, setPassword, showPassword, setShowPassword, isLoading, error, handleLogin, handleQuickRoleFill, rememberMe, setRememberMe }) {
+function DesktopLoginView({ email, setEmail, password, setPassword, showPassword, setShowPassword, isLoading, error, handleLogin, rememberMe, setRememberMe }) {
   return (
     <div className="min-h-screen flex bg-background text-foreground font-sans selection:bg-orange-500/30 overflow-hidden relative text-left">
       
@@ -260,40 +252,7 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
             </p>
           </div>
 
-          {/* QUICK ROLE SELECTOR BADGES */}
-          <div className="mb-6">
-            <div className="text-[10px] font-black text-orange-600 dark:text-orange-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Zap size={12} /> Pilih Mode Akses Login Cepat:
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { role: 'dev', label: 'Dev Mode', icon: <Crown size={12} className="text-amber-500" />, bg: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400' },
-                { role: 'owner', label: 'Owner Toko', icon: <Store size={12} className="text-emerald-500" />, bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' },
-                { role: 'admin', label: 'Admin Kasir', icon: <UserCheck size={12} className="text-blue-500" />, bg: 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' },
-              ].map(r => (
-                <button
-                  key={r.role}
-                  type="button"
-                  onClick={() => {
-                    handleQuickRoleFill(r.role)
-                    handleLogin(r.role === 'dev' ? 'dev@sembako.id' : r.role === 'owner' ? 'owner@sembako.id' : 'admin@sembako.id', r.role + '123')
-                  }}
-                  className={cn(
-                    "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center justify-center gap-1.5 hover:scale-[1.02] cursor-pointer",
-                    r.bg
-                  )}
-                >
-                  {r.icon} <span>{r.label.split(' ')[0]}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px bg-border/40" />
-            <span className="text-[9px] text-muted-foreground/60 uppercase tracking-widest font-black">atau login email</span>
-            <div className="flex-1 h-px bg-border/40" />
-          </div>
 
           <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
             
@@ -386,7 +345,7 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
 }
 
 // ─── MOBILE LOGIN VIEW ────────────────────────────────────────
-function MobileLoginView({ email, setEmail, password, setPassword, showPassword, setShowPassword, isLoading, error, handleLogin, handleQuickRoleFill, rememberMe, setRememberMe }) {
+function MobileLoginView({ email, setEmail, password, setPassword, showPassword, setShowPassword, isLoading, error, handleLogin, rememberMe, setRememberMe }) {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans px-4 py-8 flex flex-col justify-center text-left">
       
@@ -404,34 +363,7 @@ function MobileLoginView({ email, setEmail, password, setPassword, showPassword,
       {/* FORM CARD */}
       <div className="w-full max-w-[360px] mx-auto bg-card border border-border/60 rounded-3xl p-6 shadow-xl">
         
-        {/* QUICK ROLE SELECTOR */}
-        <div className="mb-5">
-          <div className="text-[10px] font-black text-orange-600 dark:text-orange-500 uppercase tracking-widest mb-2 flex items-center gap-1">
-            <Zap size={11} /> Pilih Role Login Cepat:
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {[
-              { role: 'dev', label: 'Dev', icon: <Crown size={11} className="text-amber-500" />, bg: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400' },
-              { role: 'owner', label: 'Owner', icon: <Store size={11} className="text-emerald-500" />, bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' },
-              { role: 'admin', label: 'Admin', icon: <UserCheck size={11} className="text-blue-500" />, bg: 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' },
-            ].map(r => (
-              <button
-                key={r.role}
-                type="button"
-                onClick={() => {
-                  handleQuickRoleFill(r.role)
-                  handleLogin(r.role === 'dev' ? 'dev@sembako.id' : r.role === 'owner' ? 'owner@sembako.id' : 'admin@sembako.id', r.role + '123')
-                }}
-                className={cn(
-                  "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center justify-center gap-1 hover:scale-[1.02] cursor-pointer",
-                  r.bg
-                )}
-              >
-                {r.icon} <span>{r.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
           
@@ -468,6 +400,18 @@ function MobileLoginView({ email, setEmail, password, setPassword, showPassword,
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between py-0.5">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-muted-foreground select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-border/60 text-orange-600 focus:ring-orange-500/30 accent-orange-600 cursor-pointer"
+              />
+              <span>Ingat Sesi Saya</span>
+            </label>
           </div>
 
           {error && (

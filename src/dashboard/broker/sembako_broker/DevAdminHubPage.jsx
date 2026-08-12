@@ -205,33 +205,27 @@ export default function DevAdminHubPage() {
   }, [systemLogs, logFilter, logSearch])
 
   return (
-    <div className="bg-[#06090F] min-h-screen text-slate-100 p-4 sm:p-8 space-y-6 selection:bg-[#EA580C]/30 selection:text-orange-200">
+    <div className="bg-slate-50 min-h-screen text-slate-900 p-4 sm:p-8 space-y-6 selection:bg-[#EA580C]/30 selection:text-orange-900">
       
-      {/* Background Glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px]" />
-      </div>
-
       {/* Header Admin Console */}
-      <header className="relative z-10 bg-[#0F172A] border border-white/10 rounded-[28px] p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <header className="relative z-10 bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#EA580C] to-amber-600 border border-orange-400/30 flex items-center justify-center text-white shadow-lg shadow-orange-950/40 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#EA580C] to-amber-600 border border-orange-400/30 flex items-center justify-center text-white shadow-md shadow-orange-600/20 shrink-0">
             <Terminal size={28} />
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Badge className="bg-[#EA580C]/20 text-[#EA580C] border border-[#EA580C]/40 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 animate-pulse">
+              <Badge className="bg-orange-50 text-[#EA580C] border border-orange-200 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 animate-pulse">
                 DEV MODE ACTIVE
               </Badge>
-              <Badge className="bg-white/5 text-slate-300 border border-white/10 text-[10px] font-bold px-2 py-0.5">
+              <Badge className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold px-2 py-0.5">
                 Role: {profile?.role || 'Developer'}
               </Badge>
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
+            <h1 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase">
               Web Admin & System Management
             </h1>
-            <p className="text-xs text-slate-400 font-medium">
+            <p className="text-xs text-slate-500 font-medium">
               Konsol inspeksi kesehatan sistem, error log, manajemen akses akun, dan diagnosa cache.
             </p>
           </div>
@@ -239,13 +233,13 @@ export default function DevAdminHubPage() {
 
         {/* Server & DB Status Badges */}
         <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <div className="bg-white/[0.03] border border-white/10 p-3 rounded-2xl flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+          <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
               <Server size={18} />
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Supabase DB</p>
-              <p className="text-xs font-black text-emerald-400 flex items-center gap-1.5">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Supabase DB</p>
+              <p className="text-xs font-black text-emerald-600 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 CONNECTED {dbLatency !== null && `(${dbLatency}ms)`}
               </p>
@@ -256,7 +250,7 @@ export default function DevAdminHubPage() {
             onClick={checkHealth} 
             disabled={isCheckingPing}
             variant="outline" 
-            className="h-12 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-slate-200 text-xs font-bold gap-2 px-4"
+            className="h-12 rounded-2xl bg-white border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold gap-2 px-4 shadow-sm cursor-pointer"
           >
             <RefreshCw size={14} className={cn(isCheckingPing && "animate-spin text-[#EA580C]")} />
             Ping System
@@ -267,28 +261,28 @@ export default function DevAdminHubPage() {
       {/* Main Tabs Navigation */}
       <main className="relative z-10 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-[#0F172A] border border-white/10 p-1.5 h-14 rounded-2xl grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+          <TabsList className="bg-slate-200/70 border border-slate-300/60 p-1.5 h-14 rounded-2xl grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
             <TabsTrigger 
               value="logs" 
-              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white transition-all h-11"
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Activity size={16} /> Error & System Logs
             </TabsTrigger>
             <TabsTrigger 
               value="accounts" 
-              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white transition-all h-11"
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Users size={16} /> Kelola Akun Login
             </TabsTrigger>
             <TabsTrigger 
               value="diagnostics" 
-              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white transition-all h-11"
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Cpu size={16} /> Diagnostics & Cache
             </TabsTrigger>
             <TabsTrigger 
               value="recycle" 
-              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white transition-all h-11"
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Trash2 size={16} /> Recycle Bin Data
             </TabsTrigger>
@@ -296,7 +290,7 @@ export default function DevAdminHubPage() {
 
           {/* TAB 1: ERROR & SYSTEM LOGS CONSOLE */}
           <TabsContent value="logs" className="mt-0 space-y-4">
-            <Card className="bg-[#0F172A] border border-white/10 rounded-[28px] p-6 shadow-xl space-y-6">
+            <Card className="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm space-y-6">
               
               {/* Controls Bar */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -407,39 +401,39 @@ export default function DevAdminHubPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* Cache Management Card */}
-              <Card className="bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-[28px] p-6 shadow-2xl space-y-4">
+              <Card className="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <div className="p-3 rounded-2xl bg-amber-100 text-amber-700">
                     <Zap size={22} />
                   </div>
                   <div>
-                    <h3 className="font-display font-black text-white text-lg tracking-tight uppercase">Cache & State Manager</h3>
-                    <p className="text-xs text-slate-400">Purge data sementara dan atur ulang cache React Query</p>
+                    <h3 className="font-display font-black text-slate-900 text-lg tracking-tight uppercase">Cache & State Manager</h3>
+                    <p className="text-xs text-slate-500">Purge data sementara dan atur ulang cache React Query</p>
                   </div>
                 </div>
 
-                <Separator className="bg-white/10 my-2" />
+                <Separator className="bg-slate-200 my-2" />
 
                 <div className="space-y-3">
-                  <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-extrabold text-white">React Query Invalidation</p>
-                      <p className="text-[11px] text-slate-400">Refresh semua query toko, stok, dan penjualan</p>
+                      <p className="text-xs font-extrabold text-slate-900">React Query Invalidation</p>
+                      <p className="text-[11px] text-slate-500">Refresh semua query toko, stok, dan penjualan</p>
                     </div>
                     <Button 
                       onClick={handleFlushCache}
-                      className="bg-[#EA580C] hover:bg-[#D44E0A] rounded-xl text-xs font-bold h-10 px-4"
+                      className="bg-[#EA580C] hover:bg-[#D44E0A] rounded-xl text-xs font-bold h-10 px-4 cursor-pointer"
                     >
                       Flush Cache
                     </Button>
                   </div>
 
-                  <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-extrabold text-white">Tenant Storage State</p>
-                      <p className="text-[11px] text-slate-400">Active Tenant: {tenant?.id || 'Default'}</p>
+                      <p className="text-xs font-extrabold text-slate-900">Tenant Storage State</p>
+                      <p className="text-[11px] text-slate-500">Active Tenant: {tenant?.id || 'Default'}</p>
                     </div>
-                    <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                    <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                       ACTIVE
                     </Badge>
                   </div>
@@ -447,28 +441,28 @@ export default function DevAdminHubPage() {
               </Card>
 
               {/* Database Connection Info */}
-              <Card className="bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-[28px] p-6 shadow-2xl space-y-4">
+              <Card className="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <div className="p-3 rounded-2xl bg-cyan-100 text-cyan-700">
                     <Database size={22} />
                   </div>
                   <div>
-                    <h3 className="font-display font-black text-white text-lg tracking-tight uppercase">Supabase REST Diagnostics</h3>
-                    <p className="text-xs text-slate-400">Informasi endpoint PostgREST API</p>
+                    <h3 className="font-display font-black text-slate-900 text-lg tracking-tight uppercase">Supabase REST Diagnostics</h3>
+                    <p className="text-xs text-slate-500">Informasi endpoint PostgREST API</p>
                   </div>
                 </div>
 
-                <Separator className="bg-white/10 my-2" />
+                <Separator className="bg-slate-200 my-2" />
 
                 <div className="space-y-3 text-xs">
-                  <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/5 space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Endpoint</p>
-                    <p className="font-mono text-slate-200 truncate">https://kqbxzokrpcwuxrfjshuf.supabase.co</p>
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Project Endpoint</p>
+                    <p className="font-mono text-slate-800 truncate">https://kqbxzokrpcwuxrfjshuf.supabase.co</p>
                   </div>
 
-                  <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/5 space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Auth User ID</p>
-                    <p className="font-mono text-slate-200 truncate">{user?.id || 'Dev Session'}</p>
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Auth User ID</p>
+                    <p className="font-mono text-slate-800 truncate">{user?.id || 'Dev Session'}</p>
                   </div>
                 </div>
               </Card>
@@ -476,18 +470,18 @@ export default function DevAdminHubPage() {
             </div>
 
             {/* License Management Section */}
-            <Card className="bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-[28px] p-6 sm:p-8 shadow-2xl space-y-6 mt-6">
+            <Card className="bg-white border border-slate-200 rounded-[28px] p-6 sm:p-8 shadow-sm space-y-6 mt-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <div className="p-3 rounded-2xl bg-amber-100 text-amber-700">
                   <Server size={22} />
                 </div>
                 <div>
-                  <h3 className="font-display font-black text-white text-lg tracking-tight uppercase">License Management</h3>
-                  <p className="text-xs text-slate-400">Atur dan perbarui masa aktif server klien distributor secara langsung. Semua tindakan perubahan memerlukan konfirmasi.</p>
+                  <h3 className="font-display font-black text-slate-900 text-lg tracking-tight uppercase">License Management</h3>
+                  <p className="text-xs text-slate-500">Atur dan perbarui masa aktif server klien distributor secara langsung. Semua tindakan perubahan memerlukan konfirmasi.</p>
                 </div>
               </div>
 
-              <Separator className="bg-white/10 my-1" />
+              <Separator className="bg-slate-200 my-1" />
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Col 1: Status + Timeline */}
@@ -500,8 +494,8 @@ export default function DevAdminHubPage() {
                     formatLicenseDate={license.formatLicenseDate}
                     getGraceDate={license.getGraceDate}
                   />
-                  <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Alur Lisensi</h4>
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Alur Lisensi</h4>
                     <LicenseTimeline statusInfo={license.statusInfo} loading={license.loading} />
                   </div>
                 </div>
@@ -519,7 +513,7 @@ export default function DevAdminHubPage() {
                     pendingExpiry={license.pendingExpiry}
                     executeLicenseUpdate={license.executeLicenseUpdate}
                   />
-                  <Separator className="bg-white/5" />
+                  <Separator className="bg-slate-200" />
                   <LicenseHistory
                     history={license.history}
                     loading={license.historyLoading}
@@ -530,64 +524,64 @@ export default function DevAdminHubPage() {
             </Card>
 
             {/* Danger Zone: Reset Data Bisnis */}
-            <Card className="bg-red-950/10 border border-red-500/30 rounded-[28px] p-6 shadow-2xl space-y-4 mt-6">
+            <Card className="bg-red-50 border border-red-200 rounded-[28px] p-6 shadow-sm space-y-4 mt-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20">
+                <div className="p-3 rounded-2xl bg-red-100 text-red-600">
                   <ShieldAlert size={22} />
                 </div>
                 <div>
-                  <h3 className="font-display font-black text-red-400 text-lg tracking-tight uppercase leading-none">Zona Bahaya: Reset Database Bisnis</h3>
+                  <h3 className="font-display font-black text-red-600 text-lg tracking-tight uppercase leading-none">Zona Bahaya: Reset Database Bisnis</h3>
                   <p className="text-[11px] text-red-500/80 font-bold uppercase tracking-wider mt-1">Hanya untuk Owner / Dev Superadmin</p>
                 </div>
               </div>
 
-              <Separator className="bg-red-500/20 my-2" />
+              <Separator className="bg-red-200 my-2" />
 
-              <div className="bg-black/30 p-4 rounded-2xl border border-red-500/10 space-y-4">
+              <div className="bg-white p-4 rounded-2xl border border-red-200 space-y-4 shadow-xs">
                 <div className="space-y-2">
-                  <p className="text-xs font-bold text-slate-300">
+                  <p className="text-xs font-bold text-slate-800">
                     Pilih cakupan data bisnis yang ingin dihapus/dibersihkan dari database:
                   </p>
                   
                   <div className="space-y-2.5 pt-2 text-xs">
-                    <label className="flex items-start gap-2.5 cursor-pointer text-slate-300 hover:text-white">
+                    <label className="flex items-start gap-2.5 cursor-pointer text-slate-700 hover:text-slate-900">
                       <input 
                         type="checkbox" 
                         checked={wipeTransactions} 
                         disabled 
-                        className="mt-0.5 rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-not-allowed" 
+                        className="mt-0.5 rounded border-slate-300 bg-slate-100 text-red-600 focus:ring-red-500 cursor-not-allowed" 
                       />
                       <div>
                         <strong>Reset Transaksi & Operasional (Wajib)</strong>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Menghapus Nota Penjualan, Pembayaran, Trip Kirim Barang, Kas Masuk/Keluar, Retur Toko, Payroll, dan Logs.</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Menghapus Nota Penjualan, Pembayaran, Trip Kirim Barang, Kas Masuk/Keluar, Retur Toko, Payroll, dan Logs.</p>
                       </div>
                     </label>
 
-                    <label className="flex items-start gap-2.5 cursor-pointer text-slate-300 hover:text-white">
+                    <label className="flex items-start gap-2.5 cursor-pointer text-slate-700 hover:text-slate-900">
                       <input 
                         type="checkbox" 
                         checked={wipeCatalog} 
                         onChange={e => setWipeCatalog(e.target.checked)} 
-                        className="mt-0.5 rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500" 
+                        className="mt-0.5 rounded border-slate-300 bg-white text-red-600 focus:ring-red-500" 
                       />
                       <div>
                         <strong>Reset Katalog & Kontak (Opsional)</strong>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Menghapus Produk Katalog, Daftar Toko (Pelanggan), Supplier (Pabrik), dan Pegawai.</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Menghapus Produk Katalog, Daftar Toko (Pelanggan), Supplier (Pabrik), dan Pegawai.</p>
                       </div>
                     </label>
                   </div>
                 </div>
 
-                <div className="bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl flex items-start gap-3">
-                  <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5 animate-pulse" />
-                  <p className="text-[10px] font-black text-red-400 leading-relaxed uppercase tracking-wider">
+                <div className="bg-red-50 border border-red-200 p-3.5 rounded-xl flex items-start gap-3">
+                  <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5 animate-pulse" />
+                  <p className="text-[10px] font-bold text-red-600 leading-relaxed uppercase tracking-wider">
                     PENTING: Akun Login Owner/Superadmin, Hak Akses Akun, Tenant Bisnis, dan Info Langganan TIDAK akan dihapus. Anda tidak akan terkunci keluar dari sistem.
                   </p>
                 </div>
 
                 <Button 
                   onClick={() => setShowConfirm1(true)}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl h-12 font-black uppercase tracking-widest text-xs shadow-lg shadow-red-950/20 transition-all active:scale-[0.98]"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl h-12 font-black uppercase tracking-widest text-xs shadow-md shadow-red-600/20 transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Mulai Reset Data Bisnis
                 </Button>

@@ -99,17 +99,29 @@ export const useAdjustBatchStock = () => {
         throw updErr
       }
 
-      // BUG-05 fix: sync product.current_stock dengan SUM semua batch aktif
-      // agar UI tidak tampilkan stok yang sudah stale
-      const { data: batchTotals } = await supabase
+      // Sync product current_stock and weighted average buy_price with active batches
+      const { data: activeBatches } = await supabase
         .from('sembako_stock_batches')
-        .select('qty_sisa')
+        .select('qty_sisa, buy_price')
         .eq('product_id', batch.product_id)
+        .eq('is_deleted', false)
         .gt('qty_sisa', 0)
-      const syncedStock = (batchTotals || []).reduce((s, b) => s + (b.qty_sisa || 0), 0)
+
+      let syncedStock = 0
+      let totalAssetValue = 0
+      if (activeBatches && activeBatches.length > 0) {
+        for (const b of activeBatches) {
+          const q = Number(b.qty_sisa || 0)
+          const p = Number(b.buy_price || 0)
+          syncedStock += q
+          totalAssetValue += (q * p)
+        }
+      }
+      const weightedAvgBuyPrice = syncedStock > 0 ? Math.round(totalAssetValue / syncedStock) : Number(batch.buy_price || 0)
+
       const { error: prodSyncErr } = await supabase
         .from('sembako_products')
-        .update({ current_stock: syncedStock })
+        .update({ current_stock: Math.round(syncedStock), avg_buy_price: weightedAvgBuyPrice })
         .eq('id', batch.product_id)
       if (prodSyncErr) {
         logError({
@@ -199,19 +211,29 @@ export const useAddStockBatch = () => {
         throw error
       }
 
-      // CRITICAL FIX: Automatically recalculate & sync current_stock on sembako_products
+      // Automatically recalculate & sync current_stock & weighted average buy_price on sembako_products
       const { data: batchTotals } = await supabase
         .from('sembako_stock_batches')
-        .select('qty_sisa, qty_masuk')
+        .select('qty_sisa, buy_price')
         .eq('product_id', product_id)
         .eq('is_deleted', false)
         .gt('qty_sisa', 0)
 
-      const syncedStock = Math.round((batchTotals || []).reduce((s, b) => s + Number(b.qty_sisa ?? b.qty_masuk ?? 0), 0))
+      let syncedStock = 0
+      let totalAssetValue = 0
+      if (batchTotals && batchTotals.length > 0) {
+        for (const b of batchTotals) {
+          const q = Number(b.qty_sisa || 0)
+          const p = Number(b.buy_price || 0)
+          syncedStock += q
+          totalAssetValue += (q * p)
+        }
+      }
+      const weightedAvgBuyPrice = syncedStock > 0 ? Math.round(totalAssetValue / syncedStock) : Number(buy_price || 0)
 
       await supabase
         .from('sembako_products')
-        .update({ current_stock: syncedStock, avg_buy_price: buy_price })
+        .update({ current_stock: Math.round(syncedStock), avg_buy_price: weightedAvgBuyPrice })
         .eq('id', product_id)
     },
     onSuccess: (_, vars) => {

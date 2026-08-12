@@ -1,6 +1,8 @@
 import { supabase } from '../../supabase'
 
-export const STALE_5M = 10 * 1000 // 10s stale time for real-time freshness
+export const STALE_5M = 5 * 60 * 1000 // 5 minutes stale time for master data cache efficiency
+export const STALE_1M = 1 * 60 * 1000 // 1 minute stale time for active dashboard metrics
+export const STALE_10S = 10 * 1000    // 10s stale time for high-frequency live tracking
 
 export const ALLOWED_COLUMNS = {
   sembako_customers: [

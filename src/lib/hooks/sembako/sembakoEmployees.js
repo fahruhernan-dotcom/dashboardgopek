@@ -30,8 +30,9 @@ export const useUpdateSembakoEmployee = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...updates }) => {
+      const cleanUpdates = sanitizeDBPayload(updates, 'sembako_employees')
       const { error } = await supabase.from('sembako_employees')
-        .update(updates).eq('id', id)
+        .update(cleanUpdates).eq('id', id)
       if (error) {
         logSupabaseError(error, { table: 'sembako_employees', operation: 'update', component: 'useSembakoData', actionName: 'sembako.employee.update' })
         throw error

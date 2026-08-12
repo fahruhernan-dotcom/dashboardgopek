@@ -93,7 +93,7 @@ export function SalesAndCashChart({
   const kpiBoxStyle = {
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: '12px 14px',
     background: '#F8FAFC',
     border: `1px solid ${MC.border}`,

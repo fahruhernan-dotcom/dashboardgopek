@@ -398,6 +398,7 @@ export default function AppSidebar({ open, onClose }) {
       items: [
         { title: 'Laporan Bisnis', url: `${brokerBase}/laporan`, icon: BarChart2, roles: ['owner', 'dev'], planRequired: 'pro', dataTutorial: 'sembako-laporan' },
         { title: 'Tim & Karyawan', url: `${brokerBase}/tim`, icon: Users, roles: ['owner', 'dev'] },
+        { title: 'Kelola Akun & Dev', url: `${brokerBase}/kelola-akun`, icon: Wrench, roles: ['dev'], isDevItem: true },
       ]
     }] : []),
 

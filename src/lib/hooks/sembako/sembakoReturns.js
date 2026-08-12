@@ -220,13 +220,22 @@ export const useCreateSembakoReturn = () => {
       const financialAction = payload.financial_action || 'potong_piutang'
       if (return_type === 'sale_return' && financialAction === 'potong_piutang' && total_amount > 0) {
         try {
-          // Find unpaid sales for this customer/party
-          const { data: unpaidSales } = await supabase.from('sembako_sales')
-            .select('id, remaining_amount, paid_amount, total_amount, invoice_number')
+          // Find unpaid sales specifically for this customer/party
+          let unpaidSalesQuery = supabase.from('sembako_sales')
+            .select('id, remaining_amount, paid_amount, total_amount, invoice_number, customer_id, customer_name')
             .eq('tenant_id', tenantId)
             .eq('is_deleted', false)
             .neq('payment_status', 'lunas')
-            .order('transaction_date', { ascending: true })
+
+          if (customer_id) {
+            unpaidSalesQuery = unpaidSalesQuery.eq('customer_id', customer_id)
+          } else if (party_name && party_name.trim()) {
+            unpaidSalesQuery = unpaidSalesQuery.eq('customer_name', party_name.trim())
+          } else {
+            unpaidSalesQuery = null
+          }
+
+          const { data: unpaidSales } = unpaidSalesQuery ? await unpaidSalesQuery.order('transaction_date', { ascending: true }) : { data: [] }
 
           let remainingCredit = Number(total_amount)
 
@@ -251,6 +260,8 @@ export const useCreateSembakoReturn = () => {
               await supabase.from('sembako_payments').insert({
                 tenant_id: tenantId,
                 sale_id: sale.id,
+                customer_id: customer_id || sale.customer_id || null,
+                amount: deduct,
                 amount_paid: deduct,
                 payment_method: 'potong_piutang_retur',
                 notes: `Potong Piutang Retur ${returnNumber} (${product_name})`,

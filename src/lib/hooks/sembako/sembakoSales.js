@@ -172,6 +172,38 @@ export const useCreateSembakoSale = () => {
     mutationFn: async ({ customer_id, customer_name, transaction_date,
       due_date, items, delivery_cost, other_cost, notes }) => {
       const tenant_id = await getTenantId()
+
+      // ── ATOMIC SUPABASE RPC TRANSACTION (Primary) ──────────────────────────
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('create_sembako_sale_transaction', {
+          p_tenant_id: tenant_id,
+          p_customer_id: customer_id || null,
+          p_customer_name: customer_name || 'Umum',
+          p_transaction_date: transaction_date || new Date().toISOString(),
+          p_due_date: due_date || null,
+          p_delivery_cost: Number(delivery_cost) || 0,
+          p_other_cost: Number(other_cost) || 0,
+          p_notes: notes || '',
+          p_items: items
+        })
+
+        if (!rpcError && rpcData?.id) {
+          return rpcData
+        }
+        if (rpcError) {
+          // If error is an explicit stock error from Postgres exception, surface immediately
+          if (rpcError.message && (rpcError.message.includes('Stok') || rpcError.message.includes('Access Denied'))) {
+            throw new Error(rpcError.message)
+          }
+        }
+      } catch (rpcErr) {
+        if (rpcErr.message && (rpcErr.message.includes('Stok') || rpcErr.message.includes('Access Denied'))) {
+          throw rpcErr
+        }
+        // Fallback to client preflight if RPC is not deployed yet
+      }
+
+      // ── FALLBACK CLIENT PREFLIGHT ──────────────────────────────────────────
       const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
       const rand = Array.from(crypto.getRandomValues(new Uint8Array(3)))
         .map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase().slice(0, 4)

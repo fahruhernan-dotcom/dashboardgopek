@@ -6,7 +6,12 @@ export const isOwnerUser = (profile) => isDevUser(profile) || profile?.role === 
 
 export const isAdminUser = (profile) => profile?.role === BUSINESS_ROLES.ADMIN || profile?.role === 'admin';
 
-export const canViewProfit = (profile) => !isAdminUser(profile) || isDevUser(profile) || isOwnerUser(profile);
+export const canViewProfit = (profile) =>
+  isDevUser(profile) ||
+  isOwnerUser(profile) ||
+  isAdminUser(profile) ||
+  isManager(profile) ||
+  profile?.role === BUSINESS_ROLES.FINANCE;
 
 export const canManageAccounts = (profile) => isDevUser(profile);
 

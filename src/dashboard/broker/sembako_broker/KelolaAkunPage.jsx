@@ -284,16 +284,16 @@ export default function KelolaAkunPage() {
   /* ─────────────── INPUT STYLE SHARED ─────────────── */
   const inputStyle = {
     width: '100%', height: 42, padding: '0 12px',
-    background: '#1C130A', border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: 10, color: '#FFF', fontSize: 14, outline: 'none', boxSizing: 'border-box'
+    background: '#F8FAFC', border: '1px solid #CBD5E1',
+    borderRadius: 10, color: '#0F172A', fontSize: 14, outline: 'none', boxSizing: 'border-box'
   }
   const labelStyle = {
     display: 'block', fontSize: 11, fontWeight: 700,
-    color: '#C4B5A5', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6
+    color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0A07', color: '#FDF8F3', padding: '24px 20px 100px', fontFamily: "'Sora', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', padding: '24px 20px 100px', fontFamily: "'Sora', sans-serif" }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
 
         {/* HEADER */}
@@ -304,10 +304,10 @@ export default function KelolaAkunPage() {
                 <Crown size={12} /> DEV MODE ONLY
               </span>
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.3px', color: '#FFF' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.3px', color: '#0F172A' }}>
               Kelola Akun Login &amp; Hak Akses
             </h1>
-            <p style={{ fontSize: 13, color: '#A18E7E', marginTop: 2 }}>
+            <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
               Daftar akun yang terdaftar dan diizinkan login ke sistem Dashboard Sembako.
             </p>
           </div>
@@ -319,7 +319,7 @@ export default function KelolaAkunPage() {
               background: 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)',
               border: 'none', color: '#FFF', fontSize: 13, fontWeight: 800,
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-              boxShadow: '0 6px 20px rgba(234, 88, 12, 0.35)'
+              boxShadow: '0 6px 20px rgba(234, 88, 12, 0.25)'
             }}
           >
             <UserPlus size={16} /> Buat Akun Baru
@@ -329,58 +329,58 @@ export default function KelolaAkunPage() {
         {/* STATS ROW */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 32 }}>
           {[
-            { label: '👑 DEV SUPERADMIN', count: devCount, color: '#F59E0B', border: 'rgba(245, 158, 11, 0.3)', icon: <Crown size={18} color="#F59E0B" />, sub: 'Full Control System' },
-            { label: '💼 OWNER / PEMILIK', count: ownerCount, color: '#10B981', border: 'rgba(16, 185, 129, 0.3)', icon: <Store size={18} color="#10B981" />, sub: 'Laporan Profit & Audit Log' },
-            { label: '🛒 KASIR / ADMIN', count: adminCount, color: '#3B82F6', border: 'rgba(59, 130, 246, 0.3)', icon: <UserCheck size={18} color="#3B82F6" />, sub: 'Akses Utama POS & Stok' },
-            { label: '👥 TOTAL AKUN', count: accountList.length, color: '#C4B5A5', border: 'rgba(255, 255, 255, 0.1)', icon: <Users size={18} color="#C4B5A5" />, sub: 'Terdaftar di Database' },
+            { label: '👑 DEV SUPERADMIN', count: devCount, color: '#D97706', border: '#FDE68A', bg: '#FFFBEB', icon: <Crown size={18} color="#D97706" />, sub: 'Full Control System' },
+            { label: '💼 OWNER / PEMILIK', count: ownerCount, color: '#059669', border: '#A7F3D0', bg: '#ECFDF5', icon: <Store size={18} color="#059669" />, sub: 'Laporan Profit & Audit Log' },
+            { label: '🛒 KASIR / ADMIN', count: adminCount, color: '#2563EB', border: '#BFDBFE', bg: '#EFF6FF', icon: <UserCheck size={18} color="#2563EB" />, sub: 'Akses Utama POS & Stok' },
+            { label: '👥 TOTAL AKUN', count: accountList.length, color: '#475569', border: '#E2E8F0', bg: '#FFFFFF', icon: <Users size={18} color="#475569" />, sub: 'Terdaftar di Database' },
           ].map((stat, i) => (
-            <div key={i} style={{ background: '#130E09', border: `1px solid ${stat.border}`, borderRadius: 16, padding: 18 }}>
+            <div key={i} style={{ background: stat.bg, border: `1px solid ${stat.border}`, borderRadius: 16, padding: 18, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 12, color: stat.color, fontWeight: 700 }}>{stat.label}</span>
                 {stat.icon}
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#FFF', marginTop: 8 }}>{stat.count}</div>
-              <div style={{ fontSize: 11, color: '#A18E7E', marginTop: 2 }}>{stat.sub}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#0F172A', marginTop: 8 }}>{stat.count}</div>
+              <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{stat.sub}</div>
             </div>
           ))}
         </div>
 
         {/* ACCOUNT LIST */}
-        <div style={{ background: '#130E09', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 20, padding: 24 }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#FFF' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
               Daftar Pengguna Terdaftar ({accountList.length})
             </div>
             <button
               onClick={fetchAccounts}
-              style={{ background: 'none', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: 8, padding: '6px 12px', color: '#A18E7E', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 12px', color: '#475569', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
             >
               <RefreshCw size={12} /> Refresh Data
             </button>
           </div>
 
           {loading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: '#A18E7E', fontSize: 13 }}>Memuat data akun...</div>
+            <div style={{ padding: 40, textAlign: 'center', color: '#64748B', fontSize: 13 }}>Memuat data akun...</div>
           ) : accountList.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center', color: '#A18E7E', fontSize: 13 }}>Belum ada data akun terdaftar.</div>
+            <div style={{ padding: 40, textAlign: 'center', color: '#64748B', fontSize: 13 }}>Belum ada data akun terdaftar.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {accountList.map((acc, index) => {
                 const isDevAcc = acc.role === 'dev'
                 const isOwnerAcc = acc.role === 'owner'
                 const isCurrentUser = acc.id === profile?.id || acc.email === authUser?.email
-                const badgeColor = isDevAcc ? '#F59E0B' : isOwnerAcc ? '#10B981' : '#3B82F6'
-                const badgeBg = isDevAcc ? 'rgba(245, 158, 11, 0.12)' : isOwnerAcc ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.12)'
-                const badgeBorder = isDevAcc ? 'rgba(245, 158, 11, 0.3)' : isOwnerAcc ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'
+                const badgeColor = isDevAcc ? '#D97706' : isOwnerAcc ? '#059669' : '#2563EB'
+                const badgeBg = isDevAcc ? '#FFFBEB' : isOwnerAcc ? '#ECFDF5' : '#EFF6FF'
+                const badgeBorder = isDevAcc ? '#FDE68A' : isOwnerAcc ? '#A7F3D0' : '#BFDBFE'
                 const initials = acc.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
 
                 return (
                   <div
                     key={acc.id || index}
                     style={{
-                      background: isCurrentUser ? 'rgba(234, 88, 12, 0.06)' : '#1C130A',
-                      border: `1px solid ${isCurrentUser ? 'rgba(234, 88, 12, 0.4)' : badgeBorder}`,
+                      background: isCurrentUser ? '#FFF7ED' : '#F8FAFC',
+                      border: `1px solid ${isCurrentUser ? '#FDBA74' : badgeBorder}`,
                       borderRadius: 16, padding: '16px 20px',
                       display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16
                     }}
@@ -397,20 +397,20 @@ export default function KelolaAkunPage() {
                       </div>
 
                       <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#FFF', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           {acc.full_name || 'Pengguna'}
-                          {isDevAcc && <Crown size={14} color="#F59E0B" />}
+                          {isDevAcc && <Crown size={14} color="#D97706" />}
                           {isCurrentUser && (
-                            <span style={{ fontSize: 10, fontWeight: 800, background: 'rgba(234, 88, 12, 0.2)', color: '#EA580C', border: '1px solid rgba(234, 88, 12, 0.4)', padding: '2px 8px', borderRadius: 99 }}>
+                            <span style={{ fontSize: 10, fontWeight: 800, background: '#FFEDD5', color: '#EA580C', border: '1px solid #FDBA74', padding: '2px 8px', borderRadius: 99 }}>
                               ANDA
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: 12, color: '#A18E7E', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                           <Mail size={11} /> {acc.email || '—'}
                           {acc.created_at && (
                             <>
-                              <span style={{ color: '#3A2E28' }}>•</span>
+                              <span style={{ color: '#CBD5E1' }}>•</span>
                               <Calendar size={11} />
                               <span>{formatDate(acc.created_at)}</span>
                             </>
@@ -438,8 +438,8 @@ export default function KelolaAkunPage() {
                           setShowEditPassword(false)
                         }}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.12)',
-                          color: '#FFF', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 600,
+                          background: '#FFFFFF', border: '1px solid #CBD5E1',
+                          color: '#0F172A', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 600,
                           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                         }}
                       >
@@ -450,8 +450,8 @@ export default function KelolaAkunPage() {
                         <button
                           onClick={() => handleDeleteAccount(acc)}
                           style={{
-                            background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)',
-                            color: '#F87171', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 600,
+                            background: '#FEF2F2', border: '1px solid #FCA5A5',
+                            color: '#DC2626', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 600,
                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                           }}
                         >
@@ -470,14 +470,14 @@ export default function KelolaAkunPage() {
 
       {/* ───── MODAL TAMBAH AKUN ───── */}
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 440, background: '#130E09', border: '1px solid rgba(234, 88, 12, 0.3)', borderRadius: 24, padding: 28, boxShadow: '0 24px 60px rgba(0,0,0,0.8)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 440, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <UserPlus size={20} color="#EA580C" /> Buat Akun Login Baru
               </div>
-              <button onClick={() => { setShowAddModal(false); setShowPassword(false) }} style={{ background: 'none', border: 'none', color: '#A18E7E', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+              <button onClick={() => { setShowAddModal(false); setShowPassword(false) }} style={{ background: 'none', border: 'none', color: '#64748B', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
 
             <form onSubmit={handleCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -519,7 +519,7 @@ export default function KelolaAkunPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
-                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#A18E7E', cursor: 'pointer', display: 'flex', padding: 0 }}
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex', padding: 0 }}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -542,13 +542,13 @@ export default function KelolaAkunPage() {
                     {selectedRole === 'owner' && '💼 Owner / Pemilik'}
                     {selectedRole === 'dev' && '👑 Dev Superadmin'}
                   </span>
-                  <ChevronDown size={14} color="#A18E7E" style={{ transform: showRoleDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                  <ChevronDown size={14} color="#64748B" style={{ transform: showRoleDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                 </button>
                 {showRoleDropdown && (
                   <div style={{
                     position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 999,
-                    background: '#1C130A', border: '1px solid rgba(234, 88, 12, 0.35)', borderRadius: 12,
-                    overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.6)'
+                    background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 12,
+                    overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.1)'
                   }}>
                     {[
                       { value: 'admin', label: '🛒 Kasir / Admin', sub: 'Akses Operasional Utama' },
@@ -560,13 +560,13 @@ export default function KelolaAkunPage() {
                         type="button"
                         onClick={() => { setSelectedRole(opt.value); setShowRoleDropdown(false) }}
                         style={{
-                          width: '100%', padding: '11px 14px', background: selectedRole === opt.value ? 'rgba(234,88,12,0.12)' : 'transparent',
-                          border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer',
+                          width: '100%', padding: '11px 14px', background: selectedRole === opt.value ? '#FFF7ED' : 'transparent',
+                          border: 'none', borderBottom: '1px solid #F1F5F9', cursor: 'pointer',
                           textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2
                         }}
                       >
-                        <span style={{ fontSize: 13, fontWeight: 700, color: selectedRole === opt.value ? '#EA580C' : '#FFF' }}>{opt.label}</span>
-                        <span style={{ fontSize: 11, color: '#A18E7E' }}>{opt.sub}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: selectedRole === opt.value ? '#EA580C' : '#0F172A' }}>{opt.label}</span>
+                        <span style={{ fontSize: 11, color: '#64748B' }}>{opt.sub}</span>
                       </button>
                     ))}
                   </div>
@@ -574,7 +574,7 @@ export default function KelolaAkunPage() {
               </div>
 
               {/* Role Info */}
-              <div style={{ background: 'rgba(234, 88, 12, 0.08)', border: '1px solid rgba(234, 88, 12, 0.2)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#C4A27A', lineHeight: 1.6 }}>
+              <div style={{ background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#C2410C', lineHeight: 1.6 }}>
                 {selectedRole === 'admin' && '🛒 Kasir/Admin dapat mengakses POS, stok, dan transaksi harian.'}
                 {selectedRole === 'owner' && '💼 Owner dapat melihat laporan profit, margin, dan audit log lengkap.'}
                 {selectedRole === 'dev' && '👑 Dev Superadmin memiliki full control termasuk kelola akun pengguna.'}
@@ -584,14 +584,14 @@ export default function KelolaAkunPage() {
                 <button
                   type="button"
                   onClick={() => { setShowAddModal(false); setShowPassword(false) }}
-                  style={{ flex: 1, height: 44, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#A18E7E', borderRadius: 12, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                  style={{ flex: 1, height: 44, background: 'transparent', border: '1px solid #CBD5E1', color: '#64748B', borderRadius: 12, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  style={{ flex: 2, height: 44, background: creating ? 'rgba(234,88,12,0.4)' : 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)', border: 'none', color: '#FFF', borderRadius: 12, cursor: creating ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}
+                  style={{ flex: 2, height: 44, background: creating ? '#FDBA74' : 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)', border: 'none', color: '#FFF', borderRadius: 12, cursor: creating ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}
                 >
                   {creating ? 'Memproses...' : 'Simpan Akun Baru'}
                 </button>
@@ -603,17 +603,17 @@ export default function KelolaAkunPage() {
 
       {/* ───── MODAL EDIT AKUN ───── */}
       {editUser && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 440, background: '#130E09', border: '1px solid rgba(234, 88, 12, 0.3)', borderRadius: 24, padding: 28, boxShadow: '0 24px 60px rgba(0,0,0,0.8)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 440, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Edit3 size={18} color="#EA580C" /> Edit Akun
               </div>
-              <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', color: '#A18E7E', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+              <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', color: '#64748B', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
 
             {/* Email info (read-only) */}
-            <div style={{ background: '#1C130A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#A18E7E', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#64748B', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Mail size={13} /> {editUser.email}
             </div>
 
@@ -642,20 +642,20 @@ export default function KelolaAkunPage() {
                     textAlign: 'left', paddingRight: 12
                   }}
                 >
-                  <span style={{ fontSize: 13, color: '#FFF' }}>
+                  <span style={{ fontSize: 13, color: '#0F172A' }}>
                     {editRole === 'admin' && '🛒 Kasir / Admin'}
                     {editRole === 'owner' && '💼 Owner / Pemilik'}
                     {editRole === 'dev'   && '👑 Dev Superadmin'}
                   </span>
                   {editUser.id !== profile?.id && (
-                    <ChevronDown size={14} color="#A18E7E" style={{ transform: showEditRoleDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                    <ChevronDown size={14} color="#64748B" style={{ transform: showEditRoleDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                   )}
                 </button>
                 {showEditRoleDropdown && editUser.id !== profile?.id && (
                   <div style={{
                     position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 999,
-                    background: '#1C130A', border: '1px solid rgba(234, 88, 12, 0.35)', borderRadius: 12,
-                    overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.6)'
+                    background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 12,
+                    overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.1)'
                   }}>
                     {[
                       { value: 'admin', label: '🛒 Kasir / Admin',   sub: 'Akses Operasional Utama' },
@@ -667,27 +667,27 @@ export default function KelolaAkunPage() {
                         type="button"
                         onClick={() => { setEditRole(opt.value); setShowEditRoleDropdown(false) }}
                         style={{
-                          width: '100%', padding: '11px 14px', background: editRole === opt.value ? 'rgba(234,88,12,0.12)' : 'transparent',
-                          border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer',
+                          width: '100%', padding: '11px 14px', background: editRole === opt.value ? '#FFF7ED' : 'transparent',
+                          border: 'none', borderBottom: '1px solid #F1F5F9', cursor: 'pointer',
                           textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2
                         }}
                       >
-                        <span style={{ fontSize: 13, fontWeight: 700, color: editRole === opt.value ? '#EA580C' : '#FFF' }}>{opt.label}</span>
-                        <span style={{ fontSize: 11, color: '#A18E7E' }}>{opt.sub}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: editRole === opt.value ? '#EA580C' : '#0F172A' }}>{opt.label}</span>
+                        <span style={{ fontSize: 11, color: '#64748B' }}>{opt.sub}</span>
                       </button>
                     ))}
                   </div>
                 )}
                 {editUser.id === profile?.id && (
-                  <p style={{ fontSize: 11, color: '#A18E7E', marginTop: 5 }}>⚠️ Tidak dapat mengubah role akun Anda sendiri.</p>
+                  <p style={{ fontSize: 11, color: '#64748B', marginTop: 5 }}>⚠️ Tidak dapat mengubah role akun Anda sendiri.</p>
                 )}
               </div>
 
               <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-                <button onClick={() => setEditUser(null)} style={{ flex: 1, height: 42, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#A18E7E', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                <button onClick={() => setEditUser(null)} style={{ flex: 1, height: 42, background: 'transparent', border: '1px solid #CBD5E1', color: '#64748B', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                   Batal
                 </button>
-                <button onClick={handleSaveEdit} disabled={savingEdit} style={{ flex: 2, height: 42, background: savingEdit ? 'rgba(234,88,12,0.4)' : 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)', border: 'none', color: '#FFF', borderRadius: 10, cursor: savingEdit ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}>
+                <button onClick={handleSaveEdit} disabled={savingEdit} style={{ flex: 2, height: 42, background: savingEdit ? '#FDBA74' : 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)', border: 'none', color: '#FFF', borderRadius: 10, cursor: savingEdit ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}>
                   {savingEdit ? 'Memproses...' : 'Simpan Perubahan'}
                 </button>
               </div>
@@ -698,32 +698,32 @@ export default function KelolaAkunPage() {
 
       {/* ───── MODAL KONFIRMASI HAPUS ───── */}
       {deleteTarget && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 400, background: '#140E08', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: 24, padding: 28, textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.9)' }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(239, 68, 68, 0.12)', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 400, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 16, background: '#FEF2F2', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <Trash2 size={24} />
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#FFF', marginBottom: 8 }}>Hapus Akun?</h3>
-            <p style={{ fontSize: 13, color: '#A18E7E', lineHeight: 1.6, marginBottom: 6 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>Hapus Akun?</h3>
+            <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6, marginBottom: 6 }}>
               Anda akan menghapus akun:
             </p>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#FFF', marginBottom: 4 }}>{deleteTarget.full_name}</p>
-            <p style={{ fontSize: 12, color: '#C4A27A', marginBottom: 20 }}>{deleteTarget.email}</p>
-            <p style={{ fontSize: 12, color: '#EF4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 20 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>{deleteTarget.full_name}</p>
+            <p style={{ fontSize: 12, color: '#EA580C', marginBottom: 20 }}>{deleteTarget.email}</p>
+            <p style={{ fontSize: 12, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 12px', marginBottom: 20 }}>
               ⚠️ Tindakan ini tidak dapat dibatalkan!
             </p>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={() => setDeleteTarget(null)}
-                style={{ flex: 1, height: 44, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#A18E7E', borderRadius: 12, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                style={{ flex: 1, height: 44, background: 'transparent', border: '1px solid #CBD5E1', color: '#64748B', borderRadius: 12, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
               >
                 Batal
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleting}
-                style={{ flex: 1, height: 44, background: deleting ? 'rgba(239,68,68,0.4)' : 'linear-gradient(135deg, #EF4444, #DC2626)', border: 'none', color: '#FFF', borderRadius: 12, cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}
+                style={{ flex: 1, height: 44, background: deleting ? '#FCA5A5' : 'linear-gradient(135deg, #EF4444, #DC2626)', border: 'none', color: '#FFF', borderRadius: 12, cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}
               >
                 {deleting ? 'Menghapus...' : 'Ya, Hapus'}
               </button>

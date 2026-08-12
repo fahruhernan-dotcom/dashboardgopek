@@ -119,6 +119,19 @@ export const useSoftDeleteSembakoProduct = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id) => {
+      // 1. Check if product still has active batch stock (qty_sisa > 0)
+      const { data: activeBatches } = await supabase
+        .from('sembako_stock_batches')
+        .select('qty_sisa')
+        .eq('product_id', id)
+        .eq('is_deleted', false)
+        .gt('qty_sisa', 0)
+
+      const remainingStock = (activeBatches || []).reduce((s, b) => s + Number(b.qty_sisa || 0), 0)
+      if (remainingStock > 0) {
+        throw new Error(`Tidak dapat menghapus produk ini karena masih memiliki sisa stok aktif (${remainingStock} unit). Habiskan atau sesuaikan stok terlebih dahulu.`)
+      }
+
       const { error: errProduct } = await supabase.from('sembako_products').update({ is_deleted: true }).eq('id', id)
       if (errProduct) {
         logSupabaseError(errProduct, { table: 'sembako_products', operation: 'update', component: 'useSembakoData', actionName: 'sembako.product.delete' })

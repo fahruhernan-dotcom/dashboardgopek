@@ -12,6 +12,7 @@ import SembakoTokoSupplierDetail from '../sembako_broker/TokoSupplierDetail'
 import SembakoAkun from '@/dashboard/_shared/pages/Akun'
 import SembakoTimManajemenPage from '../sembako_broker/TimManajemenPage'
 import SembakoRetur from '../sembako_broker/Retur'
+import DevAdminHubPage from '../sembako_broker/DevAdminHubPage'
 import WelcomeOnlyOverlay from '@/dashboard/_shared/components/WelcomeOnlyOverlay'
 
 export function BrokerPageRouter({ page }) {
@@ -28,7 +29,9 @@ export function BrokerPageRouter({ page }) {
     karyawan: <SembakoTimManajemenPage />,
     laporan: <SembakoLaporan />,
     akun: <SembakoAkun />,
-    tim: <SembakoTimManajemenPage />
+    tim: <SembakoTimManajemenPage />,
+    'kelola-akun': <DevAdminHubPage />,
+    'dev-admin': <DevAdminHubPage />,
   }
 
   const component = pages[page]

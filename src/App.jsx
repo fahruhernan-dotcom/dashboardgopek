@@ -39,7 +39,7 @@ const pageImporters = {
   laporan:          () => import('./dashboard/broker/sembako_broker/Laporan'),
   tim:              () => import('./dashboard/broker/sembako_broker/TimManajemenPage'),
   akun:             () => import('./dashboard/_shared/pages/Akun'),
-  kelolaAkun:       () => import('./dashboard/broker/sembako_broker/KelolaAkunPage'),
+  kelolaAkun:       () => import('./dashboard/broker/sembako_broker/DevAdminHubPage'),
 }
 
 // Prefetch semua modul halaman di background secara senyap
@@ -89,6 +89,7 @@ const SEMBAKO_ROUTES = [
   ['karyawan',                <SembakoTimManajemenPage />],
   ['akun',                    <SembakoAkun />],
   ['kelola-akun',             <SembakoDevAdminHub />],
+  ['dev-admin',               <SembakoDevAdminHub />],
 ]
 
 // Scroll to top on route change

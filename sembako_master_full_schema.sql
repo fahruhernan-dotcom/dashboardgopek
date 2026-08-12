@@ -444,6 +444,33 @@ ALTER TABLE sembako_supplier_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sembako_returns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sembako_audit_logs ENABLE ROW LEVEL SECURITY;
 
+-- Utility Helper Function for RLS Tenant Access Verification
+CREATE OR REPLACE FUNCTION public.has_tenant_access(target_tenant_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  IF COALESCE((auth.jwt() -> 'app_metadata' ->> 'is_superadmin')::boolean, false) = true THEN
+    RETURN TRUE;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE auth_user_id = auth.uid() AND tenant_id = target_tenant_id
+  ) OR EXISTS (
+    SELECT 1 FROM public.tenant_memberships
+    WHERE auth_user_id = auth.uid() AND tenant_id = target_tenant_id
+  ) OR EXISTS (
+    SELECT 1 FROM public.tenants
+    WHERE owner_id = auth.uid() AND id = target_tenant_id
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public, pg_temp;
+
+GRANT EXECUTE ON FUNCTION public.has_tenant_access(UUID) TO authenticated;
+
 -- Drop existing policies if needed to avoid conflicts
 DO $$ 
 BEGIN
@@ -465,28 +492,90 @@ BEGIN
     DROP POLICY IF EXISTS "Public Read/Write for Supplier Payments" ON sembako_supplier_payments;
     DROP POLICY IF EXISTS "Public Read/Write for Returns" ON sembako_returns;
     DROP POLICY IF EXISTS "Public Read/Write for Audit Logs" ON sembako_audit_logs;
+
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for tenants" ON tenants;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for profiles" ON profiles;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for tenant_memberships" ON tenant_memberships;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for team_invitations" ON team_invitations;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_products" ON sembako_products;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_suppliers" ON sembako_suppliers;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_customers" ON sembako_customers;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_sales" ON sembako_sales;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_sale_items" ON sembako_sale_items;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_stock_batches" ON sembako_stock_batches;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_stock_out" ON sembako_stock_out;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_deliveries" ON sembako_deliveries;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_employees" ON sembako_employees;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_payroll" ON sembako_payroll;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_expenses" ON sembako_expenses;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_payments" ON sembako_payments;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_supplier_payments" ON sembako_supplier_payments;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_returns" ON sembako_returns;
+    DROP POLICY IF EXISTS "Tenant Isolation Policy for sembako_audit_logs" ON sembako_audit_logs;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
--- Permissive policies for application access
-CREATE POLICY "Public Read/Write for Tenants" ON tenants FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Profiles" ON profiles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Memberships" ON tenant_memberships FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Products" ON sembako_products FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Suppliers" ON sembako_suppliers FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Customers" ON sembako_customers FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Sales" ON sembako_sales FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Sale Items" ON sembako_sale_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Batches" ON sembako_stock_batches FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Stock Out" ON sembako_stock_out FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Deliveries" ON sembako_deliveries FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Employees" ON sembako_employees FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Payroll" ON sembako_payroll FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Expenses" ON sembako_expenses FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Payments" ON sembako_payments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Supplier Payments" ON sembako_supplier_payments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Returns" ON sembako_returns FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write for Audit Logs" ON sembako_audit_logs FOR ALL USING (true) WITH CHECK (true);
+-- Secure Tenant Isolation Policies
+CREATE POLICY "Tenant Isolation Policy for tenants" ON tenants FOR ALL
+USING (auth.uid() IS NOT NULL AND (id IN (SELECT tenant_id FROM public.profiles WHERE auth_user_id = auth.uid()) OR id IN (SELECT tenant_id FROM public.tenant_memberships WHERE auth_user_id = auth.uid()) OR owner_id = auth.uid() OR COALESCE((auth.jwt() -> 'app_metadata' ->> 'is_superadmin')::boolean, false) = true))
+WITH CHECK (auth.uid() IS NOT NULL AND (id IN (SELECT tenant_id FROM public.profiles WHERE auth_user_id = auth.uid()) OR id IN (SELECT tenant_id FROM public.tenant_memberships WHERE auth_user_id = auth.uid()) OR owner_id = auth.uid() OR COALESCE((auth.jwt() -> 'app_metadata' ->> 'is_superadmin')::boolean, false) = true));
+
+CREATE POLICY "Tenant Isolation Policy for profiles" ON profiles FOR ALL
+USING (auth.uid() IS NOT NULL AND (auth_user_id = auth.uid() OR has_tenant_access(tenant_id)))
+WITH CHECK (auth.uid() IS NOT NULL AND (auth_user_id = auth.uid() OR has_tenant_access(tenant_id)));
+
+CREATE POLICY "Tenant Isolation Policy for tenant_memberships" ON tenant_memberships FOR ALL
+USING (auth.uid() IS NOT NULL AND (auth_user_id = auth.uid() OR has_tenant_access(tenant_id)))
+WITH CHECK (auth.uid() IS NOT NULL AND (auth_user_id = auth.uid() OR has_tenant_access(tenant_id)));
+
+CREATE POLICY "Tenant Isolation Policy for team_invitations" ON team_invitations FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_products" ON sembako_products FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_suppliers" ON sembako_suppliers FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_customers" ON sembako_customers FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_sales" ON sembako_sales FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_sale_items" ON sembako_sale_items FOR ALL
+USING (EXISTS (SELECT 1 FROM public.sembako_sales WHERE sembako_sales.id = sembako_sale_items.sale_id AND has_tenant_access(sembako_sales.tenant_id)))
+WITH CHECK (EXISTS (SELECT 1 FROM public.sembako_sales WHERE sembako_sales.id = sembako_sale_items.sale_id AND has_tenant_access(sembako_sales.tenant_id)));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_stock_batches" ON sembako_stock_batches FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_stock_out" ON sembako_stock_out FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_deliveries" ON sembako_deliveries FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_employees" ON sembako_employees FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_payroll" ON sembako_payroll FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_expenses" ON sembako_expenses FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_payments" ON sembako_payments FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_supplier_payments" ON sembako_supplier_payments FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_returns" ON sembako_returns FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
+
+CREATE POLICY "Tenant Isolation Policy for sembako_audit_logs" ON sembako_audit_logs FOR ALL
+USING (has_tenant_access(tenant_id)) WITH CHECK (has_tenant_access(tenant_id));
 
 -- ==============================================================================
 -- 6. SEED DEFAULT TENANT, AUTH USERS & PROFILES

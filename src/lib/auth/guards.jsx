@@ -22,7 +22,7 @@ export const RequireSuperadmin = ({ children }) => {
 
   if (!authIsSuperadmin) {
     logAuthCheck('RequireSuperadmin', profile, location, 'DENIED');
-    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+    return <Navigate to="/beranda" state={{ from: location }} replace />;
   }
 
   logAuthCheck('RequireSuperadmin', profile, location, 'ALLOWED');
@@ -37,7 +37,7 @@ export const RequireOwner = ({ children }) => {
 
   if (!isOwner(profile) && !authIsSuperadmin) {
     logAuthCheck('RequireOwner', profile, location, 'DENIED');
-    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+    return <Navigate to="/beranda" state={{ from: location }} replace />;
   }
 
   logAuthCheck('RequireOwner', profile, location, 'ALLOWED');
@@ -52,7 +52,7 @@ export const RequireCapability = ({ children, capabilityCheck, capabilityName = 
 
   if (!authIsSuperadmin && !capabilityCheck(profile)) {
     logAuthCheck(`RequireCapability:${capabilityName}`, profile, location, 'DENIED');
-    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+    return <Navigate to="/beranda" state={{ from: location }} replace />;
   }
 
   logAuthCheck(`RequireCapability:${capabilityName}`, profile, location, 'ALLOWED');
