@@ -61,7 +61,7 @@ export function EditBisnisSheet({ open, onClose, tenant, onSuccess, accent }) {
     borderTop: `1px solid ${T.hairlineStrong}`,
     paddingBottom: 'calc(120px + env(safe-area-inset-bottom))',
     boxShadow: '0 -8px 40px rgba(0,0,0,0.5)',
-    zIndex: 210,
+    zIndex: 5001,
     maxHeight: '90dvh', overflowY: 'auto',
     animation: 'slideUp 240ms cubic-bezier(0.32,0.72,0,1)',
   }
@@ -70,7 +70,7 @@ export function EditBisnisSheet({ open, onClose, tenant, onSuccess, accent }) {
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 200,
+        position: 'fixed', inset: 0, zIndex: 5000,
         background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'flex-end',
         animation: 'fadeIn 180ms ease',
@@ -273,7 +273,7 @@ export function EditProfileSheet({ open, onClose, profile, user, onSuccess, acce
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 200,
+        position: 'fixed', inset: 0, zIndex: 5000,
         background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'flex-end',
         animation: 'fadeIn 180ms ease',
@@ -288,7 +288,7 @@ export function EditProfileSheet({ open, onClose, profile, user, onSuccess, acce
           borderTop: `1px solid ${T.hairlineStrong}`,
           paddingBottom: 'calc(120px + env(safe-area-inset-bottom))',
           boxShadow: '0 -8px 40px rgba(0,0,0,0.5)',
-          zIndex: 210,
+          zIndex: 5001,
           maxHeight: '90dvh', overflowY: 'auto',
           animation: 'slideUp 240ms cubic-bezier(0.32,0.72,0,1)',
         }}
@@ -487,7 +487,7 @@ export function DeleteBusinessDialog({ tenant, profiles, onClose, onDeleted }) {
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 300,
+        position: 'fixed', inset: 0, zIndex: 5000,
         background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
         display: 'flex', alignItems: 'flex-end',
         animation: 'fadeIn 180ms ease',
@@ -619,7 +619,7 @@ export function DangerZoneSheet({ open, onClose, tenantName, onDelete }) {
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 200,
+        position: 'fixed', inset: 0, zIndex: 5000,
         background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'flex-end',
         animation: 'fadeIn 180ms ease',
@@ -634,7 +634,7 @@ export function DangerZoneSheet({ open, onClose, tenantName, onDelete }) {
           borderTop: `2px solid ${T.danger}55`,
           paddingBottom: 'calc(32px + env(safe-area-inset-bottom))',
           boxShadow: '0 -8px 40px rgba(0,0,0,0.5)',
-          zIndex: 210,
+          zIndex: 5001,
           maxHeight: '90dvh', overflowY: 'auto',
           animation: 'slideUp 240ms cubic-bezier(0.32,0.72,0,1)',
         }}

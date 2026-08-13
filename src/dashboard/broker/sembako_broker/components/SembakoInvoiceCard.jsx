@@ -4,15 +4,12 @@ import { cn } from '@/lib/utils'
 import { formatIDR, formatIDRShort } from '@/lib/format'
 import { BrokerBaseCard } from '@/dashboard/_shared/components/transactions/BrokerBaseCard'
 import { ChevronDown, User, Package } from 'lucide-react'
-import {
-  useCompleteSembakoDelivery,
-  useCreateSembakoDelivery,
-} from '@/lib/hooks/useSembakoData'
-import { toast } from 'sonner'
+import { useCreateSembakoDelivery } from '@/lib/hooks/useSembakoData'
 import { C, sBtn, sInput, sLabel, fmtDate, calculateSaleFinancials, CustomSelect } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { Loader2 } from 'lucide-react'
+import { DeliveryCompletionModal } from './DeliveryCompletionModal'
 
 
 function getDeliveryBadge(deliveries) {
@@ -189,7 +186,7 @@ export function TambahTripSheet({ open, onClose, prefillSale, employees = [] }) 
         </SheetHeader>
 
         {prefillSale && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '20px', paddingBottom: '100px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '20px', paddingBottom: 'max(40px, calc(20px + env(safe-area-inset-bottom, 20px)))' }}>
             <div style={{ background: C.card, borderRadius: '10px', padding: '12px', border: `1px solid ${C.border}` }}>
               <p style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{prefillSale.invoice_number}</p>
               <p style={{ fontSize: '11px', color: C.muted }}>{prefillSale.sembako_customers?.customer_name || prefillSale.customer_name || 'Umum'}</p>
@@ -363,8 +360,7 @@ function SaleItemsPanel({ sale, onOpenDetail, onEdit }) {
 // ── Main card component ───────────────────────────────────────────────────────
 export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDelivery, isDesktop, returnsList = [], products = [] }) {
   const [expanded, setExpanded] = useState(false)
-  const completeDelivery = useCompleteSembakoDelivery()
-  const createDelivery = useCreateSembakoDelivery()
+  const [deliveryConfirmModal, setDeliveryConfirmModal] = useState(false)
 
   const customerName = sale.sembako_customers?.customer_name || sale.customer_name || 'Umum'
   const items = Array.isArray(sale.sembako_sale_items) ? sale.sembako_sale_items : []
@@ -399,30 +395,9 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
   const deliveryBadge = getDeliveryBadge(deliveries)
   const allDelivered = deliveries.length > 0 && deliveries.every(d => d.status === 'delivered')
 
-  const handleCompleteDelivery = async (e) => {
+  const handleCompleteDelivery = (e) => {
     e?.stopPropagation()
-    try {
-      if (deliveries.length > 0) {
-        const pending = deliveries.filter(d => d.status !== 'delivered')
-        for (const d of pending) {
-          await completeDelivery.mutateAsync(d.id)
-        }
-      } else {
-        await createDelivery.mutateAsync({
-          sale_id: sale.id,
-          driver_name: 'Langsung',
-          vehicle_type: 'Langsung',
-          vehicle_plate: '-',
-          delivery_date: sale.transaction_date || new Date().toISOString().slice(0, 10),
-          status: 'delivered',
-          completed_at: new Date().toISOString(),
-          notes: 'Ditandai terkirim dari kartu nota',
-        })
-      }
-      toast.success('Pengiriman berhasil diselesaikan')
-    } catch (err) {
-      console.error('Failed to complete delivery:', err)
-    }
+    setDeliveryConfirmModal(true)
   }
 
   const fmt = isDesktop ? formatIDR : formatIDRShort
@@ -680,34 +655,43 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
     : () => setExpanded(v => !v)
 
   return (
-    <BrokerBaseCard
-      onClick={handleCardClick}
-      isLoss={false}
-      header={isDesktop ? desktopHeader : mobileHeader}
-      footer={footer}
-      isDesktop={isDesktop}
-    >
-      {isDesktop ? desktopBody : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {mobileBody}
+    <>
+      <BrokerBaseCard
+        onClick={handleCardClick}
+        isLoss={false}
+        header={isDesktop ? desktopHeader : mobileHeader}
+        footer={footer}
+        isDesktop={isDesktop}
+      >
+        {isDesktop ? desktopBody : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {mobileBody}
 
-          <AnimatePresence>
-            {!isDesktop && expanded && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-                style={{ overflow: 'hidden' }}
-              >
-                <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: '12px', marginTop: '4px' }}>
-                  <SaleItemsPanel sale={sale} onOpenDetail={onOpenDetail} onEdit={onEdit} />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-    </BrokerBaseCard>
+            <AnimatePresence>
+              {!isDesktop && expanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: '12px', marginTop: '4px' }}>
+                    <SaleItemsPanel sale={sale} onOpenDetail={onOpenDetail} onEdit={onEdit} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </BrokerBaseCard>
+
+      <DeliveryCompletionModal
+        isOpen={deliveryConfirmModal}
+        onClose={() => setDeliveryConfirmModal(false)}
+        sale={sale}
+        delivery={deliveries.find(d => d.status !== 'delivered') || deliveries[0]}
+      />
+    </>
   )
 }

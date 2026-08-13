@@ -98,7 +98,7 @@ export function MobileBeranda({
         onMenuClick={() => setSidebarOpen(true)}
       />
 
-      <div style={{ padding: '12px 16px 128px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ padding: '12px 16px max(140px, calc(110px + env(safe-area-inset-bottom, 24px)))', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
         {insight && (
           <div style={{ marginTop: '-4px' }}>
@@ -108,133 +108,236 @@ export function MobileBeranda({
 
         <OnboardingWrapper setStokOpen={setStokOpen} />
 
-        {/* Today's Sales & Cash Summary Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            background: MC.card,
-            borderRadius: '18px',
-            padding: '16px',
-            border: `1px solid ${MC.border}`,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <p style={{ fontSize: '9px', color: MC.muted, fontWeight: 700, letterSpacing: '0.1em', marginBottom: '4px' }}>
-                HARI INI
-              </p>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                <span style={{ fontSize: '22px', fontWeight: 800, color: MC.text, fontFamily: "'Sora', 'Inter', sans-serif" }}>
-                  {formatIDR(todayOmzet)}
-                </span>
-                <span style={{ fontSize: '10px', color: MC.green, fontWeight: 700 }}>
-                  Profit: {formatIDR(todayProfit)}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowTodayDetail(!showTodayDetail)}
-              style={{
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-soft)',
-                borderRadius: '8px',
-                padding: '6px 10px',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-              className="hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all shadow-tko-xs"
-            >
-              {showTodayDetail ? 'Tutup' : 'Detail'}
-              {showTodayDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-          </div>
+        {/* Card UANG SAAT INI (Expandable) */}
+        {(() => {
+          const currentCashTotal = cashSummary?.liquidCash ?? (cashSummary?.cashBalance ?? 0)
+          const cashInHand = cashSummary?.cashInHand ?? 0
+          const bankBalance = cashSummary?.bankBalance ?? 0
+          const totalMethods = cashInHand + bankBalance
+          const cashMethodPct = totalMethods > 0 ? (cashInHand / totalMethods) * 100 : 50
+          const transferMethodPct = totalMethods > 0 ? (bankBalance / totalMethods) * 100 : 50
 
-          <AnimatePresence>
-            {showTodayDetail && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                style={{ overflow: 'hidden', marginTop: '12px', borderTop: `1px solid ${MC.border}`, paddingTop: '12px' }}
-              >
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: MC.muted, marginBottom: '6px' }}>
-                    <span>Cash Diterima: <strong style={{ color: MC.amber }}>{formatIDR(todayCash)}</strong></span>
-                    <span>Piutang Baru: <strong style={{ color: MC.red }}>{formatIDR(todayPiutang)}</strong></span>
+          const todayCashTunai = cashSummary?.todayCashMethod ?? 0
+          const todayCashTransfer = cashSummary?.todayTransferMethod ?? 0
+          const todayPaymentsReceived = cashSummary?.todayTotalPayment ?? todayCash
+
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: MC.card,
+                borderRadius: '20px',
+                padding: '18px',
+                border: `1px solid ${MC.border}`,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              }}
+            >
+              {/* Header Card (Collapsed View) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: 6, background: 'rgba(16, 185, 129, 0.12)', color: MC.green }}>
+                      <Wallet size={12} />
+                    </span>
+                    <p style={{ fontSize: '10px', color: MC.muted, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      UANG SAAT INI
+                    </p>
                   </div>
-                  <div style={{ background: '#E2E8F0', height: '8px', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
-                    <div style={{ width: `${cashPct}%`, background: MC.amber, height: '100%' }} />
-                    <div style={{ width: `${piutangPct}%`, background: MC.red, height: '100%' }} />
+
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '24px', fontWeight: 800, color: MC.text, fontFamily: "'Sora', 'Inter', sans-serif", letterSpacing: '-0.02em' }}>
+                      {formatIDR(currentCashTotal)}
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: MC.muted, marginTop: '4px' }}>
-                    <span>{cashPct.toFixed(0)}% Cash</span>
-                    <span>{piutangPct.toFixed(0)}% Piutang</span>
+
+                  {/* Sub-summary pill */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '10px', color: MC.green, fontWeight: 700, background: 'rgba(22, 163, 74, 0.08)', border: '1px solid rgba(22, 163, 74, 0.16)', padding: '2px 8px', borderRadius: 6 }}>
+                      Hari Ini: Profit {formatIDR(todayProfit)}
+                    </span>
+                    <span style={{ fontSize: '10px', color: MC.amber, fontWeight: 700, background: 'rgba(217, 119, 6, 0.08)', border: '1px solid rgba(217, 119, 6, 0.16)', padding: '2px 8px', borderRadius: 6 }}>
+                      Masuk {formatIDR(todayPaymentsReceived)}
+                    </span>
                   </div>
                 </div>
 
-                <div>
-                  <p style={{ fontSize: '10px', color: MC.muted, fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>
-                    TRANSAKSI HARI INI ({todaySales.length})
-                  </p>
-                  {todaySales.length === 0 ? (
-                    <p style={{ fontSize: '11px', color: MC.muted, fontStyle: 'italic', textAlign: 'center', padding: '12px 0' }}>
-                      Belum ada transaksi hari ini.
-                    </p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {todaySales.map(s => (
-                        <div
-                          key={s.id}
-                          onClick={() => navigate(`${brokerBase}/penjualan?saleId=${s.id}`)}
-                          style={{
-                            background: MC.card,
-                            borderRadius: '10px',
-                            padding: '10px 12px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                            border: `1px solid ${MC.border}`,
-                          }}
-                        >
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <p style={{ fontSize: '12px', fontWeight: 700, color: MC.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {s.sembako_customers?.customer_name || s.customer_name || '-'}
+                <button
+                  onClick={() => setShowTodayDetail(!showTodayDetail)}
+                  style={{
+                    background: showTodayDetail ? 'var(--brand-500)' : 'var(--bg-subtle)',
+                    border: showTodayDetail ? 'none' : '1px solid var(--border-soft)',
+                    borderRadius: '10px',
+                    padding: '8px 12px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    color: showTodayDetail ? '#FFFFFF' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    flexShrink: 0,
+                  }}
+                  className="active:scale-95 transition-all shadow-sm"
+                >
+                  {showTodayDetail ? 'Tutup' : 'Rincian'}
+                  {showTodayDetail ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                </button>
+              </div>
+
+              {/* Accordion Detail */}
+              <AnimatePresence>
+                {showTodayDetail && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeInOut' }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div style={{ marginTop: '16px', borderTop: `1px solid ${MC.border}`, paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      
+                      {/* 1. Saldo Uang Kas vs Bank */}
+                      <div style={{ background: 'var(--bg-subtle)', borderRadius: '14px', padding: '12px 14px', border: `1px solid ${MC.border}` }}>
+                        <p style={{ fontSize: '10px', fontWeight: 800, color: MC.muted, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                          💵 Posisi Saldo Kas & Bank
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                          <div style={{ background: MC.card, borderRadius: '10px', padding: '10px', border: `1px solid ${MC.border}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
+                              <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 700 }}>Kas Tunai (Cash)</span>
+                            </div>
+                            <p style={{ fontSize: '14px', fontWeight: 800, color: MC.text, fontFamily: 'Sora' }}>
+                              {formatIDR(cashInHand)}
                             </p>
-                            <p style={{ fontSize: '10px', color: MC.muted }}>{s.invoice_number}</p>
                           </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <p style={{ fontSize: '12px', fontWeight: 700, color: MC.text }}>
-                              {formatIDR(s.total_amount)}
+                          <div style={{ background: MC.card, borderRadius: '10px', padding: '10px', border: `1px solid ${MC.border}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3B82F6' }} />
+                              <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 700 }}>Rekening Bank</span>
+                            </div>
+                            <p style={{ fontSize: '14px', fontWeight: 800, color: MC.text, fontFamily: 'Sora' }}>
+                              {formatIDR(bankBalance)}
                             </p>
-                            <span style={{
-                              fontSize: '8px',
-                              fontWeight: 900,
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              background: s.payment_status === 'lunas' ? 'rgba(22, 163, 74, 0.08)' : 'rgba(220, 38, 38, 0.08)',
-                              color: s.payment_status === 'lunas' ? MC.green : MC.red,
-                              border: s.payment_status === 'lunas' ? '1px solid rgba(22, 163, 74, 0.15)' : '1px solid rgba(220, 38, 38, 0.15)',
-                            }}>
-                              {s.payment_status?.toUpperCase()}
-                            </span>
                           </div>
                         </div>
-                      ))}
+                        {/* Visual proportion bar */}
+                        <div style={{ background: 'rgba(15,23,42,0.1)', height: '6px', borderRadius: '3px', overflow: 'hidden', display: 'flex' }}>
+                          <div style={{ width: `${cashMethodPct}%`, background: '#10B981', height: '100%', transition: 'width 0.3s' }} />
+                          <div style={{ width: `${transferMethodPct}%`, background: '#3B82F6', height: '100%', transition: 'width 0.3s' }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: MC.muted, marginTop: '4px', fontWeight: 600 }}>
+                          <span>{cashMethodPct.toFixed(0)}% Tunai</span>
+                          <span>{transferMethodPct.toFixed(0)}% Transfer</span>
+                        </div>
+                      </div>
+
+                      {/* 2. Rincian Kinerja Penjualan Hari Ini */}
+                      <div style={{ background: 'var(--bg-subtle)', borderRadius: '14px', padding: '12px 14px', border: `1px solid ${MC.border}` }}>
+                        <p style={{ fontSize: '10px', fontWeight: 800, color: MC.muted, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                          📊 Kinerja Penjualan Hari Ini
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                          <div>
+                            <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Omzet Penjualan</span>
+                            <p style={{ fontSize: '13px', fontWeight: 800, color: MC.text, fontFamily: 'Sora' }}>{formatIDR(todayOmzet)}</p>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Profit Bersih Hari Ini</span>
+                            <p style={{ fontSize: '13px', fontWeight: 800, color: MC.green, fontFamily: 'Sora' }}>{formatIDR(todayProfit)}</p>
+                          </div>
+                        </div>
+                        <div style={{ borderTop: `1px solid ${MC.border}`, paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                            <span style={{ color: MC.muted }}>Uang Masuk Hari Ini:</span>
+                            <strong style={{ color: MC.amber }}>{formatIDR(todayPaymentsReceived)}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: MC.muted, paddingLeft: '8px' }}>
+                            <span>• Tunai: {formatIDR(todayCashTunai)}</span>
+                            <span>• Transfer: {formatIDR(todayCashTransfer)}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginTop: '4px' }}>
+                            <span style={{ color: MC.muted }}>Piutang Baru Hari Ini:</span>
+                            <strong style={{ color: MC.red }}>{formatIDR(todayPiutang)}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 3. Daftar Transaksi Hari Ini */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <p style={{ fontSize: '10px', color: MC.muted, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                            🧾 Transaksi Hari Ini ({todaySales.length})
+                          </p>
+                          {todaySales.length > 0 && (
+                            <button
+                              onClick={() => navigate(`${brokerBase}/penjualan`)}
+                              style={{ fontSize: '10px', color: MC.accent, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                              Lihat Semua →
+                            </button>
+                          )}
+                        </div>
+                        {todaySales.length === 0 ? (
+                          <div style={{ padding: '14px', textAlign: 'center', background: 'var(--bg-subtle)', borderRadius: '12px', border: `1px dashed ${MC.border}` }}>
+                            <p style={{ fontSize: '11px', color: MC.muted, fontWeight: 600 }}>
+                              Belum ada transaksi penjualan dicatat hari ini.
+                            </p>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {todaySales.map(s => (
+                              <div
+                                key={s.id}
+                                onClick={() => navigate(`${brokerBase}/penjualan?saleId=${s.id}`)}
+                                style={{
+                                  background: MC.card,
+                                  borderRadius: '12px',
+                                  padding: '10px 12px',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  cursor: 'pointer',
+                                  border: `1px solid ${MC.border}`,
+                                }}
+                                className="hover:border-slate-300 dark:hover:border-white/20 active:scale-[0.99] transition-all"
+                              >
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <p style={{ fontSize: '12px', fontWeight: 700, color: MC.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {s.sembako_customers?.customer_name || s.customer_name || 'Pelanggan Umum'}
+                                  </p>
+                                  <p style={{ fontSize: '10px', color: MC.muted }}>{s.invoice_number}</p>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                  <p style={{ fontSize: '12px', fontWeight: 700, color: MC.text, fontFamily: 'Sora' }}>
+                                    {formatIDR(s.total_amount)}
+                                  </p>
+                                  <span style={{
+                                    fontSize: '8px',
+                                    fontWeight: 900,
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: s.payment_status === 'lunas' ? 'rgba(22, 163, 74, 0.08)' : 'rgba(220, 38, 38, 0.08)',
+                                    color: s.payment_status === 'lunas' ? MC.green : MC.red,
+                                    border: s.payment_status === 'lunas' ? '1px solid rgba(22, 163, 74, 0.15)' : '1px solid rgba(220, 38, 38, 0.15)',
+                                  }}>
+                                    {s.payment_status?.toUpperCase()}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )
+        })()}
 
         {lowStock.length > 0 && (
           <motion.div

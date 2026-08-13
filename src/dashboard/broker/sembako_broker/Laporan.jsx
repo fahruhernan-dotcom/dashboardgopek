@@ -120,7 +120,7 @@ export default function SembakoLaporan() {
   const s = data?.summary || {}
 
   return (
-    <div className="bg-background min-h-screen text-foreground pb-24 text-left">
+    <div className="bg-background min-h-screen text-foreground pb-[max(140px,calc(110px+env(safe-area-inset-bottom,24px)))] text-left">
       {!isDesktop && <BrokerMobileHeader title="Laporan" onMenuClick={() => setSidebarOpen(true)} />}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4 sm:pt-6">
 

@@ -24,13 +24,12 @@ import {
   useVoidSembakoReturnsBySale,
   useSembakoProducts,
   useSembakoReturns,
-  useCompleteSembakoDelivery,
-  useCreateSembakoDelivery,
   useRefundSembakoSaleOverpay,
 } from '@/lib/hooks/useSembakoData'
 import InvoicePreviewModal from '@/components/invoice/InvoicePreviewModal'
 import { C, sBtn, sLabel, DetailRow, fmtDate, generateWAMessage, toWaLink, InputRupiah, CustomSelect, calculateSaleFinancials, formatRokokPackaging } from './sembakoSaleUtils'
 import { SembakoPaymentSheet } from './SembakoPaymentSheet'
+import { DeliveryCompletionModal } from './DeliveryCompletionModal'
 import { useBackHandler } from '@/lib/hooks/useBackHandler'
 
 export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
@@ -40,8 +39,6 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
   const deleteSale = useDeleteSembakoSale()
   const createReturn = useCreateSembakoReturn()
   const voidReturnsMut = useVoidSembakoReturnsBySale()
-  const completeDelivery = useCompleteSembakoDelivery()
-  const createDelivery = useCreateSembakoDelivery()
   const refundOverpay = useRefundSembakoSaleOverpay()
   const { data: products = [] } = useSembakoProducts()
   const { data: returnsList = [] } = useSembakoReturns()
@@ -57,7 +54,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReturn, setConfirmReturn] = useState(false)
   const [confirmCancelReturn, setConfirmCancelReturn] = useState(false)
-  const [isSubmittingDelivery, setIsSubmittingDelivery] = useState(false)
+  const [deliveryConfirmModal, setDeliveryConfirmModal] = useState(false)
   const [isRefunding, setIsRefunding] = useState(false)
   const [refundDialogOpen, setRefundDialogOpen] = useState(false)
   const [refundInputAmount, setRefundInputAmount] = useState(0)
@@ -140,33 +137,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
 
 
 
-  const handleMarkDelivered = async () => {
-    try {
-      setIsSubmittingDelivery(true)
-      if (deliveries.length > 0) {
-        const pending = deliveries.filter(d => d.status !== 'delivered')
-        for (const d of pending) {
-          await completeDelivery.mutateAsync(d.id)
-        }
-      } else {
-        await createDelivery.mutateAsync({
-          sale_id: sale.id,
-          driver_name: 'Langsung',
-          vehicle_type: 'Langsung',
-          vehicle_plate: '-',
-          delivery_date: sale.transaction_date || new Date().toISOString().slice(0, 10),
-          status: 'delivered',
-          completed_at: new Date().toISOString(),
-          notes: 'Ditandai terkirim via detail nota',
-        })
-      }
-      toast.success('Pesanan berhasil ditandai TERKIRIM')
-    } catch (err) {
-      console.error('Failed to mark delivery:', err)
-    } finally {
-      setIsSubmittingDelivery(false)
-    }
-  }
+
 
   const openReturnDialog = () => {
     if (!items || items.length === 0) {
@@ -635,8 +606,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
           }}>
             {!isDelivered ? (
               <button
-                onClick={handleMarkDelivered}
-                disabled={isSubmittingDelivery}
+                onClick={() => setDeliveryConfirmModal(true)}
                 style={{
                   ...sBtn(true),
                   background: '#10B981',
@@ -649,11 +619,10 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                   padding: '14px',
                   fontWeight: 900,
                   fontSize: '14px',
-                  cursor: isSubmittingDelivery ? 'not-allowed' : 'pointer',
-                  opacity: isSubmittingDelivery ? 0.7 : 1,
+                  cursor: 'pointer',
                 }}
               >
-                {isSubmittingDelivery ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                <CheckCircle2 size={18} />
                 Pesanan Terkirim
               </button>
             ) : (
@@ -977,6 +946,13 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
       </AlertDialog>
 
       <SembakoPaymentSheet sale={payTarget} onClose={() => setPayTarget(null)} />
+      
+      <DeliveryCompletionModal
+        isOpen={deliveryConfirmModal}
+        onClose={() => setDeliveryConfirmModal(false)}
+        sale={sale}
+        delivery={deliveries.find(d => d.status !== 'delivered') || deliveries[0]}
+      />
 
       {sale && invoiceModal.open && (
         <InvoicePreviewModal

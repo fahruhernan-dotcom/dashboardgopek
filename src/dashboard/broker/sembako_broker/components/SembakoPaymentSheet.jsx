@@ -53,7 +53,7 @@ export function SembakoPaymentSheet({ sale, onClose }) {
           <SheetDescription className="sr-only">Form untuk mencatat pembayaran invoice sembako.</SheetDescription>
         </SheetHeader>
         {sale && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '20px', paddingBottom: '100px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '20px', paddingBottom: 'max(40px, calc(20px + env(safe-area-inset-bottom, 20px)))' }}>
             <div style={{ background: C.card, borderRadius: '10px', padding: '12px', border: `1px solid ${C.border}` }}>
               <p style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{sale.invoice_number}</p>
               <p style={{ fontSize: '11px', color: C.muted }}>{sale.customer_name} - Total: {formatIDR(sale.total_amount)}</p>

@@ -99,24 +99,47 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
   const [isUnitDropdownOpen, setIsUnitDropdownOpen] = useState(false)
   const updateProduct = useUpdateSembakoProduct()
 
+  const selectedProduct = products.find(p => p.id === form.product_id)
+  const currentFactor = getFactor(form.selectedUnit || selectedProduct?.unit || 'slop')
+  const isCigarettePackaging = selectedProduct?.unit === 'slop' && currentFactor > 1
+  const priceMode = form.priceMode || 'per_slop' // 'per_slop' | 'per_kemasan'
+
+  const inputBuyPrice = Number(String(form.buy_price).replace(/\D/g, ''))
+  const inputSellPrice = Number(String(form.sell_price).replace(/\D/g, ''))
+
+  // Effective per-slop / base unit prices for calculation and DB storage
+  const effectiveBuyPricePerSlop = isCigarettePackaging
+    ? (priceMode === 'per_kemasan' ? (inputBuyPrice > 0 ? Math.round(inputBuyPrice / currentFactor) : 0) : inputBuyPrice)
+    : inputBuyPrice
+
+  const effectiveSellPricePerSlop = isCigarettePackaging
+    ? (priceMode === 'per_kemasan' ? (inputSellPrice > 0 ? Math.round(inputSellPrice / currentFactor) : 0) : inputSellPrice)
+    : inputSellPrice
+
+  // Total purchase value
+  const totalPurchaseValue = isCigarettePackaging
+    ? (priceMode === 'per_kemasan'
+        ? Number(form.qty_masuk || 0) * inputBuyPrice
+        : Number(form.qty_masuk || 0) * currentFactor * inputBuyPrice)
+    : Number(form.qty_masuk || 0) * inputBuyPrice
+
   // 1. Get recommendation for the selected product
   const recommendation = React.useMemo(() => {
     return getSupplierRecommendation(form.product_id, allBatches, suppliers)
   }, [form.product_id, allBatches, suppliers])
 
-  // 2. Get history context for the selected supplier
+  // 2. Get history context for the selected supplier (always compared on base unit / slop)
   const historyContext = React.useMemo(() => {
     return getSupplierHistoryContext(form.product_id, form.supplier_id, allBatches)
   }, [form.product_id, form.supplier_id, allBatches])
 
-  // 3. Get anomalies
+  // 3. Get anomalies based on effective per-slop price
   const anomalies = React.useMemo(() => {
-    return checkSupplierAnomalies(form.product_id, form.supplier_id, form.buy_price, allBatches, suppliers)
-  }, [form.product_id, form.supplier_id, form.buy_price, allBatches, suppliers])
+    return checkSupplierAnomalies(form.product_id, form.supplier_id, effectiveBuyPricePerSlop, allBatches, suppliers)
+  }, [form.product_id, form.supplier_id, effectiveBuyPricePerSlop, allBatches, suppliers])
 
-  const inputPrice = Number(String(form.buy_price).replace(/\D/g, ''))
-  const showPriceTrend = !!(form.supplier_id && historyContext && inputPrice > 0 && inputPrice !== historyContext.lastPrice)
-  const priceDiff = inputPrice - (historyContext?.lastPrice || 0)
+  const showPriceTrend = !!(form.supplier_id && historyContext && effectiveBuyPricePerSlop > 0 && effectiveBuyPricePerSlop !== historyContext.lastPrice)
+  const priceDiff = effectiveBuyPricePerSlop - (historyContext?.lastPrice || 0)
   const priceDiffPct = (historyContext?.lastPrice || 0) > 0 ? Math.round((priceDiff / (historyContext?.lastPrice || 1)) * 100) : 0
   const isUp = priceDiff > 0
 
@@ -140,9 +163,6 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
   }
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
-
-  const selectedProduct = products.find(p => p.id === form.product_id)
-  const currentFactor = getFactor(form.selectedUnit || selectedProduct?.unit || 'slop')
 
   const handleAddSupplier = async () => {
     if (!newSupplier.trim()) return
@@ -178,6 +198,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
       product_id: preselectedProductId || '',
       supplier_id: '',
       selectedUnit: '',
+      priceMode: 'per_slop',
       qty_masuk: '',
       buy_price: '',
       sell_price: '',
@@ -201,17 +222,16 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
     if (!form.supplier_id) return toast.error('Pilih supplier dulu')
     if (!form.qty_masuk || Number(form.qty_masuk) <= 0) return toast.error('Jumlah harus > 0')
     
-    const finalBuyPrice = Number(String(form.buy_price).replace(/\D/g, ''))
-    const finalSellPrice = Number(String(form.sell_price).replace(/\D/g, ''))
-    
-    if (finalBuyPrice <= 0) return toast.error('Harga beli wajib diisi')
+    if (inputBuyPrice <= 0) return toast.error('Harga beli wajib diisi')
 
     const factor = getFactor(form.selectedUnit || selectedProduct?.unit || 'slop')
     const baseQty = Number(form.qty_masuk) * factor
-    const baseBuyPrice = Math.round(finalBuyPrice / factor)
-    const baseSellPrice = finalSellPrice > 0 ? Math.round(finalSellPrice / factor) : 0
+    const baseBuyPrice = effectiveBuyPricePerSlop
+    const baseSellPrice = effectiveSellPricePerSlop
 
-    const unitNote = factor > 1 ? `Penerimaan ${form.qty_masuk} ${form.selectedUnit} (@ Rp ${fmt(finalBuyPrice)})` : null
+    const unitNote = factor > 1
+      ? `Penerimaan ${form.qty_masuk} ${form.selectedUnit} (@ Rp ${fmt(priceMode === 'per_kemasan' ? inputBuyPrice : inputBuyPrice * factor)} / ${form.selectedUnit} | Rp ${fmt(baseBuyPrice)} / slop)`
+      : null
     const finalNotes = [form.notes, unitNote].filter(Boolean).join(' - ')
 
     await addBatch.mutateAsync({
@@ -250,7 +270,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{
-        position: 'fixed', inset: 0, zIndex: 4000,
+        position: 'fixed', inset: 0, zIndex: 5000,
         background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: isDesktop ? 'center' : 'flex-end',
@@ -505,7 +525,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                   </button>
                   {isUnitDropdownOpen && (
                     <>
-                      <div style={{ position: 'fixed', inset: 0, zIndex: 4050 }} onClick={() => setIsUnitDropdownOpen(false)} />
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 5050 }} onClick={() => setIsUnitDropdownOpen(false)} />
                       <div
                         style={{
                           position: 'absolute',
@@ -517,7 +537,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                           border: '1px solid #E2E8F0',
                           borderRadius: 12,
                           boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                          zIndex: 4060,
+                          zIndex: 5060,
                           overflow: 'hidden',
                           padding: '4px 0',
                         }}
@@ -594,21 +614,82 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
               )}
             </SField>
 
+            {/* Selector Mode Input Harga (per slop vs per kemasan) jika satuan kemasan dipilih */}
+            {isCigarettePackaging && (
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 6, fontFamily: 'DM Sans' }}>
+                  Pilihan Satuan Harga Input:
+                </p>
+                <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: 10, padding: 3, gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => set('priceMode', 'per_slop')}
+                    style={{
+                      flex: 1,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: priceMode === 'per_slop' ? '#FFFFFF' : 'transparent',
+                      boxShadow: priceMode === 'per_slop' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                      color: priceMode === 'per_slop' ? '#0F172A' : '#64748B',
+                      fontWeight: priceMode === 'per_slop' ? 800 : 600,
+                      fontSize: 11,
+                      fontFamily: 'DM Sans',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <span>🏷️ Harga per Slop</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => set('priceMode', 'per_kemasan')}
+                    style={{
+                      flex: 1,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: priceMode === 'per_kemasan' ? '#FFFFFF' : 'transparent',
+                      boxShadow: priceMode === 'per_kemasan' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                      color: priceMode === 'per_kemasan' ? '#0F172A' : '#64748B',
+                      fontWeight: priceMode === 'per_kemasan' ? 800 : 600,
+                      fontSize: 11,
+                      fontFamily: 'DM Sans',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <span>📦 Harga per {form.selectedUnit}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <SField label={`Harga Beli / ${form.selectedUnit || selectedProduct?.unit || 'Satuan'} *`}>
+              <SField label={`Harga Beli / ${isCigarettePackaging ? (priceMode === 'per_kemasan' ? form.selectedUnit : 'Slop') : (form.selectedUnit || selectedProduct?.unit || 'Satuan')} *`}>
                 <InputRupiah
                   value={form.buy_price}
                   onChange={val => set('buy_price', val)}
                   placeholder="Rp 0"
                 />
-                {selectedProduct?.unit === 'slop' && currentFactor > 1 && inputPrice > 0 && (
+                {isCigarettePackaging && (
                   <p style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginTop: 4, fontFamily: 'DM Sans' }}>
-                    ≈ Rp {fmt(Math.round(inputPrice / currentFactor))} / slop
+                    {priceMode === 'per_kemasan'
+                      ? (inputBuyPrice > 0 ? `≈ Rp ${fmt(Math.round(inputBuyPrice / currentFactor))} / slop` : `Otomatis dihitung / slop`)
+                      : (inputBuyPrice > 0 ? `≈ Rp ${fmt(inputBuyPrice * currentFactor)} / ${form.selectedUnit}` : `Otomatis dihitung / ${form.selectedUnit}`)}
                   </p>
                 )}
                 {showPriceTrend && (
                   <p style={{ fontSize: 10, color: isUp ? '#EF4444' : '#10B981', fontWeight: 700, marginTop: 4, fontFamily: 'DM Sans' }}>
-                    {isUp ? '📈 Naik' : '📉 Turun'} {Math.abs(priceDiffPct)}% dari pembelian terakhir (Rp {fmt(historyContext.lastPrice)})
+                    {isUp ? '📈 Naik' : '📉 Turun'} {Math.abs(priceDiffPct)}% dari pembelian terakhir (Rp {fmt(historyContext.lastPrice)} / slop)
                   </p>
                 )}
                 {anomalies.map((anom, idx) => {
@@ -625,15 +706,17 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                   return null
                 })}
               </SField>
-              <SField label={`Harga Jual / ${form.selectedUnit || selectedProduct?.unit || 'Satuan'}`}>
+              <SField label={`Harga Jual / ${isCigarettePackaging ? (priceMode === 'per_kemasan' ? form.selectedUnit : 'Slop') : (form.selectedUnit || selectedProduct?.unit || 'Satuan')}`}>
                 <InputRupiah
                   value={form.sell_price}
                   onChange={val => set('sell_price', val)}
                   placeholder="Rp 0"
                 />
-                {selectedProduct?.unit === 'slop' && currentFactor > 1 && Number(String(form.sell_price).replace(/\D/g, '')) > 0 && (
+                {isCigarettePackaging && (
                   <p style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginTop: 4, fontFamily: 'DM Sans' }}>
-                    ≈ Rp {fmt(Math.round(Number(String(form.sell_price).replace(/\D/g, '')) / currentFactor))} / slop
+                    {priceMode === 'per_kemasan'
+                      ? (inputSellPrice > 0 ? `≈ Rp ${fmt(Math.round(inputSellPrice / currentFactor))} / slop` : `Otomatis dihitung / slop`)
+                      : (inputSellPrice > 0 ? `≈ Rp ${fmt(inputSellPrice * currentFactor)} / ${form.selectedUnit}` : `Otomatis dihitung / ${form.selectedUnit}`)}
                   </p>
                 )}
                 <p style={{ fontSize: 10, color: '#64748B', opacity: 0.7, marginTop: 4, fontFamily: 'DM Sans' }}>Harga ke toko</p>
@@ -644,7 +727,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
               <div style={{ background: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 700, color: '#64748B' }}>Total Nilai Pembelian</span>
                 <span style={{ fontFamily: 'Sora', fontSize: 16, fontWeight: 800, color: C.accent }}>
-                  Rp {fmt(Number(form.qty_masuk) * Number(String(form.buy_price).replace(/\D/g, '')))}
+                  Rp {fmt(totalPurchaseValue)}
                 </span>
               </div>
             )}

@@ -14,7 +14,7 @@ export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, messa
               position: 'fixed', inset: 0,
               background: 'rgba(0,0,0,0.7)',
               backdropFilter: 'blur(4px)',
-              zIndex: 300,
+              zIndex: 5100,
             }}
           />
           <motion.div
@@ -31,7 +31,7 @@ export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, messa
               borderRadius: '20px',
               border: '1px solid rgba(255,255,255,0.08)',
               padding: '24px',
-              zIndex: 301,
+              zIndex: 5101,
               x: '-50%',
               y: '-50%',
             }}

@@ -53,7 +53,7 @@ export default function SembakoPenjualan() {
   }, [location.search, location.pathname, navigate])
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: '96px' }}>
+    <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: 'max(140px, calc(110px + env(safe-area-inset-bottom, 24px)))' }}>
       {!isDesktop && <BrokerMobileHeader title="Penjualan" onMenuClick={() => setSidebarOpen(true)} />}
       <div style={{ maxWidth: '1600px', margin: '0 auto', fontFamily: "'Sora', 'Inter', sans-serif" }}>
         <TabInvoice isDesktop={isDesktop} openWizard={openWizard} setOpenWizard={handleOpenWizardChange} />
@@ -74,28 +74,39 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
   const [search, setSearch] = useState('')
   const [invoiceFilter, setInvoiceFilter] = useState('all')
   const [page, setPage] = useState(0)
-  const [selectedSaleId, setSelectedSaleId] = useState(null)
-  const [showDetail, setShowDetail] = useState(false)
+  const [selectedSaleId, setSelectedSaleId] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('saleId') || null
+  })
+  const [showDetail, setShowDetail] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return !!params.get('saleId')
+  })
   const [editSaleId, setEditSaleId] = useState(null)
   const [importCsvOpen, setImportCsvOpen] = useState(false)
 
-  // Context preservation: auto-open sale detail sheet if saleId is passed
+  // Context preservation: sync sale detail sheet if saleId param changes
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const saleId = params.get('saleId')
-    if (saleId && sales.length > 0) {
-      const match = sales.find(s => s.id === saleId)
-      if (match) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSelectedSaleId(saleId)
-        setShowDetail(true)
-        const newParams = new URLSearchParams(location.search)
-        newParams.delete('saleId')
-        const searchStr = newParams.toString()
+    if (saleId) {
+      setSelectedSaleId(saleId)
+      setShowDetail(true)
+    }
+  }, [location.search])
+
+  const handleDetailOpenChange = useCallback((open) => {
+    setShowDetail(open)
+    if (!open) {
+      setSelectedSaleId(null)
+      const params = new URLSearchParams(location.search)
+      if (params.get('saleId')) {
+        params.delete('saleId')
+        const searchStr = params.toString()
         navigate(location.pathname + (searchStr ? `?${searchStr}` : ''), { replace: true })
       }
     }
-  }, [location.search, sales, navigate, location.pathname])
+  }, [location.search, location.pathname, navigate])
   const PER_PAGE = 20
 
   const stats = useMemo(() => {
@@ -337,7 +348,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
       <SembakoCreateInvoiceSheet open={openWizard} onOpenChange={handleWizardClose} editId={editSaleId} />
       <SembakoSaleDetailSheet
         isOpen={showDetail}
-        onOpenChange={setShowDetail}
+        onOpenChange={handleDetailOpenChange}
         sale={selectedSale}
         onEdit={handleOpenEdit}
       />

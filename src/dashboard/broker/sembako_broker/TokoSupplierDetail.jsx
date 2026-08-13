@@ -680,7 +680,7 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
         <div className="space-y-2">
           <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-1">Metode Pembayaran</Label>
           <div className="flex gap-2">
-            {['transfer', 'cash', 'qris'].map(m => (
+            {['cash', 'transfer'].map(m => (
               <button
                 key={m}
                 type="button"
@@ -692,7 +692,7 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
                     : "bg-muted text-muted-foreground border border-border/60 hover:text-foreground"
                 )}
               >
-                {m}
+                {m === 'cash' ? 'Cash (Tunai)' : 'Transfer Bank'}
               </button>
             ))}
           </div>

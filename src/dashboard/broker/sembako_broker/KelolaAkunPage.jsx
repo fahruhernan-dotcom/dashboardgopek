@@ -531,8 +531,8 @@ export default function KelolaAkunPage() {
 
       {/* ───── MODAL TAMBAH AKUN ───── */}
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 440, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 16px max(32px, calc(16px + env(safe-area-inset-bottom, 16px)))' }}>
+          <div style={{ width: '100%', maxWidth: 440, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -664,8 +664,8 @@ export default function KelolaAkunPage() {
 
       {/* ───── MODAL EDIT AKUN ───── */}
       {editUser && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 440, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 16px max(32px, calc(16px + env(safe-area-inset-bottom, 16px)))' }}>
+          <div style={{ width: '100%', maxWidth: 440, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Edit3 size={18} color="#0F172A" /> Edit Akun
@@ -759,8 +759,8 @@ export default function KelolaAkunPage() {
 
       {/* ───── MODAL KONFIRMASI HAPUS ───── */}
       {deleteTarget && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 400, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 5100, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 16px max(32px, calc(16px + env(safe-area-inset-bottom, 16px)))' }}>
+          <div style={{ width: '100%', maxWidth: 400, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ width: 52, height: 52, borderRadius: 16, background: '#FEF2F2', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <Trash2 size={24} />
             </div>

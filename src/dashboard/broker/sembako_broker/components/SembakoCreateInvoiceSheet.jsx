@@ -540,9 +540,8 @@ const VEHICLE_TYPES = [
 ]
 
 const PAY_METHOD_CONFIG = {
-  cash:     { label: 'Cash',     color: '#0F172A', bg: 'rgba(15,23,42,0.1)' },
-  transfer: { label: 'Transfer', color: '#60A5FA', bg: 'rgba(96,165,250,0.12)' },
-  qris:     { label: 'QRIS',     color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
+  cash:     { label: 'Cash (Tunai)',     color: '#0F172A', bg: 'rgba(15,23,42,0.1)' },
+  transfer: { label: 'Transfer Bank',   color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
 }
 
 function PayMethodButton({ method, selected, onClick }) {
@@ -1094,7 +1093,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.2 }}
-                style={{ position: 'fixed', inset: 0, zIndex: 4100, pointerEvents: showCustSearch ? 'auto' : 'none' }}
+                style={{ position: 'fixed', inset: 0, zIndex: 5100, pointerEvents: showCustSearch ? 'auto' : 'none' }}
               >
                 <MobileCustomerSearch
                   customers={customers}

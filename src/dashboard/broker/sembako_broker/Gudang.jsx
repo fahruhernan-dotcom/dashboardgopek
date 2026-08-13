@@ -675,7 +675,7 @@ export default function Gudang() {
   ]
 
   return (
-    <div className="min-h-screen bg-background pb-24 text-left">
+    <div className="min-h-screen bg-background pb-[max(140px,calc(110px+env(safe-area-inset-bottom,24px)))] text-left">
       {!isDesktop && <BrokerMobileHeader title="Gudang" onMenuClick={() => setSidebarOpen(true)} />}
 
       <div className="mx-auto max-w-7xl">
@@ -866,12 +866,12 @@ function KartuStokSheet({ product, onClose }) {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
       onClick={onClose}
     >
       <motion.div
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-        style={{ background: 'var(--bg-surface)', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: '540px', padding: '0 0 32px', borderTop: `1px solid ${C.border}`, height: '85vh', display: 'flex', flexDirection: 'column' }}
+        style={{ background: 'var(--bg-surface)', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: '540px', padding: '0 0 max(32px, calc(16px + env(safe-area-inset-bottom, 16px)))', borderTop: `1px solid ${C.border}`, height: '85vh', display: 'flex', flexDirection: 'column' }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
@@ -986,12 +986,12 @@ function AdjustStokSheet({ batch, product, onClose }) {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
       onClick={onClose}
     >
       <motion.div
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-        style={{ background: 'var(--bg-surface)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: '540px', padding: '0 0 32px', borderTop: `2px solid ${C.accent}`, maxHeight: '92vh', overflowY: 'auto' }}
+        style={{ background: 'var(--bg-surface)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: '540px', padding: '0 0 max(36px, calc(20px + env(safe-area-inset-bottom, 20px)))', borderTop: `2px solid ${C.accent}`, maxHeight: '92vh', overflowY: 'auto' }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ textAlign: 'center', padding: '12px 0' }}>

@@ -539,7 +539,7 @@ export default function AppSidebar({ open, onClose }) {
         )}
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-2">
+      <SidebarContent className="flex-1 overflow-y-auto min-h-0 px-2 py-2">
         {filteredNavMain.map((group) => {
           const isUtama = group.label === 'UTAMA'
           // Only make UTAMA collapsible for peternak (they have per-farm sections to focus on)
@@ -865,7 +865,7 @@ export default function AppSidebar({ open, onClose }) {
 
       </SidebarContent>
 
-      <SidebarFooter className="p-2 pb-6">
+      <SidebarFooter className="p-2 pb-[max(20px,calc(12px+env(safe-area-inset-bottom,12px)))] flex-shrink-0 mt-auto">
         <SidebarSeparator className="mb-2" />
         <div
           onClick={isSuperadmin ? handleGoToAdmin : undefined}
@@ -1038,15 +1038,13 @@ export default function AppSidebar({ open, onClose }) {
   if (!isDesktop) {
     return (
       <Sheet open={open} onOpenChange={(val) => !val && onClose?.()}>
-        <SheetContent side="left" className="p-0 border-r border-slate-200 dark:border-white/[0.08] w-[280px] flex flex-col overflow-hidden animate-in fade-in duration-200" style={{ background: 'var(--bg-1-val)' }}>
+        <SheetContent side="left" hideClose className="p-0 border-r border-slate-200 dark:border-white/[0.08] w-[285px] max-w-[85vw] flex flex-col h-full overflow-hidden animate-in fade-in duration-200" style={{ background: 'var(--bg-1-val)' }}>
           <SheetHeader className="sr-only">
             <SheetTitle>Navigasi Sidebar</SheetTitle>
             <SheetDescription>Menu navigasi utama aplikasi TernakOS.</SheetDescription>
           </SheetHeader>
-          <Sidebar collapsible="none" className="border-none bg-transparent select-none cursor-default" style={{ width: '100%', height: '100%' }}>
-            <div style={{ paddingBottom: '32px', height: '100%', overflowY: 'auto', overscrollBehavior: 'contain' }}>
-              {sidebarContent}
-            </div>
+          <Sidebar collapsible="none" className="border-none bg-transparent select-none cursor-default flex flex-col h-full w-full overflow-hidden">
+            {sidebarContent}
           </Sidebar>
         </SheetContent>
       </Sheet>

@@ -146,7 +146,7 @@ function ProductSheet({ product, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
       onClick={onClose}
     >
       <motion.div
@@ -159,7 +159,7 @@ function ProductSheet({ product, onClose }) {
           borderRadius: '24px 24px 0 0',
           width: '100%',
           maxWidth: '560px',
-          padding: '0 0 32px',
+          padding: '0 0 max(36px, calc(20px + env(safe-area-inset-bottom, 20px)))',
           borderTop: '2px solid var(--brand-500)',
           boxShadow: 'var(--shadow-tko-lg)',
           maxHeight: '92vh',
@@ -448,7 +448,7 @@ function CustomSelect({ value, onChange, options, placeholder, id }) {
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ position: 'fixed', inset: 0, zIndex: 998, background: 'transparent' }}
+              style={{ position: 'fixed', inset: 0, zIndex: 5050, background: 'transparent' }}
               onClick={() => setOpen(false)}
             />
             <motion.div
@@ -458,7 +458,7 @@ function CustomSelect({ value, onChange, options, placeholder, id }) {
               style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '8px',
                 background: 'var(--bg-surface)', border: `1px solid var(--border-soft)`, borderRadius: '14px',
-                zIndex: 999, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                zIndex: 5060, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
                 backdropFilter: 'blur(10px)',
               }}
             >
@@ -682,7 +682,7 @@ export default function Produk() {
   const categoryFilters = categories.map(c => ({ id: c, label: c }))
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-24 text-left">
+    <div className="min-h-screen bg-background text-foreground pb-[max(140px,calc(110px+env(safe-area-inset-bottom,24px)))] text-left">
       {!isDesktop && <BrokerMobileHeader title="Produk" onMenuClick={() => setSidebarOpen(true)} />}
 
       <div className="mx-auto max-w-7xl">

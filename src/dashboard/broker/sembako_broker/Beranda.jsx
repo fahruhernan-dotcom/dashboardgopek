@@ -189,11 +189,30 @@ export default function SembakoBeranda() {
     const INITIAL_CAPITAL = 0
 
     // Cash In: all payments ever received (including negative refund payments to get net cash inflow)
-    const totalCashIn = sales.reduce((sum, s) => {
-      return sum + (s.sembako_payments || [])
-        .filter(p => !p.is_deleted)
-        .reduce((acc, p) => acc + (Number(p.amount || p.amount_paid || 0)), 0)
-    }, 0)
+    let totalCashIn = 0
+    let totalCashMethod = 0
+    let totalTransferMethod = 0
+    let todayCashMethod = 0
+    let todayTransferMethod = 0
+    const todayStrKey = format(today, 'yyyy-MM-dd')
+
+    sales.forEach(s => {
+      const pmts = (s.sembako_payments || []).filter(p => !p.is_deleted)
+      pmts.forEach(p => {
+        const amt = Number(p.amount || p.amount_paid || 0)
+        totalCashIn += amt
+        const method = String(p.payment_method || '').toLowerCase()
+        const isToday = (p.payment_date && p.payment_date.startsWith(todayStrKey)) || (s.transaction_date && s.transaction_date.startsWith(todayStrKey))
+
+        if (method === 'transfer') {
+          totalTransferMethod += amt
+          if (isToday) todayTransferMethod += amt
+        } else {
+          totalCashMethod += amt
+          if (isToday) todayCashMethod += amt
+        }
+      })
+    })
 
     // Cash Out: purchases + expenses + payroll + cogs + delivery
     const totalCashOutPurchases = suppliers.reduce((sum, s) => sum + (Number(s.total_paid_value) || 0), 0)
@@ -203,6 +222,11 @@ export default function SembakoBeranda() {
     const totalCashOutDelivery = sales.reduce((sum, s) => sum + (Number(s.delivery_cost) || 0) + (Number(s.other_cost) || 0), 0)
     const totalCashOut = totalCashOutPurchases + totalCashOutExpenses + totalCashOutPayroll + totalCashOutCogs + totalCashOutDelivery
     const cashBalance = INITIAL_CAPITAL + totalCashIn - totalCashOut
+
+    // Realistic split of liquid cash between Physical Cash and Bank
+    const netCashInHand = Math.max(0, INITIAL_CAPITAL + totalCashMethod - totalCashOut)
+    const netBankBalance = Math.max(0, totalTransferMethod)
+    const totalLiquidCash = cashBalance > 0 ? cashBalance : (netCashInHand + netBankBalance)
 
     // Realized & Unrealized Profit: computed per sale as clean integers with no rounding discrepancies
     let totalRealizedProfit = 0
@@ -233,6 +257,12 @@ export default function SembakoBeranda() {
       totalCashOutDelivery,
       totalCashOut,
       cashBalance,
+      liquidCash: totalLiquidCash,
+      cashInHand: netCashInHand,
+      bankBalance: netBankBalance,
+      todayCashMethod,
+      todayTransferMethod,
+      todayTotalPayment: todayCashMethod + todayTransferMethod,
       realizedProfit: totalRealizedProfit,
     }
 

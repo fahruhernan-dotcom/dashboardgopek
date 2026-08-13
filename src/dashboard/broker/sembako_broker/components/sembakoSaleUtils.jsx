@@ -27,7 +27,10 @@ export const CUSTOMER_TYPES = [
   'warung', 'toko_retail', 'supermarket', 'restoran', 'catering', 'grosir', 'semi_grosir', 'sales_keliling', 'perseorangan', 'lainnya'
 ]
 export const CUSTOMER_TYPE_OPTIONS = CUSTOMER_TYPES.map(t => ({ value: t, label: t.replace(/_/g, ' ').toUpperCase() }))
-export const PAYMENT_METHOD_OPTIONS = ['cash', 'transfer', 'qris', 'giro', 'cek', 'potong_deposit'].map(m => ({ value: m, label: m === 'potong_deposit' ? 'POTONG DEPOSIT TOKO' : m.toUpperCase() }))
+export const PAYMENT_METHOD_OPTIONS = [
+  { value: 'cash', label: 'CASH (TUNAI)' },
+  { value: 'transfer', label: 'TRANSFER BANK' },
+]
 export const INVOICE_FILTERS = [
   { id: 'all', label: 'Semua Invoice' },
   { id: 'unpaid', label: 'Punya Piutang' },
@@ -132,7 +135,7 @@ export function CustomSelect({ value, onChange, options, placeholder, onAddNew, 
         {open && (
           <>
             <div
-              style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+              style={{ position: 'fixed', inset: 0, zIndex: 5050 }}
               onClick={() => setOpen(false)}
             />
             <motion.div
@@ -142,7 +145,7 @@ export function CustomSelect({ value, onChange, options, placeholder, onAddNew, 
               style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '8px',
                 background: C.card, border: `1px solid ${C.border}`, borderRadius: '14px',
-                zIndex: 999, overflow: 'hidden', boxShadow: '0 10px 30px rgba(15,23,42,0.08)',
+                zIndex: 5060, overflow: 'hidden', boxShadow: '0 10px 30px rgba(15,23,42,0.08)',
                 backdropFilter: 'blur(10px)',
               }}
             >

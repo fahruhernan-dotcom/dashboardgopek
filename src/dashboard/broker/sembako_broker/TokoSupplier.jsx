@@ -237,7 +237,7 @@ export default function SembakoTokoSupplier() {
   if (isBatchError) return <SembakoErrorState error={batchError} onRetry={refetchBatch} />
 
   return (
-    <div className="min-h-screen bg-background pb-24 text-left">
+    <div className="min-h-screen bg-background pb-[max(140px,calc(110px+env(safe-area-inset-bottom,24px)))] text-left">
       {!isDesktop && <BrokerMobileHeader title="Toko & Supplier" onMenuClick={() => setSidebarOpen(true)} />}
 
       <div className="mx-auto max-w-7xl">

@@ -82,7 +82,7 @@ export default function DrawerLainnya({ isOpen, onClose, userType }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000]"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[5000]"
           />
 
           <motion.div
@@ -90,14 +90,14 @@ export default function DrawerLainnya({ isOpen, onClose, userType }) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-bg-1 border-t border-border/10 rounded-t-[32px] z-[1001] flex flex-col"
-            style={{ maxHeight: '90dvh' }}
+            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-bg-1 border-t border-border/10 rounded-t-[32px] z-[5001] flex flex-col"
+            style={{ maxHeight: 'min(90dvh, calc(100dvh - 32px))' }}
           >
             {/* Handle — non-scrollable */}
             <div className="shrink-0 w-10 h-1.5 bg-muted/20 rounded-full mx-auto my-4" />
 
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6" style={{ paddingBottom: 'max(2rem, calc(1.5rem + env(safe-area-inset-bottom, 16px)))' }}>
+            <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6" style={{ paddingBottom: 'max(36px, calc(20px + env(safe-area-inset-bottom, 20px)))' }}>
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h2 className="font-display text-lg font-bold">Layanan Lainnya</h2>
