@@ -19,6 +19,7 @@ import { getSubscriptionStatus } from './lib/subscriptionUtils'
 import LockedServerPage from './pages/LockedServerPage'
 import LicenseBanner from './components/license/LicenseBanner'
 import { initPushNotifications } from './lib/services/pushNotificationService'
+import { useCapacitorBackNavigation } from './lib/hooks/useCapacitorBackNavigation'
 
 const SuperadminDashboard = React.lazy(() => import('./dashboard/superadmin/SuperadminDashboardPage'))
 
@@ -161,6 +162,9 @@ function AppContentLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, tenant } = useAuth()
+
+  // Global Android Back Button & Navigation Gesture Manager
+  useCapacitorBackNavigation()
 
   useEffect(() => {
     if (user?.id && tenant?.id) {

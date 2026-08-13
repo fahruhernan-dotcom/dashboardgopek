@@ -21,13 +21,6 @@ export default defineConfig({
     minify: false,
     sourcemap: false,
     chunkSizeWarningLimit: 5000,
-    rollupOptions: {
-      external: [
-        '@react-pdf/renderer',
-        'html5-qrcode',
-        'animejs',
-      ],
-    },
   },
 })
 
