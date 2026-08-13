@@ -76,7 +76,7 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
           {/* Top Bar Controls */}
           <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-[#121B22] print:hidden">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500">
+              <div className="w-9 h-9 rounded-xl bg-[#0F172A]/15 border border-[#0F172A]/30 flex items-center justify-center text-[#0F172A]">
                 <FileText size={18} />
               </div>
               <div>
@@ -92,7 +92,7 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
             <div className="flex items-center gap-2">
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 px-4 h-9 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 border-0"
+                className="flex items-center gap-2 px-4 h-9 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white transition-all cursor-pointer shadow-lg shadow-slate-950/10 active:scale-95 border-0"
               >
                 <Printer size={15} />
                 <span>Cetak / Save PDF</span>
@@ -178,7 +178,7 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="inline-block bg-amber-600 text-white font-bold text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-sm mb-1.5">
+                  <div className="inline-block bg-[#0F172A] text-white font-bold text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-sm mb-1.5">
                     {isBusinessResult ? 'LAPORAN HASIL BISNIS (P&L)' : 'LAPORAN ARUS KAS (CASH FLOW)'}
                   </div>
                   <p className="text-slate-700 text-[11px] font-semibold m-0">
@@ -698,7 +698,7 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
                         )}
 
                         {/* Section D: Ending Cash */}
-                        <tr className="bg-amber-100 text-slate-900 font-extrabold text-sm border-t-2 border-b-2 border-amber-600">
+                        <tr className="bg-amber-100 text-slate-900 font-extrabold text-sm border-t-2 border-b-2 border-[#0F172A]">
                           <td className="p-3">= SALDO KAS AKHIR PERIODE</td>
                           <td className="p-3 text-right">{formatIDR(summary.endingCashOnHand || 0)}</td>
                         </tr>

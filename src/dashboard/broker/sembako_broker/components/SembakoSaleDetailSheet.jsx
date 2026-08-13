@@ -839,7 +839,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                         Harga: <span className="font-semibold text-white">{formatIDR(item.unit_price)}</span> / {item.unit}
                       </p>
                     </div>
-                    <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-[10px] font-bold">
+                    <Badge variant="outline" className="border-[#0F172A]/30 text-amber-400 text-[10px] font-bold">
                       Maks Retur: {item.max_qty} {item.unit}
                     </Badge>
                   </div>
@@ -859,7 +859,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                             const val = Math.min(item.max_qty, Math.max(0, parseInt(e.target.value) || 0))
                             updateReturnFormItem(idx, 'return_qty', val)
                           }}
-                          className="w-full bg-[#121B22] border border-white/10 rounded-lg px-3 py-2 text-white font-bold text-sm focus:outline-none focus:border-amber-500"
+                          className="w-full bg-[#121B22] border border-white/10 rounded-lg px-3 py-2 text-white font-bold text-sm focus:outline-none focus:border-slate-500"
                           placeholder="0"
                         />
                       </div>
@@ -894,7 +894,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
               )
             })}
 
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex justify-between items-center text-sm">
+            <div className="p-3 bg-[#0F172A]/10 border border-[#0F172A]/20 rounded-xl flex justify-between items-center text-sm">
               <span className="text-amber-200 font-bold">TOTAL ESTIMASI POTONGAN:</span>
               <span className="text-amber-400 font-black text-base">
                 {formatIDR(
@@ -911,7 +911,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             <AlertDialogAction
               disabled={isSubmittingReturn || !returnFormItems.some(i => Number(i.return_qty) > 0)}
               onClick={handleProcessReturn}
-              className="bg-amber-500 text-slate-950 font-black hover:bg-amber-400 rounded-xl"
+              className="bg-[#0F172A] text-slate-950 font-black hover:bg-amber-400 rounded-xl"
             >
               {isSubmittingReturn ? <Loader2 size={16} className="animate-spin" /> : 'Konfirmasi & Simpan Retur'}
             </AlertDialogAction>

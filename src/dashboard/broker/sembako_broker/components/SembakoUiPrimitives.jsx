@@ -18,11 +18,11 @@ export function SembakoStatCard({ label, value, icon: Icon, color = 'accent', su
       iconClass: 'text-muted-foreground/30',
     },
     amber: {
-      cardClass: 'bg-amber-500/[0.04] dark:bg-amber-500/[0.07] border-amber-500/20 dark:border-amber-500/30',
-      titleClass: 'text-amber-600 dark:text-amber-400',
+      cardClass: 'bg-[#0F172A]/[0.04] dark:bg-[#0F172A]/[0.07] border-[#0F172A]/20 dark:border-[#0F172A]/30',
+      titleClass: 'text-[#0F172A] dark:text-amber-400',
       valueClass: 'text-foreground',
-      subClass: 'text-amber-700/80 dark:text-amber-500',
-      iconClass: 'text-amber-500/20 dark:text-amber-400/25',
+      subClass: 'text-amber-700/80 dark:text-[#0F172A]',
+      iconClass: 'text-[#0F172A]/20 dark:text-amber-400/25',
     },
     green: {
       cardClass: 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07] border-emerald-500/20 dark:border-emerald-500/30',
@@ -113,7 +113,7 @@ export function SembakoEmptyState({
 
   const colors = {
     accent: 'text-slate-600 bg-slate-50 border-slate-200 hover:border-slate-300',
-    amber: 'text-amber-600 bg-amber-50 border-amber-200 hover:border-amber-300',
+    amber: 'text-[#0F172A] bg-amber-50 border-amber-200 hover:border-amber-300',
     green: 'text-emerald-600 bg-emerald-50 border-emerald-250 hover:border-emerald-350',
     red: 'text-rose-600 bg-rose-50 border-rose-250 hover:border-rose-350',
   }

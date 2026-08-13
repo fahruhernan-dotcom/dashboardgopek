@@ -149,11 +149,11 @@ export function DesktopBeranda({
           <StockTrendChart products={products} sales={sales} batches={batches} suppliers={suppliers} isDesktop={true} />
 
           {lowStock.length > 0 && (
-            <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 sm:p-5 space-y-3">
+            <div className="bg-[#0F172A]/5 border border-[#0F172A]/20 rounded-2xl p-4 sm:p-5 space-y-3">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={16} className="text-amber-500 shrink-0" />
-                <span className="text-xs font-black tracking-widest text-amber-500 uppercase">STOK MENIPIS</span>
-                <span className="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{lowStock.length}</span>
+                <AlertTriangle size={16} className="text-[#0F172A] shrink-0" />
+                <span className="text-xs font-black tracking-widest text-[#0F172A] uppercase">STOK MENIPIS</span>
+                <span className="bg-[#0F172A]/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{lowStock.length}</span>
               </div>
               <div className="space-y-2">
                 {lowStock.map(p => (
@@ -164,7 +164,7 @@ export function DesktopBeranda({
                     </div>
                     <button 
                       onClick={() => navigate(`${brokerBase}/gudang?action=tambah&product=${p.id}`)}
-                      className="bg-amber-500/10 border border-amber-500/30 text-amber-500 hover:bg-amber-500/20 rounded-lg px-3 py-1.5 text-xs font-bold cursor-pointer transition-all shrink-0"
+                      className="bg-[#0F172A]/10 border border-[#0F172A]/30 text-[#0F172A] hover:bg-slate-900/20 rounded-lg px-3 py-1.5 text-xs font-bold cursor-pointer transition-all shrink-0"
                     >
                       Tambah Stok
                     </button>
@@ -181,7 +181,7 @@ export function DesktopBeranda({
             {/* Invoice Terbaru */}
             <div className="md:col-span-3 bg-card rounded-2xl p-4 sm:p-5 border border-border/60 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between gap-2 mb-4">
-                <span className="text-xs font-black tracking-widest text-amber-500 uppercase">INVOICE TERBARU</span>
+                <span className="text-xs font-black tracking-widest text-[#0F172A] uppercase">INVOICE TERBARU</span>
                 <button 
                   onClick={() => navigate(`${brokerBase}/penjualan`)}
                   className="flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -212,7 +212,7 @@ export function DesktopBeranda({
 
             {/* Quick Stat Summary */}
             <div className="md:col-span-2 bg-card rounded-2xl p-4 sm:p-5 border border-border/60 shadow-sm flex flex-col justify-between gap-3">
-              <span className="text-xs font-black tracking-widest text-amber-500 uppercase mb-1">RINGKASAN</span>
+              <span className="text-xs font-black tracking-widest text-[#0F172A] uppercase mb-1">RINGKASAN</span>
               <div className="space-y-2">
                 <QuickStatRow label="Produk Aktif"       value={stats?.stok?.totalProduk || 0} />
                 <QuickStatRow label="Pegawai Aktif"       value={activeEmployees} />

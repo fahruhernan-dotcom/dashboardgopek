@@ -33,7 +33,7 @@ const TEXT     = C.text     // #0F172A
 const BORDER   = C.border   // #E2E8F0
 const INPUT_BG = C.input    // #F1F5F9
 
-const inputCn = `w-full h-12 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl px-4 text-[#0F172A] text-sm font-semibold focus:border-[#0F172A]/50 focus:outline-none focus:ring-1 focus:ring-[#0F172A]/20 transition-colors appearance-none`
+const inputCn = `w-full h-12 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl px-4 text-[#0F172A] text-sm font-semibold focus:border-slate-500/50 focus:outline-none focus:ring-1 focus:ring-[#0F172A]/20 transition-colors appearance-none`
 const labelCn = `block text-[9px] font-black text-[#64748B] uppercase tracking-[0.15em] mb-1.5`
 
 const getFactor = (u) => {
@@ -1852,7 +1852,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
               className="bg-white dark:bg-[#111C24] border border-[#E2E8F0] dark:border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5 text-left"
             >
               <div className="text-center space-y-2">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center mx-auto text-xl">
+                <div className="w-12 h-12 rounded-2xl bg-[#0F172A]/15 border border-[#0F172A]/30 text-[#0F172A] flex items-center justify-center mx-auto text-xl">
                   🚚
                 </div>
                 <h3 className="font-display font-black text-lg text-[#0F172A] dark:text-white uppercase tracking-tight">
@@ -1882,7 +1882,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                       element.scrollIntoView({ behavior: 'smooth', block: 'center' })
                     }
                   }}
-                  className="flex-1 h-12 rounded-xl text-xs font-black text-white bg-amber-600 hover:bg-amber-500 shadow-sm transition-all cursor-pointer"
+                  className="flex-1 h-12 rounded-xl text-xs font-black text-white bg-[#0F172A] hover:bg-slate-900 shadow-sm transition-all cursor-pointer"
                 >
                   Ya, Tambah Biaya
                 </button>

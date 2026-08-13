@@ -101,7 +101,7 @@ export default function SembakoRecycleBin({ tenantId }) {
                     >
                         <div className="px-6 pb-8 space-y-6 border-t border-slate-200 pt-6">
                             <div className="bg-amber-50 border border-amber-200/50 p-4 rounded-2xl flex items-start gap-3">
-                                <Info size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                                <Info size={18} className="text-[#0F172A] shrink-0 mt-0.5" />
                                 <p className="text-[11px] font-bold text-amber-700 leading-relaxed uppercase tracking-wider">
                                     Data yang dihapus akan otomatis terhapus permanen setelah 30 hari.
                                 </p>

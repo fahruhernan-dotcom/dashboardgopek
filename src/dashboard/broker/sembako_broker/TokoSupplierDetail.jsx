@@ -173,8 +173,8 @@ export default function SembakoTokoSupplierDetail() {
                         {profileData?.customer_type || 'Toko'}
                       </Badge>
                     )}
-                    <Badge className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-none">
-                      <Star size={10} className="fill-amber-500 text-amber-500" />
+                    <Badge className="bg-[#0F172A]/10 text-[#0F172A] border border-[#0F172A]/20 text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-none">
+                      <Star size={10} className="fill-amber-500 text-[#0F172A]" />
                       <span>{profileData?.reliability_score || 5}.0 Rating</span>
                     </Badge>
                   </div>
@@ -458,7 +458,7 @@ function CustomerInvoiceList({ invoices, onPay }) {
                 <Badge className={cn(
                   "border rounded-lg text-[10px] font-black uppercase px-2.5 py-1 tracking-wider shadow-none",
                   inv.payment_status === 'lunas' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
-                    inv.payment_status === 'sebagian' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                    inv.payment_status === 'sebagian' ? "bg-[#0F172A]/10 text-[#0F172A] border-[#0F172A]/20" :
                       "bg-rose-500/10 text-rose-500 border-rose-500/20"
                 )}>
                   {inv.payment_status?.replace('_', ' ')}

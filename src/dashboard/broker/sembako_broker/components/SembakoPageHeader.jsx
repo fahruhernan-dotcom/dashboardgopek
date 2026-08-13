@@ -38,7 +38,7 @@ export function SembakoPageHeader({
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="pl-9 h-9 w-52 bg-card border-border/60 rounded-xl font-medium text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-amber-500/40"
+                className="pl-9 h-9 w-52 bg-card border-border/60 rounded-xl font-medium text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-slate-500/30"
               />
             </div>
           )}
@@ -53,7 +53,7 @@ export function SembakoPageHeader({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="pl-9 h-9 w-full bg-card border-border/60 rounded-xl font-medium text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-amber-500/40"
+            className="pl-9 h-9 w-full bg-card border-border/60 rounded-xl font-medium text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-slate-500/30"
           />
         </div>
       )}
@@ -67,7 +67,7 @@ export function SembakoPageHeader({
               className={cn(
                 'px-3 py-1 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap cursor-pointer select-none',
                 activeFilter === filter.id
-                  ? 'bg-amber-600 text-white'
+                  ? 'bg-[#0F172A] text-white'
                   : 'bg-card text-muted-foreground hover:text-foreground border border-border/60 hover:border-border'
               )}
             >
@@ -78,7 +78,7 @@ export function SembakoPageHeader({
       )}
 
       {isViewOnly && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 flex items-center gap-2 text-amber-400 text-xs font-medium mt-3">
+        <div className="bg-[#0F172A]/10 border border-[#0F172A]/20 rounded-xl px-4 py-2.5 flex items-center gap-2 text-[#0F172A] dark:text-slate-300 text-xs font-semibold mt-3">
           <Eye className="w-4 h-4 shrink-0" />
           <span>
             Mode <strong className="font-bold">View Only</strong> (Hanya bisa melihat data)

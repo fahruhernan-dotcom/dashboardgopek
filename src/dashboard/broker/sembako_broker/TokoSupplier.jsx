@@ -260,7 +260,7 @@ export default function SembakoTokoSupplier() {
                   onClick={() => setImportCsvOpen(true)}
                   className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/60 hover:bg-muted text-foreground transition-all cursor-pointer shrink-0"
                 >
-                  <FileSpreadsheet size={15} className="text-amber-500" />
+                  <FileSpreadsheet size={15} className="text-[#0F172A]" />
                   <span>Import CSV</span>
                 </button>
                 {sub === 'toko' ? <TokoActions compact autoOpen={autoOpenToko} /> : <SupplierActions compact />}
@@ -271,7 +271,7 @@ export default function SembakoTokoSupplier() {
                   onClick={() => setImportCsvOpen(true)}
                   className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/60 hover:bg-muted text-foreground transition-all cursor-pointer shrink-0"
                 >
-                  <FileSpreadsheet size={15} className="text-amber-500" />
+                  <FileSpreadsheet size={15} className="text-[#0F172A]" />
                   <span>Import CSV</span>
                 </button>
                 {sub === 'toko' ? <TokoActions compact autoOpen={autoOpenToko} /> : <SupplierActions compact />}
@@ -341,7 +341,7 @@ function SegmentSwitch({ sub, setSub }) {
         onClick={() => setSub('toko')}
         className={cn(
           'h-9 rounded-lg px-4 text-xs font-bold transition-all cursor-pointer select-none',
-          sub === 'toko' ? 'bg-amber-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          sub === 'toko' ? 'bg-[#0F172A] text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
         )}
       >
         Toko
@@ -350,7 +350,7 @@ function SegmentSwitch({ sub, setSub }) {
         onClick={() => setSub('supplier')}
         className={cn(
           'h-9 rounded-lg px-4 text-xs font-bold transition-all cursor-pointer select-none',
-          sub === 'supplier' ? 'bg-amber-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          sub === 'supplier' ? 'bg-[#0F172A] text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
         )}
       >
         Supplier
@@ -657,11 +657,11 @@ function TokoList({ customers, customerStats, search, selectedArea, onlyHutang }
             type="button"
             onClick={() => navigate(`customer/${customer.id}`)}
             whileTap={{ scale: 0.985 }}
-            className="group w-full rounded-2xl border border-border/60 bg-card px-4 py-3 text-left transition-all hover:border-amber-500/30 hover:bg-card/90 shadow-sm cursor-pointer"
+            className="group w-full rounded-2xl border border-border/60 bg-card px-4 py-3 text-left transition-all hover:border-slate-500/30 hover:bg-card/90 shadow-sm cursor-pointer"
           >
             {/* Row 1: avatar + name + chevron */}
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-xs font-black uppercase text-amber-500 border border-amber-500/20">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0F172A]/10 text-xs font-black uppercase text-[#0F172A] border border-[#0F172A]/20">
                 {(customer.customer_name || '--').slice(0, 2)}
               </div>
               <div className="min-w-0 flex-1">
@@ -669,7 +669,7 @@ function TokoList({ customers, customerStats, search, selectedArea, onlyHutang }
                   <p className="truncate text-sm font-bold text-foreground">
                     {customer.customer_name}
                   </p>
-                  <Badge className="h-4 shrink-0 border-none bg-amber-500/10 px-1.5 text-[8px] font-black uppercase tracking-wider text-amber-400">
+                  <Badge className="h-4 shrink-0 border-none bg-[#0F172A]/10 px-1.5 text-[8px] font-black uppercase tracking-wider text-slate-500">
                     {customer.customer_type || 'customer'}
                   </Badge>
                 </div>
@@ -683,7 +683,7 @@ function TokoList({ customers, customerStats, search, selectedArea, onlyHutang }
                   )}
                 </div>
               </div>
-              <ChevronRight className="shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-amber-500" size={16} />
+              <ChevronRight className="shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-[#0F172A]" size={16} />
             </div>
 
             {/* Row 2: metrics strip */}
@@ -763,11 +763,11 @@ function SupplierList({ suppliers, supplierStats, search }) {
             type="button"
             onClick={() => navigate(`supplier/${supplier.id}`)}
             whileTap={{ scale: 0.992 }}
-            className="group flex items-center justify-between rounded-2xl border border-border/60 bg-card p-4 text-left shadow-sm transition-all hover:border-amber-500/30 cursor-pointer"
+            className="group flex items-center justify-between rounded-2xl border border-border/60 bg-card p-4 text-left shadow-sm transition-all hover:border-slate-500/30 cursor-pointer"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10">
-                <Package size={20} className="text-amber-500" />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#0F172A]/20 bg-[#0F172A]/10">
+                <Package size={20} className="text-[#0F172A]" />
               </div>
 
               <div className="min-w-0">
@@ -782,12 +782,12 @@ function SupplierList({ suppliers, supplierStats, search }) {
 
                 <div className="mt-2 flex flex-wrap gap-3">
                   <MetricBlock label="Sisa Hutang" value={formatIDR(supplier.total_outstanding || 0)} tone={supplier.total_outstanding > 0 ? "red" : "green"} compact />
-                  <MetricBlock label="Nilai Belanja" value={formatIDR(supplier.total_purchase_value || 0)} tone="amber" compact />
+                  <MetricBlock label="Nilai Belanja" value={formatIDR(supplier.total_purchase_value || 0)} tone="default" compact />
                 </div>
               </div>
             </div>
 
-            <ChevronRight className="ml-2 text-muted-foreground transition-all group-hover:translate-x-1 group-hover:text-amber-500 shrink-0" size={16} />
+            <ChevronRight className="ml-2 text-muted-foreground transition-all group-hover:translate-x-1 group-hover:text-[#0F172A] shrink-0" size={16} />
           </MotionButton>
         )
       })}
@@ -818,8 +818,8 @@ function MetricBlock({ label, value, tone = 'default', compact = false }) {
           compact ? 'text-base' : 'text-xl',
           tone === 'red' && 'text-[#EF4444]',
           tone === 'green' && 'text-[#34D399]',
-          tone === 'amber' && 'text-[#F59E0B]',
-          tone === 'default' && 'text-[#FEF3C7]'
+          tone === 'amber' && 'text-[#475569] dark:text-[#E2E8F0]',
+          tone === 'default' && 'text-foreground'
         )}
       >
         {value}

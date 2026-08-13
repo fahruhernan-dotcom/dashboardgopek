@@ -37,7 +37,7 @@ const SALARY_TYPES = [
 const STATUS_COLOR = { aktif: '#10B981', nonaktif: '#EF4444', cuti: '#F59E0B' }
 const ROLES = ['gudang', 'sales', 'kurir', 'admin', 'lainnya']
 
-const inputClass = "w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 font-bold transition-all"
+const inputClass = "w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500/50 font-bold transition-all"
 const labelClass = "block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5"
 
 // ── MAIN ────────────────────────────────────────────────────────────────────
@@ -59,13 +59,13 @@ export default function SembakoPegawai({ hideMobileHeader }) {
       <div className="bg-background min-h-screen">
         {(!isDesktop && !hideMobileHeader) && <BrokerMobileHeader title="Pegawai" onMenuClick={() => setSidebarOpen(true)} />}
         <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center gap-6">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-amber-500/10 border border-amber-500/20">
-            <Lock size={28} className="text-amber-500" />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-[#0F172A]/10 border border-[#0F172A]/20">
+            <Lock size={28} className="text-[#0F172A]" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3 bg-amber-500/10 border border-amber-500/20">
-              <Users size={11} className="text-amber-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Fitur Pro</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3 bg-[#0F172A]/10 border border-[#0F172A]/20">
+              <Users size={11} className="text-[#0F172A]" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#0F172A]">Fitur Pro</span>
             </div>
             <h2 className="font-sans font-black text-xl text-foreground mb-2">Karyawan & Payroll</h2>
             <p className="text-sm max-w-xs leading-relaxed text-muted-foreground">
@@ -75,7 +75,7 @@ export default function SembakoPegawai({ hideMobileHeader }) {
           </div>
           <Link
             to="/upgrade"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm text-white transition-colors bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-600/30 active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm text-white transition-colors bg-[#0F172A] hover:bg-slate-900 shadow-lg shadow-slate-950/10 active:scale-95 cursor-pointer"
           >
             Lihat Paket Pro →
           </Link>
@@ -100,7 +100,7 @@ export default function SembakoPegawai({ hideMobileHeader }) {
             tab === 'pegawai' ? (
               <button
                 onClick={() => window.dispatchEvent(new Event('open-new-employee'))}
-                className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
+                className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white transition-all cursor-pointer shadow-lg shadow-slate-950/10 active:scale-95 shrink-0"
               >
                 <Plus size={16} />
                 <span>Tambah Karyawan</span>
@@ -188,19 +188,19 @@ function TabPegawai({ isDesktop }) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               onClick={() => openEdit(emp)}
-              className="bg-card border border-border/60 hover:border-amber-500/30 rounded-2xl p-5 transition-all shadow-sm cursor-pointer flex flex-col justify-between group hover:shadow-md relative overflow-hidden"
+              className="bg-card border border-border/60 hover:border-slate-500/30 rounded-2xl p-5 transition-all shadow-sm cursor-pointer flex flex-col justify-between group hover:shadow-md relative overflow-hidden"
             >
               <div>
                 <div className="flex items-center gap-3.5 mb-4">
-                  <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-base font-black text-amber-500 shrink-0 uppercase">
+                  <div className="w-11 h-11 rounded-xl bg-[#0F172A]/10 border border-[#0F172A]/20 flex items-center justify-center text-base font-black text-[#0F172A] shrink-0 uppercase">
                     {(emp.full_name || '?')[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-black text-foreground group-hover:text-amber-500 transition-colors truncate">
+                    <h3 className="text-sm font-black text-foreground group-hover:text-[#0F172A] transition-colors truncate">
                       {emp.full_name}
                     </h3>
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#0F172A]/10 text-amber-400 border border-[#0F172A]/20">
                         {emp.role}
                       </span>
                       <span className={cn(
@@ -208,7 +208,7 @@ function TabPegawai({ isDesktop }) {
                         emp.status === 'aktif'
                           ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                           : emp.status === 'cuti'
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                            ? "bg-[#0F172A]/10 text-amber-400 border-[#0F172A]/20"
                             : "bg-red-500/10 text-red-400 border-red-500/20"
                       )}>
                         {emp.status}
@@ -237,7 +237,7 @@ function TabPegawai({ isDesktop }) {
 
         {employees.length === 0 && (
           <div className="bg-card border border-border/60 rounded-2xl p-12 text-center text-muted-foreground col-span-full">
-            <Users size={36} className="mx-auto mb-3 opacity-30 text-amber-500" />
+            <Users size={36} className="mx-auto mb-3 opacity-30 text-[#0F172A]" />
             <p className="text-base font-bold text-foreground">Belum ada data pegawai</p>
             <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
               Klik "Tambah Karyawan" di atas untuk mulai menambahkan data pegawai gudang, sales, atau sopir Anda.
@@ -421,7 +421,7 @@ function TabPegawai({ isDesktop }) {
               <label className={labelClass}>Catatan</label>
               <textarea
                 rows={2}
-                className="w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 resize-none font-bold"
+                className="w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500/50 resize-none font-bold"
                 value={form.notes || ''}
                 onChange={e => setForm({ ...form, notes: e.target.value })}
                 placeholder="Catatan tambahan (opsional)..."
@@ -431,7 +431,7 @@ function TabPegawai({ isDesktop }) {
             <button
               onClick={handleSave}
               disabled={createEmp.isPending || updateEmp.isPending}
-              className="w-full h-11 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-xl shadow-lg shadow-amber-600/30 transition-all mt-2 cursor-pointer flex items-center justify-center"
+              className="w-full h-11 bg-[#0F172A] hover:bg-slate-900 font-bold text-white rounded-xl shadow-lg shadow-slate-950/10 transition-all mt-2 cursor-pointer flex items-center justify-center"
             >
               {(createEmp.isPending || updateEmp.isPending) ? 'Menyimpan...' : 'Simpan Karyawan'}
             </button>
@@ -545,7 +545,7 @@ function TabPayroll({ isDesktop }) {
 
       {/* Input Gaji */}
       <div className="bg-card border border-border/60 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
-        <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest border-b border-border/40 pb-3">
+        <h3 className="text-xs font-black text-[#0F172A] uppercase tracking-widest border-b border-border/40 pb-3">
           Catat Gaji / Rekap Harian Karyawan
         </h3>
 
@@ -686,7 +686,7 @@ function TabPayroll({ isDesktop }) {
               <label className={labelClass}>Catatan Slip Gaji</label>
               <textarea
                 rows={2}
-                className="w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 resize-none font-bold"
+                className="w-full bg-slate-550 dark:bg-white/[0.02] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500/50 resize-none font-bold"
                 value={payNotes}
                 onChange={e => setPayNotes(e.target.value)}
                 placeholder="Tulis rincian absen / lembur jika ada..."
@@ -696,7 +696,7 @@ function TabPayroll({ isDesktop }) {
             <button
               onClick={handleSubmit}
               disabled={recordPayroll.isPending}
-              className="w-full h-11 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-xl shadow-lg shadow-amber-600/30 transition-all mt-2 cursor-pointer flex items-center justify-center"
+              className="w-full h-11 bg-[#0F172A] hover:bg-slate-900 font-bold text-white rounded-xl shadow-lg shadow-slate-950/10 transition-all mt-2 cursor-pointer flex items-center justify-center"
             >
               {recordPayroll.isPending ? 'Menyimpan...' : 'Catat & Simpan Slip Gaji'}
             </button>
@@ -714,7 +714,7 @@ function TabPayroll({ isDesktop }) {
         <div className="flex flex-wrap gap-2 mb-3">
           <input
             type="month"
-            className="bg-card border border-border/60 rounded-xl px-3 h-10 text-xs font-bold text-foreground outline-none focus:border-amber-500 cursor-pointer"
+            className="bg-card border border-border/60 rounded-xl px-3 h-10 text-xs font-bold text-foreground outline-none focus:border-slate-500 cursor-pointer"
             value={filterMonth}
             onChange={e => setFilterMonth(e.target.value)}
           />
@@ -761,7 +761,7 @@ function TabPayroll({ isDesktop }) {
                           <span className={cn(
                             "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border",
                             isPending
-                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                              ? "bg-[#0F172A]/10 text-amber-400 border-[#0F172A]/20"
                               : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                           )}>
                             {isPending ? 'Pending' : 'Lunas'}
@@ -810,7 +810,7 @@ function TabPayroll({ isDesktop }) {
                     <span className={cn(
                       "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0",
                       isPending
-                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        ? "bg-[#0F172A]/10 text-amber-400 border-[#0F172A]/20"
                         : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                     )}>
                       {isPending ? 'Pending' : 'Lunas'}
@@ -834,7 +834,7 @@ function TabPayroll({ isDesktop }) {
             })}
             {filteredPayrolls.length === 0 && (
               <div className="bg-card border border-border/60 rounded-2xl p-8 text-center text-muted-foreground">
-                <DollarSign size={32} className="mx-auto mb-2 opacity-30 text-amber-500" />
+                <DollarSign size={32} className="mx-auto mb-2 opacity-30 text-[#0F172A]" />
                 <p className="text-xs font-bold text-foreground">Belum ada data payroll</p>
               </div>
             )}

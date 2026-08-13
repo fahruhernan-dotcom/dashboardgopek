@@ -186,7 +186,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
               onClick={() => setImportCsvOpen(true)}
               className="h-10 rounded-xl px-3 text-[10px] font-bold text-foreground bg-card border border-border/60 hover:bg-muted transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <FileSpreadsheet size={15} className="text-amber-500" />
+              <FileSpreadsheet size={15} className="text-[#0F172A]" />
               <span>Import CSV</span>
             </button>
             <button

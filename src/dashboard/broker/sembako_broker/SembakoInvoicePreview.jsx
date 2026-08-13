@@ -57,21 +57,21 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
             </p>
          </div>
          <div className="text-right space-y-0.5">
-            <h2 className="text-xl md:text-2xl font-black text-[#F59E0B] tracking-wide uppercase">
+            <h2 className="text-xl md:text-2xl font-black text-[#0F172A] tracking-wide uppercase">
               {isDelivery ? 'SURAT JALAN' : 'INVOICE'}
             </h2>
             <p className="text-xs text-slate-500">Ref: {invoiceNo}</p>
             <p className="text-xs text-slate-600 font-medium">Tgl: {formatDate(txnDate)}</p>
             {dueDate && (
-              <p className="text-xs text-[#F59E0B] font-bold">
+              <p className="text-xs text-[#0F172A] font-bold">
                 Jatuh Tempo: {formatDate(dueDate)}
               </p>
             )}
          </div>
       </div>
 
-      {/* Orange Divider */}
-      <div className="w-full h-[2px] bg-[#F59E0B] mb-4" />
+      {/* Slate Divider */}
+      <div className="w-full h-[2px] bg-[#0F172A] mb-4" />
 
       {/* Status Badge */}
       {!isDelivery && (
@@ -80,7 +80,7 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
             "px-3 py-1 rounded-lg border text-[11px] font-black tracking-wider uppercase",
             paymentStatus === 'lunas' && "bg-emerald-50 border-emerald-500 text-emerald-700",
             paymentStatus === 'sebagian' && "bg-blue-50 border-blue-500 text-blue-700",
-            paymentStatus === 'belum_lunas' && "bg-[#FFFBEB] border-[#F59E0B] text-[#D97706]"
+            paymentStatus === 'belum_lunas' && "bg-slate-50 border-slate-600 text-slate-700"
           )}>
             {paymentStatus === 'lunas' ? 'LUNAS' : paymentStatus === 'sebagian' ? 'SEBAGIAN DIBAYAR' : 'BELUM DIBAYAR'}
           </span>
@@ -91,7 +91,7 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
       <div className="grid grid-cols-2 gap-6 mb-5">
          {/* Seller */}
          <div className="space-y-0.5">
-            <p className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-wider">
+            <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">
               DARI (SELLER)
             </p>
             <p className="text-sm font-black text-slate-900 leading-snug">
@@ -104,7 +104,7 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
 
          {/* Buyer */}
          <div className="space-y-0.5">
-            <p className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-wider">
+            <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">
               KEPADA (BUYER)
             </p>
             <p className="text-sm font-black text-slate-900 leading-snug">
@@ -181,8 +181,8 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
                  <span className="font-black text-slate-900">{formatIDR(totalAmount)}</span>
               </div>
               
-              {/* Solid Orange Box */}
-              <div className="bg-[#F59E0B] text-white rounded-lg p-2.5 flex justify-between items-center shadow-sm">
+              {/* Solid Slate Box */}
+              <div className="bg-[#0F172A] text-white rounded-lg p-2.5 flex justify-between items-center shadow-sm">
                  <span className="text-xs font-black uppercase tracking-wide">
                    {isLunas ? 'TOTAL' : 'SISA TAGIHAN'}
                  </span>
@@ -198,7 +198,7 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
       {!isDelivery && validPayments.length > 0 && (
         <div className="mb-4 bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-1.5">
           <div className="flex justify-between items-center border-b border-slate-200 pb-1">
-            <p className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-wider">
+            <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">
               RIWAYAT PEMBAYARAN TOKO
             </p>
             <p className="text-[10px] font-black text-slate-700">
@@ -221,7 +221,7 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
 
       {/* Terbilang Box */}
       {!isDelivery && (
-        <div className="mb-4 bg-[#FFFBEB] rounded-xl p-3 border-l-4 border-[#F59E0B] space-y-0.5">
+        <div className="mb-4 bg-slate-50 rounded-xl p-3 border-l-4 border-[#0F172A] space-y-0.5">
            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
              TERBILANG
            </p>
@@ -233,8 +233,8 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
 
       {/* Info Pembayaran Box */}
       {!isDelivery && !isLunas && (
-        <div className="mb-4 bg-[#FFFBEB] rounded-xl p-3 border border-[#FCD34D] space-y-1">
-           <p className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-wider">
+        <div className="mb-4 bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-1">
+           <p className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">
              INFO PEMBAYARAN REKENING
            </p>
            <p className="text-xs text-slate-700 font-medium">

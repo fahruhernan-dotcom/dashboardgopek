@@ -4,8 +4,8 @@ import { formatIDR } from '@/lib/format'
 const COLOR_MAP = {
   red:   { bar: '#EF4444' },
   green: { bar: '#10B981' },
-  amber: { bar: '#F59E0B' },
-  default:{ bar: '#D97706' },
+  amber: { bar: '#334155' },
+  default:{ bar: '#334155' },
 }
 
 export function SembakoSummaryStrip({ items = [] }) {

@@ -122,7 +122,7 @@ function StokSaatIni({ products, allBatches = [], onTambah, onAdjust, onShowHist
                   <span style={{ fontSize: 13, color: '#6B7280', fontFamily: 'DM Sans' }}>
                     Jual: Rp {fmt(product.sell_price)}
                   </span>
-                  <span style={{ fontSize: 11, color: '#F59E0B', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', padding: '1px 8px', borderRadius: 8, fontFamily: 'DM Sans', fontWeight: 700 }}>
+                  <span style={{ fontSize: 11, color: '#475569', background: 'rgba(15,23,42,0.06)', border: '1px solid rgba(15,23,42,0.15)', padding: '1px 8px', borderRadius: 8, fontFamily: 'DM Sans', fontWeight: 700 }}>
                     Asset: Rp {fmt(productValuation)}
                   </span>
                 </div>
@@ -144,16 +144,16 @@ function StokSaatIni({ products, allBatches = [], onTambah, onAdjust, onShowHist
                 >
                   <div style={{ borderTop: `1px solid ${C.border}`, padding: '12px 14px' }}>
                     {/* Valuation Breakdown Strip */}
-                    <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 12, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ background: 'rgba(15,23,42,0.05)', border: '1px solid rgba(15,23,42,0.15)', borderRadius: 12, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                       <div>
-                        <div style={{ fontSize: 10, fontFamily: 'DM Sans', fontWeight: 800, color: '#FDBA74', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Penjelasan Nilai Stok (Modal Asset)</div>
+                        <div style={{ fontSize: 10, fontFamily: 'DM Sans', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Penjelasan Nilai Stok (Modal Asset)</div>
                         <div style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'DM Sans', marginTop: 2 }}>
                           Total {fmt(displayStock)} {product.unit} @ Avg Modal Rp {fmt(productAvgBuyPrice)}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'DM Sans', fontWeight: 600 }}>Total Nilai Asset</div>
-                        <div style={{ fontFamily: 'Sora', fontSize: 14, fontWeight: 800, color: '#F59E0B' }}>Rp {fmt(productValuation)}</div>
+                        <div style={{ fontFamily: 'Sora', fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Rp {fmt(productValuation)}</div>
                       </div>
                     </div>
 
@@ -183,13 +183,13 @@ function StokSaatIni({ products, allBatches = [], onTambah, onAdjust, onShowHist
                               <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>{fmt(batch.qty_sisa)} {product.unit}</div>
                                 <div style={{ fontSize: 11, color: TEXT_SEC, fontFamily: 'DM Sans' }}>@ Rp {fmt(batch.buy_price)}</div>
-                                <div style={{ fontSize: 11, color: '#F59E0B', fontFamily: 'DM Sans', fontWeight: 700, marginTop: 1 }}>
+                                <div style={{ fontSize: 11, color: '#475569', fontFamily: 'DM Sans', fontWeight: 700, marginTop: 1 }}>
                                   = Rp {fmt(batchValuation)}
                                 </div>
                               </div>
                               <button
                                 onClick={(e) => { e.stopPropagation(); onAdjust(batch, product) }}
-                                className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 hover:bg-orange-500 hover:text-white transition-all"
+                                className="w-8 h-8 rounded-lg bg-slate-500/10 flex items-center justify-center text-slate-700 hover:bg-slate-700 hover:text-white transition-all"
                               >
                                 <ArrowRightLeft size={14} />
                               </button>
@@ -273,11 +273,11 @@ function RiwayatMasuk({ batches = [], isLoading, isError, error, refetch }) {
         if (item.is_retur) {
           const isDone = item.status === 'completed'
           return (
-            <div key={item.id} style={{ marginBottom: 8, background: 'rgba(245,158,11,0.05)', border: `1px solid rgba(245,158,11,0.25)`, borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={item.id} style={{ marginBottom: 8, background: 'rgba(15,23,42,0.04)', border: `1px solid rgba(15,23,42,0.12)`, borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                   <span style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: C.text }}>{item.product_name}</span>
-                  <span style={{ fontSize: 10, background: 'rgba(245,158,11,0.2)', color: '#F59E0B', padding: '1px 8px', borderRadius: 20, fontFamily: 'DM Sans', fontWeight: 800 }}>RETUR TOKO</span>
+                  <span style={{ fontSize: 10, background: 'rgba(15,23,42,0.08)', color: '#475569', padding: '1px 8px', borderRadius: 20, fontFamily: 'DM Sans', fontWeight: 800 }}>RETUR TOKO</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'DM Sans', fontWeight: 600 }}>Toko: {item.party_name}</div>
                 <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'DM Sans', marginTop: 2 }}>
@@ -285,7 +285,7 @@ function RiwayatMasuk({ batches = [], isLoading, isError, error, refetch }) {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>
+                <div style={{ fontFamily: 'Sora', fontSize: 13, fontWeight: 700, color: '#475569' }}>
                   +{fmt(item.qty_masuk)} {item.unit}
                 </div>
                 <div style={{ fontSize: 11, color: isDone ? '#34D399' : '#F59E0B', fontFamily: 'DM Sans', fontWeight: 700, marginTop: 2 }}>
@@ -353,12 +353,12 @@ function ReturGudangTab() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-foreground">{r.product_name}</span>
-                <span className="text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-amber-400 bg-[#0F172A]/15 border border-[#0F172A]/30 px-2 py-0.5 rounded-full">
                   +{r.quantity} {r.unit}
                 </span>
                 <span className={cn(
                   "text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider",
-                  isDone ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                  isDone ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-[#0F172A]/15 text-amber-400 border border-[#0F172A]/30"
                 )}>
                   {isDone ? "✓ Sudah Diterima di Gudang" : "⏳ Menunggu Validasi Gudang"}
                 </span>
@@ -681,12 +681,12 @@ export default function Gudang() {
                 onClick={() => setImportCsvOpen(true)}
                 className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/60 hover:bg-muted text-foreground transition-all cursor-pointer shrink-0"
               >
-                <FileSpreadsheet size={15} className="text-amber-500" />
+                <FileSpreadsheet size={15} className="text-slate-600" />
                 <span>Import CSV</span>
               </button>
               <button
                 onClick={() => openTambah()}
-                className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
+                className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white transition-all cursor-pointer shadow-lg shadow-slate-900/10 active:scale-95 shrink-0"
               >
                 <Plus size={16} />
                 <span>Stok Masuk</span>
@@ -706,7 +706,7 @@ export default function Gudang() {
               className={cn(
                 'py-2.5 px-4 font-bold text-xs border-b-2 transition-all cursor-pointer whitespace-nowrap select-none',
                 activeTab === i
-                  ? 'border-amber-500 text-amber-500'
+                  ? 'border-[#0F172A] text-[#0F172A] dark:border-white dark:text-white'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               )}
             >
@@ -1003,7 +1003,7 @@ function AdjustStokSheet({ batch, product, onClose }) {
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
             <p className="text-[10px] font-black text-[#4B6478] uppercase tracking-widest">{product.product_name}</p>
             <p className="text-sm font-black text-white uppercase tracking-tight">Batch: {batch?.batch_code || 'Batch Utama'}</p>
-            <p className="text-xs font-bold text-orange-400">Stok Digital Saat Ini: {batch?.qty_sisa ?? product.current_stock ?? 0} {product.unit}</p>
+            <p className="text-xs font-bold text-slate-400">Stok Digital Saat Ini: {batch?.qty_sisa ?? product.current_stock ?? 0} {product.unit}</p>
           </div>
 
           <SField label="Aksi">
@@ -1019,7 +1019,7 @@ function AdjustStokSheet({ batch, product, onClose }) {
                   onClick={() => setReason(opt.id)}
                   className={cn(
                     "h-12 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
-                    reason === opt.id ? "border-orange-500 bg-orange-500/20 text-white shadow-lg" : "border-white/5 bg-white/5 text-[#4B6478]"
+                    reason === opt.id ? "border-slate-400 bg-slate-500/20 text-white shadow-lg" : "border-white/5 bg-white/5 text-[#4B6478]"
                   )}
                 >
                   {opt.label}
@@ -1049,9 +1049,9 @@ function AdjustStokSheet({ batch, product, onClose }) {
             const hasValue = qtyChange !== '' && !isNaN(Number(qtyChange)) && Number(qtyChange) !== 0
 
             return (
-              <div className="p-3.5 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-500/10 border border-slate-500/30 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black text-orange-400 uppercase tracking-wider">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     {hasValue ? 'Hasil Stok Setelah Adjust' : 'Estimasi Stok Setelah Adjust'}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
@@ -1060,7 +1060,7 @@ function AdjustStokSheet({ batch, product, onClose }) {
                     </span>
                     {hasValue && (
                       <>
-                        <span className="text-xs font-black text-orange-500">→</span>
+                        <span className="text-xs font-black text-slate-500">→</span>
                         <span className="text-sm font-black text-white font-display">
                           {projectedStock.toFixed(2).replace(/\.00$/, '')} {product.unit}
                         </span>
@@ -1090,7 +1090,7 @@ function AdjustStokSheet({ batch, product, onClose }) {
             <button
               type="submit"
               disabled={isLoading || !qtyChange}
-              className="w-full h-14 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-orange-950/40 transition-all active:scale-95 disabled:opacity-50"
+              className="w-full h-14 rounded-2xl bg-[#0F172A] hover:bg-slate-900 text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-950/40 transition-all active:scale-95 disabled:opacity-50"
             >
               {isLoading ? 'MEMPROSES...' : 'SIMPAN PENYESUAIAN'}
             </button>

@@ -240,7 +240,7 @@ export default function SembakoRetur() {
           actionButton={
             <button
               onClick={() => setSheetOpen(true)}
-              className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
+              className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white transition-all cursor-pointer shadow-lg shadow-slate-950/10 active:scale-95 shrink-0"
             >
               <Plus size={16} />
               <span>Catat Retur Baru</span>
@@ -254,7 +254,7 @@ export default function SembakoRetur() {
         <div className="px-4 sm:px-6 pt-2">
           {filteredReturns.length === 0 ? (
             <div className="bg-card border border-border/60 rounded-2xl p-12 text-center text-muted-foreground">
-              <RotateCcw size={36} className="mx-auto mb-3 opacity-30 text-amber-500" />
+              <RotateCcw size={36} className="mx-auto mb-3 opacity-30 text-[#0F172A]" />
               <p className="text-base font-bold text-foreground">Belum ada riwayat retur produk</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">Klik "+ Catat Retur Baru" untuk menambah klaim produk berdasarkan transaksi nota toko atau ke supplier.</p>
             </div>
@@ -269,7 +269,7 @@ export default function SembakoRetur() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => setSelectedReturnDetail(r)}
-                    className="bg-card border border-border/60 hover:border-amber-500/30 rounded-2xl p-4 sm:p-5 transition-all shadow-sm cursor-pointer"
+                    className="bg-card border border-border/60 hover:border-slate-500/30 rounded-2xl p-4 sm:p-5 transition-all shadow-sm cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="flex flex-wrap items-center gap-2">
@@ -278,7 +278,7 @@ export default function SembakoRetur() {
                           {rType === 'sale_return' ? 'Retur dari Toko' : 'Retur ke Pabrik'}
                         </span>
                         {invNumber && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#0F172A]/10 text-amber-400 border border-[#0F172A]/20 flex items-center gap-1">
                             <FileText size={11} /> {invNumber}
                           </span>
                         )}
@@ -293,7 +293,7 @@ export default function SembakoRetur() {
                           }}
                           className={`text-xs font-bold px-3 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${r.status === 'completed'
                               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                              : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
+                              : 'bg-[#0F172A]/10 border-[#0F172A]/30 text-amber-400 hover:bg-slate-900/20'
                             }`}
                         >
                           {r.status === 'completed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
@@ -308,7 +308,7 @@ export default function SembakoRetur() {
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                           <Store size={13} className="text-muted-foreground/60" /> <span className="font-semibold text-foreground">{r.party_name}</span>
                           <span>·</span>
-                          <span className="text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">{r.quantity} {r.unit}</span>
+                          <span className="text-[#0F172A] font-bold bg-[#0F172A]/10 px-2 py-0.5 rounded-md border border-[#0F172A]/20">{r.quantity} {r.unit}</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1.5">
                           Alasan: <span className="text-foreground/80 italic">{r.reason}</span> · Action: <span className="text-amber-400 font-semibold">{r.action === 'fifo_stock' ? 'Masuk Stok (FIFO)' : 'Afkir / Loss'}</span>
@@ -397,11 +397,11 @@ export default function SembakoRetur() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card border-t-2 border-amber-500 sm:border sm:border-border rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto"
+              className="bg-card border-t-2 border-[#0F172A] sm:border sm:border-border rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
                 <div className="flex items-center gap-2">
-                  <RotateCcw className="text-amber-500" size={20} />
+                  <RotateCcw className="text-[#0F172A]" size={20} />
                   <h2 className="text-base font-bold text-foreground">Catat Retur Produk</h2>
                 </div>
                 <button onClick={() => setSheetOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -417,7 +417,7 @@ export default function SembakoRetur() {
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, type: 'sale_return' })}
-                      className={`p-3 rounded-xl border font-bold text-left transition-all ${form.type === 'sale_return' ? 'bg-amber-500/15 border-amber-500 text-amber-400' : 'bg-background border-border text-muted-foreground'
+                      className={`p-3 rounded-xl border font-bold text-left transition-all ${form.type === 'sale_return' ? 'bg-[#0F172A]/15 border-[#0F172A] text-amber-400' : 'bg-background border-border text-muted-foreground'
                         }`}
                     >
                       <ArrowDownLeft size={16} className="mb-1" />
@@ -455,7 +455,7 @@ export default function SembakoRetur() {
                         type="button"
                         onClick={() => setForm({ ...form, selection_mode: 'manual', sale_id: '' })}
                         className={`p-2.5 rounded-xl border font-bold text-left flex items-center gap-2 transition-all ${form.selection_mode === 'manual'
-                            ? 'bg-amber-500/15 border-amber-500 text-amber-400'
+                            ? 'bg-[#0F172A]/15 border-[#0F172A] text-amber-400'
                             : 'bg-background border-border text-muted-foreground'
                           }`}
                       >
@@ -544,7 +544,7 @@ export default function SembakoRetur() {
                           value={form.party_name}
                           onChange={e => setForm({ ...form, party_name: e.target.value })}
                           placeholder={form.type === 'sale_return' ? 'Ketik Nama Toko / Pelanggan Baru...' : 'Ketik Nama Pabrik / Supplier Baru...'}
-                          className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 mt-2"
+                          className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-slate-500 mt-2"
                         />
                       )}
                     </div>
@@ -590,18 +590,18 @@ export default function SembakoRetur() {
                           setForm({ ...form, quantity: val.replace(',', '.') })
                         }
                       }}
-                      className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-amber-500 font-bold"
+                      className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-slate-500 font-bold"
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground font-bold mb-1.5 flex items-center justify-between">
                       <span>Satuan</span>
-                      {!!form.product_id && <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1">🔒 Terkunci dari Transaksi</span>}
+                      {!!form.product_id && <span className="text-[10px] text-[#0F172A] font-bold flex items-center gap-1">🔒 Terkunci dari Transaksi</span>}
                     </label>
                     {form.product_id ? (
-                      <div className="w-full bg-background/50 border border-amber-500/30 rounded-xl px-3.5 py-2.5 text-xs text-amber-400 font-bold flex items-center justify-between cursor-not-allowed select-none">
+                      <div className="w-full bg-background/50 border border-[#0F172A]/30 rounded-xl px-3.5 py-2.5 text-xs text-amber-400 font-bold flex items-center justify-between cursor-not-allowed select-none">
                         <span className="capitalize">{(form.unit || 'slop')}</span>
-                        <span className="text-[10px] bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full text-amber-400 font-bold">🔒 Lock</span>
+                        <span className="text-[10px] bg-[#0F172A]/15 border border-[#0F172A]/30 px-2 py-0.5 rounded-full text-amber-400 font-bold">🔒 Lock</span>
                       </div>
                     ) : (
                       <CustomSelect
@@ -678,7 +678,7 @@ export default function SembakoRetur() {
                 <button
                   type="submit"
                   disabled={createReturnMut.isPending}
-                  className="w-full h-12 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-xl shadow-lg shadow-amber-600/30 transition-all mt-2 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-12 bg-[#0F172A] hover:bg-slate-900 font-bold text-white rounded-xl shadow-lg shadow-slate-950/10 transition-all mt-2 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {createReturnMut.isPending ? (
                     <>
@@ -711,11 +711,11 @@ export default function SembakoRetur() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               onClick={e => e.stopPropagation()}
-              className="bg-card border-t-2 border-amber-500 sm:border sm:border-border rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto space-y-4 text-left"
+              className="bg-card border-t-2 border-[#0F172A] sm:border sm:border-border rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto space-y-4 text-left"
             >
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <FileText className="text-amber-500" size={20} />
+                  <FileText className="text-[#0F172A]" size={20} />
                   <h2 className="text-base font-bold text-foreground">Detail Retur Produk</h2>
                 </div>
                 <button onClick={() => setSelectedReturnDetail(null)} className="text-muted-foreground hover:text-foreground">
@@ -737,7 +737,7 @@ export default function SembakoRetur() {
                   }}
                   className={`font-bold px-3 h-8 rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${selectedReturnDetail.status === 'completed'
                       ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                      : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
+                      : 'bg-[#0F172A]/10 border-[#0F172A]/30 text-amber-400 hover:bg-slate-900/20'
                     }`}
                 >
                   {selectedReturnDetail.status === 'completed' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
@@ -771,7 +771,7 @@ export default function SembakoRetur() {
                   </div>
                   <div>
                     <span className="text-muted-foreground font-bold block mb-1">Jumlah</span>
-                    <span className="text-amber-500 font-extrabold bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/20">
+                    <span className="text-[#0F172A] font-extrabold bg-[#0F172A]/10 px-2.5 py-0.5 rounded-md border border-[#0F172A]/20">
                       {selectedReturnDetail.quantity} {selectedReturnDetail.unit}
                     </span>
                   </div>
@@ -791,7 +791,7 @@ export default function SembakoRetur() {
                 {selectedReturnDetail.sembako_sales?.invoice_number && (
                   <div className="border-t border-border/40 pt-3">
                     <span className="text-muted-foreground font-bold block mb-1">Nota Penjualan Terhubung</span>
-                    <span className="inline-flex items-center gap-1.5 font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span className="inline-flex items-center gap-1.5 font-bold px-2 py-0.5 rounded-md bg-[#0F172A]/10 text-amber-400 border border-[#0F172A]/20">
                       <FileText size={11} /> {selectedReturnDetail.sembako_sales.invoice_number}
                     </span>
                   </div>
@@ -858,12 +858,12 @@ function CustomSelect({ value, onChange, options, placeholder }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`w-full bg-background border ${open ? 'border-amber-500 ring-1 ring-amber-500/50' : 'border-border'} rounded-xl px-3.5 py-2.5 text-left text-xs text-foreground flex items-center justify-between transition-all cursor-pointer outline-none`}
+        className={`w-full bg-background border ${open ? 'border-[#0F172A] ring-1 ring-slate-500/30' : 'border-border'} rounded-xl px-3.5 py-2.5 text-left text-xs text-foreground flex items-center justify-between transition-all cursor-pointer outline-none`}
       >
         <span className={`truncate ${selected && selected.value !== '' ? 'text-foreground font-bold' : 'text-muted-foreground font-normal'}`}>
           {selected && selected.value !== '' ? selected.label : placeholder || 'Pilih...'}
         </span>
-        <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 flex-shrink-0 ml-2 ${open ? 'rotate-180 text-amber-500' : ''}`} />
+        <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 flex-shrink-0 ml-2 ${open ? 'rotate-180 text-[#0F172A]' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -886,12 +886,12 @@ function CustomSelect({ value, onChange, options, placeholder }) {
                   type="button"
                   onClick={() => { onChange(opt.value); setOpen(false) }}
                   className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center justify-between transition-colors cursor-pointer ${value === opt.value
-                      ? 'bg-amber-500/15 text-amber-400 font-bold'
+                      ? 'bg-[#0F172A]/15 text-amber-400 font-bold'
                       : 'text-muted-foreground hover:bg-background hover:text-foreground font-medium'
                     }`}
                 >
                   <span className="truncate">{opt.label}</span>
-                  {value === opt.value && <Check size={14} className="text-amber-500 flex-shrink-0 ml-2" />}
+                  {value === opt.value && <Check size={14} className="text-[#0F172A] flex-shrink-0 ml-2" />}
                 </button>
               ))}
             </motion.div>

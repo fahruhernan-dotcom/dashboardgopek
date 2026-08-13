@@ -433,7 +433,7 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
     ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
     : hasDebt
       ? 'bg-red-500/10 border-red-500/40 text-red-500'
-      : 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+      : 'bg-[#0F172A]/10 border-[#0F172A]/40 text-amber-400'
 
   const paymentLabel = isLunas ? 'LUNAS' : isSebagian ? 'SEBAGIAN' : 'BELUM LUNAS'
 

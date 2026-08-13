@@ -698,12 +698,12 @@ export default function Produk() {
                 onClick={() => setImportCsvOpen(true)}
                 className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-muted hover:bg-muted/80 text-foreground border border-border transition-all cursor-pointer shrink-0"
               >
-                <FileSpreadsheet size={15} className="text-amber-500" />
+                <FileSpreadsheet size={15} className="text-[#0F172A]" />
                 <span>Import CSV</span>
               </button>
               <button
                 onClick={() => setSheet('new')}
-                className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 shrink-0"
+                className="flex items-center gap-2 px-4 h-10 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white transition-all cursor-pointer shadow-lg shadow-slate-950/10 active:scale-95 shrink-0"
               >
                 <Plus size={16} />
                 <span>Tambah Produk</span>
@@ -720,7 +720,7 @@ export default function Produk() {
             onClick={() => setShowInactive(v => !v)}
             className="border-0 bg-transparent cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-2 text-xs font-medium transition-colors"
           >
-            {showInactive ? <ToggleRight size={22} className="text-amber-500" /> : <ToggleLeft size={22} className="text-muted-foreground" />}
+            {showInactive ? <ToggleRight size={22} className="text-[#0F172A]" /> : <ToggleLeft size={22} className="text-muted-foreground" />}
             <span>Tampilkan produk non-aktif</span>
           </button>
         </div>
@@ -740,7 +740,7 @@ export default function Produk() {
                 {!search && (
                   <button
                     onClick={() => setSheet('new')}
-                    className="inline-flex items-center gap-2 px-5 h-10 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all shadow-lg shadow-amber-600/20"
+                    className="inline-flex items-center gap-2 px-5 h-10 rounded-xl bg-[#0F172A] hover:bg-slate-900 text-white text-xs font-bold transition-all shadow-lg shadow-slate-950/10"
                   >
                     <Plus size={15} /> Tambah Produk Pertama
                   </button>

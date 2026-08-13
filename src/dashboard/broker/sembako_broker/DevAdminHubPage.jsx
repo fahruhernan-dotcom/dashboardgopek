@@ -301,7 +301,7 @@ export default function DevAdminHubPage() {
                       value={logSearch}
                       onChange={e => setLogSearch(e.target.value)}
                       placeholder="Cari log kesalahan..."
-                      className="bg-[#111C24] border-white/10 pl-10 h-11 text-xs font-bold text-white rounded-xl focus:border-[#0F172A]"
+                      className="bg-[#111C24] border-white/10 pl-10 h-11 text-xs font-bold text-white rounded-xl focus:border-slate-500"
                     />
                   </div>
 
@@ -352,7 +352,7 @@ export default function DevAdminHubPage() {
                           <span className={cn(
                             "px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase",
                             log.level === 'ERROR' && "bg-rose-500/20 text-rose-400 border border-rose-500/30",
-                            log.level === 'WARN' && "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+                            log.level === 'WARN' && "bg-[#0F172A]/20 text-amber-400 border border-[#0F172A]/30",
                             log.level === 'INFO' && "bg-blue-500/20 text-blue-400 border border-blue-500/30"
                           )}>
                             {log.level}
