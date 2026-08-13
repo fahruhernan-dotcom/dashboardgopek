@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useLocation, useNavigate, useOutletContext, Link } from 'react-router-dom'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
 import {
@@ -22,7 +22,9 @@ import { useTransactionQuota } from '@/lib/hooks/useTransactionQuota'
 
 export default function SembakoPenjualan() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
   const location = useLocation()
+  const navigate = useNavigate()
   const [openWizard, setOpenWizard] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     return params.get('action') === 'new'

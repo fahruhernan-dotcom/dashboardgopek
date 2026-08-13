@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Plus, Search, X, ChevronDown, ToggleLeft, ToggleRight, Trash2, Package, FileSpreadsheet } from 'lucide-react'
 import ImportCsvModal from '@/components/ui/ImportCsvModal'
 import { motion, AnimatePresence } from 'framer-motion'
