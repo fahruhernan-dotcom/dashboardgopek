@@ -29,3 +29,10 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Secrets and Service Accounts
+*-firebase-adminsdk-*.json
+*service-account*.json
+*.pem
+*.key
+

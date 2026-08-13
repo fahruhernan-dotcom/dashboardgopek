@@ -50,6 +50,21 @@ const TYPE_CONFIG = {
     bg: 'rgba(139, 92, 246, 0.15)',
     color: '#8B5CF6',
   },
+  RECEIVABLES_DUE: {
+    Icon: AlertCircle,
+    bg: 'rgba(239, 68, 68, 0.15)',
+    color: '#EF4444',
+  },
+  RETURN_RECEIVED: {
+    Icon: ShoppingBag,
+    bg: 'rgba(244, 63, 94, 0.15)',
+    color: '#F43F5E',
+  },
+  LICENSE_EXPIRING: {
+    Icon: Clock,
+    bg: 'rgba(245, 158, 11, 0.15)',
+    color: '#F59E0B',
+  },
   SYSTEM_ALERT: {
     Icon: Bell,
     bg: 'rgba(99, 102, 241, 0.15)',

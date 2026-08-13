@@ -33,7 +33,25 @@ export async function initPushNotifications({ tenantId, userId, onNavigate }) {
       return { supported: true, granted: false, reason: 'permission_denied' }
     }
 
-    // 2. Daftarkan perangkat ke FCM
+    // 2. Buat Notification Channels untuk Android (High Priority & Kasir)
+    if (Capacitor.getPlatform() === 'android') {
+      try {
+        await PushNotifications.createChannel({
+          id: 'gopek_main_channel',
+          name: 'Transaksi & Pesanan Toko Gopek',
+          description: 'Notifikasi pesanan baru, pembayaran masuk, piutang, dan stok',
+          importance: 5, // High priority (heads-up notification)
+          visibility: 1,
+          vibration: true,
+          lights: true,
+          lightColor: '#10B981',
+        })
+      } catch (channelErr) {
+        console.warn('[PushNotification] Error createChannel:', channelErr)
+      }
+    }
+
+    // 3. Daftarkan perangkat ke FCM
     await PushNotifications.register()
 
     // 3. Listener: Sukses mendapatkan token FCM
