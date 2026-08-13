@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { useTheme, THEME_PRESETS } from '@/lib/hooks/useTheme'
 import { useLanguage } from '@/lib/i18n/useLanguage'
 import { useBrowserNotifications } from '@/lib/hooks/useBrowserNotifications'
+import { useNotificationPreferences } from '@/lib/hooks/useNotifications'
 import { T, PLAN_INFO, PERMISSION_MATRIX, APP_VERSION, cardStyle } from '../constants'
 import { Section, SectionLabel, InfoRow } from './Primitives'
 
@@ -674,6 +675,7 @@ export function PreferencesCard() {
 
   // ── Notifikasi ──
   const notif = useBrowserNotifications()
+  const { preferences, updatePreferences } = useNotificationPreferences()
   const [notifOpen, setNotifOpen] = useState(false)
 
   const permStatusColor = notif.permission === 'granted'
@@ -853,12 +855,15 @@ export function PreferencesCard() {
                     fontSize: 10, fontWeight: 700, letterSpacing: 0.4,
                     textTransform: 'uppercase', color: T.textMute, marginBottom: 8,
                   }}>
-                    {t('notif_categories_title')}
+                    Kanal Notifikasi Bisnis
                   </div>
                   {[
-                    { key: 'billing',  label: t('notif_cat_billing'),  desc: t('notif_cat_billing_desc')  },
-                    { key: 'business', label: t('notif_cat_business'), desc: t('notif_cat_business_desc') },
-                    { key: 'system',   label: t('notif_cat_system'),   desc: t('notif_cat_system_desc')   },
+                    { key: 'notify_new_sale', label: 'Pesanan Baru Masuk', desc: 'Notifikasi saat ada nota/pesanan baru dibuat' },
+                    { key: 'notify_payment_received', label: 'Pembayaran Diterima', desc: 'Notifikasi saat ada pembayaran nota lunas/parsial' },
+                    { key: 'notify_low_stock', label: 'Peringatan Stok Menipis', desc: 'Notifikasi saat stok produk mencapai batas minimum' },
+                    { key: 'notify_sale_status_changed', label: 'Perubahan Status Nota', desc: 'Notifikasi saat status pesanan berubah' },
+                    { key: 'notify_delivery', label: 'Pengiriman & Surat Jalan', desc: 'Notifikasi jadwal dan penyelesaian pengiriman barang' },
+                    { key: 'notify_system_alert', label: 'Pemberitahuan Sistem', desc: 'Notifikasi jatuh tempo piutang & masa aktif' },
                   ].map((cat, i, arr) => (
                     <div
                       key={cat.key}
@@ -873,8 +878,8 @@ export function PreferencesCard() {
                         <div style={{ fontSize: 10, color: T.textDim, marginTop: 1 }}>{cat.desc}</div>
                       </div>
                       <Toggle
-                        on={notif.categories[cat.key]}
-                        onChange={v => notif.setCategory(cat.key, v)}
+                        on={preferences?.[cat.key] ?? true}
+                        onChange={v => updatePreferences({ [cat.key]: v })}
                       />
                     </div>
                   ))}

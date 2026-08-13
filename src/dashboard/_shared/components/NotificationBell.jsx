@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Truck,
   Package,
+  Wallet,
   TrendingUp,
   Clock,
   ShoppingBag,
@@ -23,6 +24,38 @@ import { formatRelative } from '@/lib/format'
 // ─── Type → icon/color map ────────────────────────────────────────────────────
 
 const TYPE_CONFIG = {
+  // Sembako Gopek types
+  NEW_SALE: {
+    Icon: ShoppingBag,
+    bg: 'rgba(16, 185, 129, 0.15)',
+    color: '#10B981',
+  },
+  PAYMENT_RECEIVED: {
+    Icon: Wallet,
+    bg: 'rgba(5, 150, 105, 0.15)',
+    color: '#059669',
+  },
+  LOW_STOCK: {
+    Icon: AlertCircle,
+    bg: 'rgba(245,158,11,0.15)',
+    color: '#F59E0B',
+  },
+  SALE_STATUS_CHANGED: {
+    Icon: TrendingUp,
+    bg: 'rgba(59, 130, 246, 0.15)',
+    color: '#3B82F6',
+  },
+  DELIVERY_REMINDER: {
+    Icon: Truck,
+    bg: 'rgba(139, 92, 246, 0.15)',
+    color: '#8B5CF6',
+  },
+  SYSTEM_ALERT: {
+    Icon: Bell,
+    bg: 'rgba(99, 102, 241, 0.15)',
+    color: '#6366F1',
+  },
+  // Legacy / existing types
   piutang_jatuh_tempo: {
     Icon: AlertCircle,
     bg: 'rgba(248,113,113,0.12)',
@@ -139,8 +172,9 @@ export default function NotificationBell() {
 
   const handleItemClick = async (notif) => {
     await markAsRead(notif.id)
-    if (notif.action_url) {
-      navigate(notif.action_url, { state: { metadata: notif.metadata } })
+    const targetUrl = notif?.data?.route || notif?.data?.url || notif?.action_url
+    if (targetUrl) {
+      navigate(targetUrl, { state: { metadata: notif.metadata || notif.data } })
     }
     setIsOpen(false)
   }

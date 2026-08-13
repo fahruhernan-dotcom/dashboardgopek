@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { queryClient } from './lib/queryClient'
@@ -18,6 +18,7 @@ import { useForceDarkMode } from './lib/hooks/useForceDarkMode'
 import { getSubscriptionStatus } from './lib/subscriptionUtils'
 import LockedServerPage from './pages/LockedServerPage'
 import LicenseBanner from './components/license/LicenseBanner'
+import { initPushNotifications } from './lib/services/pushNotificationService'
 
 const SuperadminDashboard = React.lazy(() => import('./dashboard/superadmin/SuperadminDashboardPage'))
 
@@ -158,6 +159,18 @@ function SembakoLayout({ children }) {
 
 function AppContentLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, tenant } = useAuth()
+
+  useEffect(() => {
+    if (user?.id && tenant?.id) {
+      initPushNotifications({
+        tenantId: tenant.id,
+        userId: user.id,
+        onNavigate: (route) => navigate(route),
+      })
+    }
+  }, [user?.id, tenant?.id, navigate])
 
   return (
     <ErrorBoundary key={location.key}>
