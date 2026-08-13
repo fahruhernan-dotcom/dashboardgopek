@@ -447,7 +447,7 @@ export function RokokUnitCalculator({ onApply, targetUnit = 'slop', style }) {
     <div style={{
       border: '1px solid var(--border-soft)',
       borderRadius: '12px',
-      background: 'rgba(217, 119, 6, 0.05)', // Amber light
+      background: 'rgba(15, 23, 42, 0.04)',
       padding: '10px 12px',
       marginTop: '8px',
       boxSizing: 'border-box',
@@ -465,7 +465,7 @@ export function RokokUnitCalculator({ onApply, targetUnit = 'slop', style }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          color: '#D97706',
+          color: '#0F172A',
           fontFamily: 'DM Sans',
           fontSize: '12px',
           fontWeight: 700,
@@ -477,7 +477,7 @@ export function RokokUnitCalculator({ onApply, targetUnit = 'slop', style }) {
           <span>📦</span>
           <span>Kalkulator Ukuran Rokok ({targetUnit})</span>
         </div>
-        <ChevronDown size={14} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#D97706' }} />
+        <ChevronDown size={14} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#0F172A' }} />
       </button>
 
       {isOpen && (
@@ -604,7 +604,7 @@ export function RokokUnitCalculator({ onApply, targetUnit = 'slop', style }) {
                 onClick={handleApply}
                 disabled={totalSlop <= 0}
                 style={{
-                  background: '#D97706',
+                  background: '#0F172A',
                   border: 'none',
                   borderRadius: '6px',
                   padding: '4px 10px',

@@ -698,13 +698,13 @@ function CashFlowStatement({ summary: s }) {
 
       {/* Warning Known Limitation */}
       <div style={{ 
-        background: 'rgba(217,119,6,0.06)', 
-        border: '1px solid rgba(217,119,6,0.15)', 
+        background: 'rgba(15,23,42,0.05)', 
+        border: '1px solid rgba(15,23,42,0.12)', 
         borderRadius: '8px', 
         padding: '10px 12px', 
         marginBottom: '16px',
         fontSize: '10px',
-        color: '#D97706',
+        color: '#475569',
         lineHeight: '1.4'
       }}>
         <strong>💡 Batasan Sistem:</strong> Saldo Kas Awal dihitung berdasarkan riwayat transaksi yang tercatat di sistem aplikasi dan belum memperhitungkan saldo kas awal fisik atau penyesuaian manual luar sistem.

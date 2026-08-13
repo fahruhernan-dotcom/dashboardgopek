@@ -240,7 +240,7 @@ export function MobileBeranda({
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             style={{
-              background: 'rgba(217,119,6,0.06)', border: `1px solid ${MC.border}`,
+              background: 'rgba(15,23,42,0.06)', border: `1px solid ${MC.border}`,
               borderRadius: '14px', padding: '14px',
             }}
           >
@@ -248,7 +248,7 @@ export function MobileBeranda({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <AlertTriangle size={14} color={MC.amber} />
                 <span style={{ fontSize: '10px', fontWeight: 800, color: MC.amber, letterSpacing: '0.1em' }}>STOK MENIPIS</span>
-                <span style={{ background: 'rgba(217,119,6,0.15)', color: MC.amber, fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '5px' }}>{lowStock.length}</span>
+                <span style={{ background: 'rgba(15,23,42,0.1)', color: MC.amber, fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '5px' }}>{lowStock.length}</span>
               </div>
               <button
                 onClick={() => navigate(`${brokerBase}/gudang`)}

@@ -1057,7 +1057,7 @@ export default function UpgradePlan() {
         "w-full py-4 rounded-2xl font-display font-black text-[15px] transition-all disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#06090F]",
         selectedPlan === 'pro'
           ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_4px_28px_rgba(16,185,129,0.2)] focus:ring-emerald-500"
-          : "bg-amber-600 hover:bg-amber-500 text-white shadow-[0_4px_28px_rgba(217,119,6,0.2)] focus:ring-amber-500"
+          : "bg-amber-600 hover:bg-amber-500 text-white shadow-[0_4px_28px_rgba(15,23,42,0.25)] focus:ring-amber-500"
       )}
     >
       {redirecting ? (

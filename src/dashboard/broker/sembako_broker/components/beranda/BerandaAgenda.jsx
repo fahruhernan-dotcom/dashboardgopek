@@ -49,7 +49,7 @@ function CalendarHeatmap({ currentMonth, selectedDate, setSelectedDate, piutangD
           return (
             <button key={i} onClick={() => setSelectedDate(day)} style={{
               aspectRatio: '1', borderRadius: '8px', border: 'none', cursor: 'pointer',
-              background: isSelected ? MC.accent : isToday ? 'rgba(217,119,6,0.12)' : 'transparent',
+              background: isSelected ? MC.accent : isToday ? 'rgba(15,23,42,0.08)' : 'transparent',
               color: isSelected ? '#fff' : inMonth ? MC.text : MC.muted,
               fontSize: '11px', fontWeight: isSelected || isToday ? 800 : 400,
               opacity: inMonth ? 1 : 0.3,
