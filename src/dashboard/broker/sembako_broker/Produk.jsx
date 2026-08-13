@@ -42,7 +42,7 @@ const CATEGORIES = [
   'Cerutu & Lainnya',
 ]
 
-const UNITS = ['slop', 'pres', 'bal', 'karton', 'pack', 'bungkus', 'pcs', 'dus']
+const UNITS = ['slop', 'pres', 'bal', 'karton', 'pack', 'bungkus', 'pcs', 'dus', 'bal kecil', 'bal besar', 'karton bal kecil', 'karton bal besar']
 
 const fmt = (n) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(Number(n) || 0))
 
@@ -175,8 +175,8 @@ function ProductSheet({ product, onClose }) {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 20px 14px', borderBottom: '1px solid var(--border-soft)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(234,88,12,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(234,88,12,0.3)' }}>
-              <Package size={18} color="#EA580C" />
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(15,23,42,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(15,23,42,0.3)' }}>
+              <Package size={18} color="#0F172A" />
             </div>
             <div>
               <h2 style={{ fontFamily: 'Sora', fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -191,10 +191,10 @@ function ProductSheet({ product, onClose }) {
         </div>
 
         {/* FIFO Info Banner */}
-        <div style={{ margin: '14px 20px 0', background: 'rgba(234,88,12,0.08)', border: '1px solid rgba(234,88,12,0.2)', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ margin: '14px 20px 0', background: 'rgba(15,23,42,0.08)', border: '1px solid rgba(15,23,42,0.15)', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 14 }}>⚡</span>
-          <p style={{ fontSize: 11, color: '#FB923C', fontWeight: 600, margin: 0, lineHeight: 1.4 }}>
-            <strong style={{ color: '#FFF' }}>Metode Stok FIFO (First-In, First-Out)</strong>: Stok tertua dipotong otomatis saat penjualan untuk perhitungan HPP & margin yang akurat.
+          <p style={{ fontSize: 11, color: '#475569', fontWeight: 600, margin: 0, lineHeight: 1.4 }}>
+            <strong style={{ color: '#0F172A' }}>Metode Stok FIFO (First-In, First-Out)</strong>: Stok tertua dipotong otomatis saat penjualan untuk perhitungan HPP & margin yang akurat.
           </p>
         </div>
 
@@ -254,8 +254,8 @@ function ProductSheet({ product, onClose }) {
                           onMouseDown={() => { set('category', c); setCatOpen(false) }}
                           style={{
                             display: 'block', width: '100%', padding: '12px 14px', border: 'none',
-                            background: form.category === c ? 'rgba(234,88,12,0.15)' : 'transparent',
-                            color: form.category === c ? '#EA580C' : 'var(--text-primary)',
+                            background: form.category === c ? 'rgba(15,23,42,0.12)' : 'transparent',
+                            color: form.category === c ? '#0F172A' : 'var(--text-primary)',
                             fontSize: 13, fontFamily: 'DM Sans', fontWeight: form.category === c ? 700 : 500, textAlign: 'left', cursor: 'pointer',
                             transition: 'background 0.2s',
                             borderBottom: `1px solid var(--border-soft)`
@@ -265,7 +265,7 @@ function ProductSheet({ product, onClose }) {
                         </button>
                       ))}
                     {form.category && !CATEGORIES.find(c => c.toLowerCase() === form.category.toLowerCase()) && (
-                      <div style={{ padding: '12px 14px', fontSize: 13, color: TEXT_SEC, fontStyle: 'italic', background: 'rgba(234,88,12,0.03)' }}>
+                      <div style={{ padding: '12px 14px', fontSize: 13, color: TEXT_SEC, fontStyle: 'italic', background: 'rgba(15,23,42,0.03)' }}>
                         Kategori baru: "{form.category}"
                       </div>
                     )}
@@ -320,7 +320,7 @@ function ProductSheet({ product, onClose }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Field label="Harga Jual per Satuan">
               <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, fontWeight: 700, color: '#EA580C' }}>Rp</span>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, fontWeight: 700, color: '#0F172A' }}>Rp</span>
                 <input
                   id="sell-price" name="sell_price" type="text" inputMode="numeric"
                   value={form.sell_price ? fmt(form.sell_price) : ''}
@@ -391,11 +391,11 @@ function ProductSheet({ product, onClose }) {
               marginTop: 4,
               width: '100%',
               height: 50,
-              background: form.product_name.trim() && !isLoading ? C.accent : 'rgba(234,88,12,0.3)',
+              background: form.product_name.trim() && !isLoading ? C.accent : 'rgba(15,23,42,0.35)',
               border: 'none', borderRadius: 14,
               color: 'white', fontFamily: 'Sora', fontSize: 15, fontWeight: 700,
               cursor: form.product_name.trim() && !isLoading ? 'pointer' : 'not-allowed',
-              boxShadow: form.product_name.trim() ? '0 4px 16px rgba(234,88,12,0.3)' : 'none',
+              boxShadow: form.product_name.trim() ? '0 4px 16px rgba(15,23,42,0.2)' : 'none',
             }}
           >
             {isLoading ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Tambah Produk'}
@@ -469,7 +469,7 @@ function CustomSelect({ value, onChange, options, placeholder, id }) {
                     onClick={() => { onChange(opt.value); setOpen(false) }}
                     style={{
                       padding: '12px 16px', fontSize: '14px', color: value === opt.value ? C.accent : C.text,
-                      background: value === opt.value ? 'rgba(234,88,12,0.1)' : 'transparent',
+                      background: value === opt.value ? 'rgba(15,23,42,0.08)' : 'transparent',
                       cursor: 'pointer', transition: 'all 0.2s',
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       borderBottom: `1px solid var(--border-soft)`
@@ -534,7 +534,7 @@ function ProductCard({ product, onEdit, onDelete }) {
     >
       {/* Badge kategori */}
       {product.category && (
-        <span style={{ fontSize: 10, fontFamily: 'DM Sans', fontWeight: 600, color: C.accent, background: 'rgba(234,88,12,0.12)', padding: '2px 8px', borderRadius: 20, letterSpacing: '0.03em' }}>
+        <span style={{ fontSize: 10, fontFamily: 'DM Sans', fontWeight: 600, color: C.accent, background: 'rgba(15,23,42,0.08)', padding: '2px 8px', borderRadius: 20, letterSpacing: '0.03em' }}>
           {product.category}
         </span>
       )}

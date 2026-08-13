@@ -21,7 +21,7 @@ export const STATUS_STYLE = {
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 export function Skel({ h = '60px', w = '100%', r = '14px' }) {
   return (
-    <div className="animate-pulse" style={{ background: '#231A0E', borderRadius: r, height: h, width: w }} />
+    <div className="animate-pulse" style={{ background: '#E2E8F0', borderRadius: r, height: h, width: w }} />
   )
 }
 
@@ -43,7 +43,7 @@ export function BerandaSkeleton({ isDesktop }) {
   }
   return (
     <div>
-      <div style={{ background: '#0E0905', height: '60px', borderBottom: '1px solid rgba(234,88,12,0.1)' }} />
+      <div style={{ background: '#F8FAFC', height: '60px', borderBottom: '1px solid rgba(15,23,42,0.06)' }} />
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <Skel h="20px" w="55%" r="8px" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -91,8 +91,8 @@ export function KPICard({ icon: Icon, label, value, sub, accentColor = MC.accent
           border: `1px solid ${MC.border}`,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: '10px',
+          justifyContent: 'flex-start',
+          gap: '8px',
           position: 'relative',
           overflow: 'hidden',
           boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
@@ -243,10 +243,10 @@ export function ChartTooltip({ active, payload }) {
         {/* Net Profit */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EA580C', display: 'inline-block' }} />
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0F172A', display: 'inline-block' }} />
             <span style={{ fontSize: '10px', color: MC.muted, fontWeight: 600 }}>Net Profit</span>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 800, color: '#EA580C' }}>{formatIDR(netProfit)}</span>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A' }}>{formatIDR(netProfit)}</span>
         </div>
       </div>
 
@@ -442,10 +442,10 @@ export function StockChartTooltip({ active, payload, label }) {
         </div>
 
         {reorderQty > 0 && recSupplierName && (
-          <div style={{ borderTop: '1px solid rgba(234,88,12,0.15)', paddingTop: '6px', marginTop: '4px', background: 'rgba(234,88,12,0.08)', borderRadius: '6px', padding: '6px 8px' }}>
-            <p style={{ fontSize: '9px', fontWeight: 800, color: '#FDBA74', textTransform: 'uppercase', marginBottom: '2px' }}>💡 REKOMENDASI PEMBELIAN</p>
-            <p style={{ fontSize: '10px', color: '#FEF3C7', lineHeight: '1.3', fontWeight: 500 }}>
-              Pesan <strong style={{ color: '#EA580C' }}>±{reorderQty} {unit}</strong> ke <strong style={{ color: '#EA580C' }}>{recSupplierName}</strong> ({recStatusText})
+          <div style={{ borderTop: '1px solid rgba(15,23,42,0.12)', paddingTop: '6px', marginTop: '4px', background: 'rgba(15,23,42,0.05)', borderRadius: '6px', padding: '6px 8px' }}>
+            <p style={{ fontSize: '9px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '2px' }}>💡 REKOMENDASI PEMBELIAN</p>
+            <p style={{ fontSize: '10px', color: '#1e293b', lineHeight: '1.3', fontWeight: 500 }}>
+              Pesan <strong style={{ color: '#0F172A' }}>±{reorderQty} {unit}</strong> ke <strong style={{ color: '#0F172A' }}>{recSupplierName}</strong> ({recStatusText})
             </p>
           </div>
         )}

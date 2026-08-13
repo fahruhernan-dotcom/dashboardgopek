@@ -8,7 +8,7 @@ import {
   Wallet, Receipt, ChevronDown, Check, Plus, Filter,
   TrendingDown, TrendingUp, History, MessageCircle, ExternalLink, ShieldCheck, CreditCard, Sparkles
 } from 'lucide-react'
-import { toWaLink } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
+import { toWaLink, CUSTOMER_TYPES } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import {
   useSembakoCustomers, useSembakoSuppliers,
   useSembakoCustomerInvoices, useSembakoCustomerPayments,
@@ -803,10 +803,11 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border/60 text-popover-foreground">
-              <SelectItem value="warung" className="hover:bg-muted focus:bg-muted">Warung Kelontong</SelectItem>
-              <SelectItem value="grosir" className="hover:bg-muted focus:bg-muted">Grosir Sembako</SelectItem>
-              <SelectItem value="semi_grosir" className="hover:bg-muted focus:bg-muted">Semi Grosir</SelectItem>
-              <SelectItem value="sales_keliling" className="hover:bg-muted focus:bg-muted">Sales Keliling</SelectItem>
+              {CUSTOMER_TYPES.map((type) => (
+                <SelectItem key={type} value={type} className="hover:bg-muted focus:bg-muted font-bold text-xs uppercase">
+                  {type.replaceAll('_', ' ')}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

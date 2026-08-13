@@ -4,7 +4,7 @@ const THEME_KEY = 'ternakos_accent_color'
 
 export const THEME_PRESETS = [
   { name: 'Emerald',  hex: '#021a02', label: 'Default Broker' },
-  { name: 'Orange',   hex: '#EA580C', label: 'Default Sembako' },
+  { name: 'Slate',    hex: '#0F172A', label: 'Default Sembako' },
   { name: 'Purple',   hex: '#7C3AED', label: 'Default Peternak' },
   { name: 'Amber',    hex: '#F59E0B', label: 'Default RPA' },
   { name: 'Sky',      hex: '#0EA5E9', label: 'Sky Blue' },

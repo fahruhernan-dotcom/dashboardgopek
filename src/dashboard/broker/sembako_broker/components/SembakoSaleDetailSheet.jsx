@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Truck, Store, FileText, CreditCard, Smartphone, ArrowRightLeft, Pencil, Trash2, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
+import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import {
   AlertDialog,
@@ -28,12 +29,13 @@ import {
   useRefundSembakoSaleOverpay,
 } from '@/lib/hooks/useSembakoData'
 import InvoicePreviewModal from '@/components/invoice/InvoicePreviewModal'
-import { C, sBtn, sLabel, DetailRow, fmtDate, generateWAMessage, toWaLink, InputRupiah, CustomSelect, calculateSaleFinancials } from './sembakoSaleUtils'
+import { C, sBtn, sLabel, DetailRow, fmtDate, generateWAMessage, toWaLink, InputRupiah, CustomSelect, calculateSaleFinancials, formatRokokPackaging } from './sembakoSaleUtils'
 import { SembakoPaymentSheet } from './SembakoPaymentSheet'
 import { useBackHandler } from '@/lib/hooks/useBackHandler'
 
 export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
   useBackHandler(isOpen, () => onOpenChange(false))
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { tenant, profile } = useAuth()
   const deleteSale = useDeleteSembakoSale()
   const createReturn = useCreateSembakoReturn()
@@ -43,6 +45,12 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
   const refundOverpay = useRefundSembakoSaleOverpay()
   const { data: products = [] } = useSembakoProducts()
   const { data: returnsList = [] } = useSembakoReturns()
+
+  const sortedPayments = useMemo(() => {
+    if (!sale) return []
+    const rawPayments = Array.isArray(sale.sembako_payments) ? sale.sembako_payments.filter(p => !p.is_deleted) : []
+    return [...rawPayments].sort((a, b) => new Date(a.payment_date) - new Date(b.payment_date))
+  }, [sale])
 
   const [payTarget, setPayTarget] = useState(null)
   const [invoiceModal, setInvoiceModal] = useState({ open: false, type: null })
@@ -82,6 +90,27 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
   const profit = fin.profit
   const netMarginPct = fin.netMarginPct
   const isOwner = profile?.role === 'owner' || isSuperadmin(profile)
+
+  const getDueDateStatus = () => {
+    if (remainingAmount <= 0) return null
+    if (!sale.due_date) return null
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const due = new Date(sale.due_date)
+    due.setHours(0, 0, 0, 0)
+    const diffTime = due - now
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) {
+      return { text: `Telat ${Math.abs(diffDays)} Hari`, isOverdue: true }
+    } else if (diffDays === 0) {
+      return { text: `Jatuh Tempo Hari Ini`, isToday: true }
+    } else {
+      return { text: `Jatuh tempo dalam ${diffDays} hari`, isPending: true }
+    }
+  }
+  const dueDateStatus = getDueDateStatus()
+
 
   const openRefundDialog = () => {
     setRefundInputAmount(overpayAmount)
@@ -252,6 +281,21 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
               <div>
                 <SheetTitle style={{ color: C.text, fontWeight: 900, fontSize: '20px', fontFamily: 'DM Sans' }}>Detail Penjualan</SheetTitle>
                 <p style={{ fontSize: '11px', color: C.muted, marginTop: '4px' }}>{sale.invoice_number} - {fmtDate(sale.transaction_date)}</p>
+                {dueDateStatus && (
+                  <span style={{
+                    display: 'inline-block',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    marginTop: '6px',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    background: dueDateStatus.isOverdue ? '#FEF2F2' : dueDateStatus.isToday ? '#FFFBEB' : '#F0F9FF',
+                    border: `1px solid ${dueDateStatus.isOverdue ? '#FCA5A5' : dueDateStatus.isToday ? '#FDE68A' : '#BAE6FD'}`,
+                    color: dueDateStatus.isOverdue ? '#DC2626' : dueDateStatus.isToday ? '#D97706' : '#0284C7'
+                  }}>
+                    ⏳ {dueDateStatus.text}
+                  </span>
+                )}
               </div>
               <Badge className={cn(
                 "rounded-full px-3 py-1 border-none font-black text-[10px] uppercase tracking-wider pointer-events-none shadow-none",
@@ -307,11 +351,17 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                                 🔄 Ada Retur: -{returQty} {it.unit || 'unit'}
                               </span>
                             )}
+                            {isOwner && (
+                              <span style={{ fontSize: '10px', color: C.muted, display: 'block', fontWeight: 550, marginTop: '2.5px' }}>
+                                Modal: {formatIDR(it.cogs_per_unit)} · Laba: <span style={{ color: (itemPrice - it.cogs_per_unit) >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{formatIDR(itemPrice - it.cogs_per_unit)}</span> ({itemPrice > 0 ? Math.round(((itemPrice - it.cogs_per_unit) / itemPrice) * 100) : 0}%)
+                              </span>
+                            )}
                           </td>
                           <td style={{ padding: '12px', textAlign: 'right', color: C.text }}>
                             <span style={{ fontWeight: returQty > 0 ? 800 : 600, color: returQty > 0 ? '#16A34A' : C.text }}>
                               {netQty} {it.unit || 'unit'}
                             </span>
+
                             {returQty > 0 && (
                               <span style={{ fontSize: '10px', color: C.muted, display: 'block', textDecoration: 'line-through' }}>
                                 Awal: {it.quantity} {it.unit || 'unit'}
@@ -323,6 +373,11 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                             {returQty > 0 && (
                               <span style={{ fontSize: '10px', color: C.muted, display: 'block', fontWeight: 500 }}>
                                 @{formatIDR(itemPrice)}
+                              </span>
+                            )}
+                            {isOwner && (
+                              <span style={{ fontSize: '10px', color: '#10B981', display: 'block', fontWeight: 700, marginTop: '2.5px' }}>
+                                Laba: {formatIDR(netQty * (itemPrice - it.cogs_per_unit))}
                               </span>
                             )}
                           </td>
@@ -415,15 +470,103 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
               )}
             </div>
 
+            {/* Section: Riwayat Pembayaran */}
+            <div style={{ background: 'var(--bg-page)', borderRadius: '16px', padding: '16px', border: `1px solid ${C.border}` }}>
+              <p style={sLabel}>HISTORI PEMBAYARAN ({sortedPayments.length})</p>
+              {sortedPayments.length === 0 ? (
+                <p style={{ fontSize: '11px', color: C.muted, fontStyle: 'italic', marginTop: '8px' }}>
+                  Belum ada catatan pembayaran.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                  {sortedPayments.map((p, pIdx) => {
+                    const isRefund = p.payment_method === 'pengembalian_tunai_retur' || Number(p.amount) < 0
+                    return (
+                      <div
+                        key={p.id || pIdx}
+                        style={{
+                          background: 'var(--bg-surface)',
+                          border: `1px solid ${C.border}`,
+                          borderRadius: '12px',
+                          padding: '10px 12px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '9px',
+                              fontWeight: 800,
+                              padding: '1.5px 5px',
+                              borderRadius: '4px',
+                              background: isRefund ? '#FEF2F2' : p.payment_method === 'transfer' ? '#EFF6FF' : '#F3F4F6',
+                              color: isRefund ? '#DC2626' : p.payment_method === 'transfer' ? '#2563EB' : '#4B5563',
+                              border: `1px solid ${isRefund ? '#FCA5A5' : p.payment_method === 'transfer' ? '#BFDBFE' : '#E5E7EB'}`,
+                              textTransform: 'uppercase'
+                            }}>
+                              {isRefund ? 'Refund' : p.payment_method || 'cash'}
+                            </span>
+                            <span style={{ fontSize: '11px', color: C.muted }}>{fmtDate(p.payment_date)}</span>
+                          </div>
+                          {p.notes && (
+                            <p style={{ fontSize: '10px', color: C.muted, marginTop: '4px', fontStyle: 'italic', wordBreak: 'break-word' }}>
+                              "{p.notes}"
+                            </p>
+                          )}
+                          {p.reference_number && (
+                            <p style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                              Ref: {p.reference_number}
+                            </p>
+                          )}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{
+                            fontSize: '13px',
+                            fontWeight: 800,
+                            color: isRefund ? '#DC2626' : 'var(--text-primary)'
+                          }}>
+                            {isRefund ? '-' : ''}{formatIDR(Math.abs(p.amount))}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Section: Profit Analysis (Owner Only) */}
             {isOwner && (
               <div style={{ background: 'var(--bg-page)', borderRadius: '16px', padding: '16px', border: `1px solid var(--border-soft)` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <p style={{ ...sLabel, color: C.green }}>ANALISIS LABA (INTERNAL)</p>
-                  <span style={{ fontSize: '10px', fontWeight: 900, color: profit >= 0 ? C.green : C.red }}>
-                    Net Margin {netMarginPct}%
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <p style={{ ...sLabel, color: C.green, margin: 0 }}>ANALISIS LABA (INTERNAL)</p>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <span style={{
+                      fontSize: '9px',
+                      fontWeight: 800,
+                      padding: '2px 6px',
+                      borderRadius: '5px',
+                      textTransform: 'uppercase',
+                      background: netMarginPct < 0 ? '#FEE2E2' : netMarginPct <= 10 ? '#FEF3C7' : '#D1FAE5',
+                      color: netMarginPct < 0 ? '#DC2626' : netMarginPct <= 10 ? '#D97706' : '#059669',
+                      border: `1px solid ${netMarginPct < 0 ? '#FCA5A5' : netMarginPct <= 10 ? '#FDE68A' : '#A7F3D0'}`,
+                    }}>
+                      {netMarginPct < 0 ? '🚨 RUGI' : netMarginPct <= 10 ? '⚠️ TIPIS' : '✓ SEHAT'}
+                    </span>
+                    <span style={{ fontSize: '10px', fontWeight: 900, color: profit >= 0 ? C.green : C.red }}>
+                      Net Margin {netMarginPct}%
+                    </span>
+                  </div>
                 </div>
+                {profit < 0 && (
+                  <div style={{ marginTop: '12px', padding: '10px 12px', background: '#FEF2F2', border: '1px solid #FEE2E2', borderRadius: '10px', fontSize: '11px', color: '#DC2626', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <span>🚨</span>
+                    <span><strong>Perhatian:</strong> Transaksi ini rugi karena modal beli lebih besar dibanding harga jual.</span>
+                  </div>
+                )}
                 <div style={{ marginTop: '8px' }}>
                   <DetailRow label="Total Tagihan" value={formatIDR(grandTotal)} />
                   <DetailRow
@@ -441,34 +584,36 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             )}
 
             {/* Section: Delivery Status */}
-            <div style={{ background: '#F0F9FF', borderRadius: '16px', padding: '16px', border: `1px solid #BAE6FD` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ ...sLabel, color: '#60A5FA' }}>PENGIRIMAN</p>
-                <span style={{
-                  fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', padding: '3px 10px', borderRadius: '99px',
-                  background: isDelivered ? '#F0FDF4' : deliveries.length > 0 ? '#FFFBEB' : '#F1F5F9',
-                  color: isDelivered ? '#16A34A' : deliveries.length > 0 ? '#D97706' : '#64748B'
-                }}>
-                  {isDelivered ? '✓ TERKIRIM' : deliveries.length > 0 ? 'DI JALAN' : 'BELUM DIKIRIM'}
-                </span>
-              </div>
-
-              {deliveries.length > 0 && (
-                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {deliveries.map((d, i) => (
-                    <div key={d.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', background: 'var(--bg-surface)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-soft)' }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <Truck size={14} color="#0284C7" />
-                        <span style={{ color: C.text, fontWeight: 700 }}>{[d.vehicle_type, d.vehicle_plate].filter(Boolean).join(' ') || 'Pengiriman'}</span>
-                      </div>
-                      <span style={{ fontSize: '11px', fontWeight: 800, color: d.status === 'delivered' ? '#16A34A' : '#D97706' }}>
-                        {d.status === 'delivered' ? '✓ Terkirim' : d.status === 'on_route' ? 'Di Jalan' : 'Disiapkan'}
-                      </span>
-                    </div>
-                  ))}
+            {!isOwner && (
+              <div style={{ background: '#F0F9FF', borderRadius: '16px', padding: '16px', border: `1px solid #BAE6FD` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <p style={{ ...sLabel, color: '#60A5FA' }}>PENGIRIMAN</p>
+                  <span style={{
+                    fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', padding: '3px 10px', borderRadius: '99px',
+                    background: isDelivered ? '#F0FDF4' : deliveries.length > 0 ? '#FFFBEB' : '#F1F5F9',
+                    color: isDelivered ? '#16A34A' : deliveries.length > 0 ? '#D97706' : '#64748B'
+                  }}>
+                    {isDelivered ? '✓ TERKIRIM' : deliveries.length > 0 ? 'DI JALAN' : 'BELUM DIKIRIM'}
+                  </span>
                 </div>
-              )}
-            </div>
+
+                {deliveries.length > 0 && (
+                  <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {deliveries.map((d, i) => (
+                      <div key={d.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', background: 'var(--bg-surface)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-soft)' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <Truck size={14} color="#0284C7" />
+                          <span style={{ color: C.text, fontWeight: 700 }}>{[d.vehicle_type, d.vehicle_plate].filter(Boolean).join(' ') || 'Pengiriman'}</span>
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: d.status === 'delivered' ? '#16A34A' : '#D97706' }}>
+                          {d.status === 'delivered' ? '✓ Terkirim' : d.status === 'on_route' ? 'Di Jalan' : 'Disiapkan'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {sale.notes && (
               <div>
@@ -480,7 +625,14 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             )}
           </div>
 
-          <div style={{ padding: '20px 24px 32px', borderTop: `1px solid ${C.border}`, background: C.bg, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{
+            padding: isDesktop ? '20px 24px' : '16px 20px calc(12px + env(safe-area-inset-bottom, 12px))',
+            borderTop: `1px solid ${C.border}`,
+            background: C.bg,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
             {!isDelivered ? (
               <button
                 onClick={handleMarkDelivered}

@@ -139,7 +139,7 @@ export const POULTRY_BROKER_PLAN_CONFIG = {
 // ─── Sembako Broker ───────────────────────────────────────────────────────────
 export const SEMBAKO_BROKER_PLAN_CONFIG = {
   vertical: 'sembako_broker',
-  accentColor: '#EA580C',
+  accentColor: '#0F172A',
 
   starter: {
     penjualan: { allowed: true, quotaPerMonth: null },

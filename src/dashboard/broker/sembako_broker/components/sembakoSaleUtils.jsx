@@ -24,9 +24,9 @@ export const PAYMENT_TERMS_DAYS = { cash: 0, net3: 3, net7: 7, net14: 14, net30:
 export const PAYMENT_TERMS_LABEL = { cash: 'Cash', net3: 'NET 3', net7: 'NET 7', net14: 'NET 14', net30: 'NET 30' }
 
 export const CUSTOMER_TYPES = [
-  'warung', 'toko_retail', 'supermarket', 'restoran', 'catering', 'grosir', 'lainnya'
+  'warung', 'toko_retail', 'supermarket', 'restoran', 'catering', 'grosir', 'semi_grosir', 'sales_keliling', 'perseorangan', 'lainnya'
 ]
-export const CUSTOMER_TYPE_OPTIONS = CUSTOMER_TYPES.map(t => ({ value: t, label: t.toUpperCase() }))
+export const CUSTOMER_TYPE_OPTIONS = CUSTOMER_TYPES.map(t => ({ value: t, label: t.replace(/_/g, ' ').toUpperCase() }))
 export const PAYMENT_METHOD_OPTIONS = ['cash', 'transfer', 'qris', 'giro', 'cek', 'potong_deposit'].map(m => ({ value: m, label: m === 'potong_deposit' ? 'POTONG DEPOSIT TOKO' : m.toUpperCase() }))
 export const INVOICE_FILTERS = [
   { id: 'all', label: 'Semua Invoice' },
@@ -189,10 +189,11 @@ export function CustomSelect({ value, onChange, options, placeholder, onAddNew, 
   )
 }
 
-export function InputRupiah({ value, onChange, placeholder, style, disabled }) {
+export function InputRupiah({ value, onChange, placeholder, style, className, disabled }) {
   const display = value ? Number(value).toLocaleString('id-ID') : ''
+  const mergedStyle = className ? style : { ...sInput, ...style }
   return (
-    <input style={{ ...sInput, ...style, opacity: disabled ? 0.5 : 1 }} placeholder={placeholder || 'Rp 0'}
+    <input className={className} style={{ ...mergedStyle, opacity: disabled ? 0.5 : 1 }} placeholder={placeholder || 'Rp 0'}
       value={display ? `Rp ${display}` : ''}
       disabled={disabled}
       onChange={e => {
@@ -267,7 +268,7 @@ export function EmptyBox({ icon: Icon, text, hint, actionLabel, onAction }) {
             background: C.accent, color: '#fff',
             fontSize: '13px', fontWeight: 700, fontFamily: 'DM Sans',
             border: 'none', cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(234,88,12,0.3)',
+            boxShadow: '0 4px 14px rgba(15,23,42,0.25)',
             transition: 'opacity 0.2s',
           }}
           onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
@@ -410,4 +411,241 @@ export function calculateSaleFinancials(sale, returnsList = [], products = []) {
     netMarginPct,
     refundPaymentsAmount,
   }
+}
+
+// ── Rokok Unit Calculator Helper ──────────────────────────────────────────────
+export function RokokUnitCalculator({ onApply, targetUnit = 'slop', style }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [balKecil, setBalKecil] = useState('')
+  const [balBesar, setBalBesar] = useState('')
+  const [kartonKecil, setKartonKecil] = useState('')
+  const [kartonBesar, setKartonBesar] = useState('')
+
+  // 1 ball kecil = 10 slop
+  // 1 ball besar = 20 slop
+  // 1 karton ball kecil = 80 slop (8 ball kecil * 10)
+  // 1 karton ball besar = 80 slop (4 ball besar * 20)
+  const totalSlop = (Number(balKecil) || 0) * 10 +
+                    (Number(balBesar) || 0) * 20 +
+                    (Number(kartonKecil) || 0) * 80 +
+                    (Number(kartonBesar) || 0) * 80
+
+  const handleApply = () => {
+    onApply(totalSlop)
+  }
+
+  const handleClear = () => {
+    setBalKecil('')
+    setBalBesar('')
+    setKartonKecil('')
+    setKartonBesar('')
+  }
+
+  if (targetUnit !== 'slop') return null
+
+  return (
+    <div style={{
+      border: '1px solid var(--border-soft)',
+      borderRadius: '12px',
+      background: 'rgba(217, 119, 6, 0.05)', // Amber light
+      padding: '10px 12px',
+      marginTop: '8px',
+      boxSizing: 'border-box',
+      width: '100%',
+      ...style
+    }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          color: '#D97706',
+          fontFamily: 'DM Sans',
+          fontSize: '12px',
+          fontWeight: 700,
+          padding: 0,
+          outline: 'none'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>📦</span>
+          <span>Kalkulator Ukuran Rokok ({targetUnit})</span>
+        </div>
+        <ChevronDown size={14} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#D97706' }} />
+      </button>
+
+      {isOpen && (
+        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 700 }}>Bal Kecil (10 slop)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={balKecil}
+                onChange={e => setBalKecil(e.target.value.replace(/\D/g, ''))}
+                placeholder="0"
+                style={{
+                  width: '100%',
+                  height: '32px',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-soft)',
+                  borderRadius: '8px',
+                  padding: '0 8px',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 700 }}>Bal Besar (20 slop)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={balBesar}
+                onChange={e => setBalBesar(e.target.value.replace(/\D/g, ''))}
+                placeholder="0"
+                style={{
+                  width: '100%',
+                  height: '32px',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-soft)',
+                  borderRadius: '8px',
+                  padding: '0 8px',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 700 }}>Ktn Bal Kcl (80 slop)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={kartonKecil}
+                onChange={e => setKartonKecil(e.target.value.replace(/\D/g, ''))}
+                placeholder="0"
+                style={{
+                  width: '100%',
+                  height: '32px',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-soft)',
+                  borderRadius: '8px',
+                  padding: '0 8px',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 700 }}>Ktn Bal Bsr (80 slop)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={kartonBesar}
+                onChange={e => setKartonBesar(e.target.value.replace(/\D/g, ''))}
+                placeholder="0"
+                style={{
+                  width: '100%',
+                  height: '32px',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-soft)',
+                  borderRadius: '8px',
+                  padding: '0 8px',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-soft)', paddingTop: '8px', marginTop: '4px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Total: <span style={{ color: '#D97706', fontSize: '13px', fontFamily: 'Sora', fontWeight: 800 }}>{totalSlop}</span> slop
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={handleClear}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-soft)',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={handleApply}
+                disabled={totalSlop <= 0}
+                style={{
+                  background: '#D97706',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  color: 'white',
+                  cursor: totalSlop > 0 ? 'pointer' : 'not-allowed',
+                  opacity: totalSlop > 0 ? 1 : 0.5,
+                  outline: 'none'
+                }}
+              >
+                Terapkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function formatRokokPackaging(quantity) {
+  const q = Number(quantity)
+  if (isNaN(q) || q <= 0) return ''
+
+  const parts = []
+  let rem = q
+
+  const kartons = Math.floor(rem / 80)
+  rem %= 80
+
+  const balBesars = Math.floor(rem / 20)
+  rem %= 20
+
+  const balKecils = Math.floor(rem / 10)
+  rem %= 10
+
+  if (kartons > 0) parts.push(`${kartons} Karton`)
+  if (balBesars > 0) parts.push(`${balBesars} Bal Besar`)
+  if (balKecils > 0) parts.push(`${balKecils} Bal Kecil`)
+  if (rem > 0) parts.push(`${rem} slop`)
+
+  return parts.length > 0 ? `(${parts.join(' + ')})` : ''
 }

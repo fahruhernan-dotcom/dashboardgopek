@@ -10,7 +10,7 @@ import {
   useSembakoAllBatches
 } from '@/lib/hooks/useSembakoData'
 import { DatePicker } from '@/components/ui/DatePicker'
-import { C, CustomSelect, InputRupiah } from './sembakoSaleUtils'
+import { C, CustomSelect, InputRupiah, RokokUnitCalculator } from './sembakoSaleUtils'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { recordAuditLog } from '@/lib/hooks/useSembakoAudit'
 import { useBackHandler } from '@/lib/hooks/useBackHandler'
@@ -290,7 +290,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                         <CustomSelect
                           value={newProdUnit}
                           onChange={val => setNewProdUnit(val)}
-                          options={['slop', 'pack', 'karton', 'pres', 'bal', 'kg', 'liter', 'pcs', 'karung', 'sak'].map(u => ({ value: u, label: u }))}
+                          options={['slop', 'pack', 'karton', 'pres', 'bal', 'kg', 'liter', 'pcs', 'karung', 'sak', 'bal kecil', 'bal besar', 'karton bal kecil', 'karton bal besar'].map(u => ({ value: u, label: u }))}
                           placeholder="Satuan"
                         />
                       </div>
@@ -468,6 +468,12 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                 placeholder="0"
                 style={inputSt}
               />
+              {selectedProduct?.unit === 'slop' && (
+                <RokokUnitCalculator
+                  targetUnit={selectedProduct.unit}
+                  onApply={qty => set('qty_masuk', String(qty))}
+                />
+              )}
             </SField>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

@@ -20,7 +20,7 @@ import { DatePicker } from '@/components/ui/DatePicker'
 import { C, fmtDate, CustomSelect } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/SembakoUiPrimitives'
 
-const PIE_COLORS = ['#EA580C', '#F59E0B', '#021a02', '#60A5FA', '#A78BFA', '#F472B6', '#FB923C']
+const PIE_COLORS = ['#0F172A', '#F59E0B', '#021a02', '#60A5FA', '#A78BFA', '#F472B6', '#FB923C']
 const CATEGORY_LABEL = {
   sewa_gudang: 'Sewa Gudang', listrik_air: 'Listrik & Air', bbm: 'BBM',
   perawatan: 'Perawatan', packaging: 'Packaging', administrasi: 'Administrasi', lainnya: 'Lainnya',
@@ -61,14 +61,14 @@ export default function SembakoLaporan() {
         {!isDesktop && <BrokerMobileHeader title="Laporan" onMenuClick={() => setSidebarOpen(true)} />}
         <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center gap-6">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(234,88,12,0.12)', border: '1px solid rgba(234,88,12,0.25)' }}>
-            <Lock size={28} style={{ color: '#EA580C' }} />
+            style={{ background: 'rgba(15,23,42,0.12)', border: '1px solid rgba(15,23,42,0.25)' }}>
+            <Lock size={28} style={{ color: '#0F172A' }} />
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3"
-              style={{ background: 'rgba(234,88,12,0.1)', border: '1px solid rgba(234,88,12,0.2)' }}>
-              <BarChart3 size={11} style={{ color: '#EA580C' }} />
-              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#EA580C' }}>Fitur Pro</span>
+              style={{ background: 'rgba(15,23,42,0.1)', border: '1px solid rgba(15,23,42,0.2)' }}>
+              <BarChart3 size={11} style={{ color: '#0F172A' }} />
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#0F172A' }}>Fitur Pro</span>
             </div>
             <h2 className="font-display font-black text-xl text-white mb-2">Laporan Keuangan</h2>
             <p className="text-sm max-w-xs leading-relaxed" style={{ color: '#64748B' }}>
@@ -79,7 +79,7 @@ export default function SembakoLaporan() {
           <Link
             to="/upgrade"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm text-white transition-colors"
-            style={{ background: '#EA580C', boxShadow: '0 4px 20px rgba(234,88,12,0.3)' }}
+            style={{ background: '#0F172A', boxShadow: '0 4px 20px rgba(15,23,42,0.3)' }}
           >
             Lihat Paket Pro →
           </Link>
@@ -162,7 +162,7 @@ export default function SembakoLaporan() {
                 type="button"
                 onClick={() => setPdfModal({ open: true, type: 'business_result' })}
                 disabled={!data}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer shadow-lg shadow-amber-600/20 active:scale-95 disabled:opacity-50 border-0"
+                className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-slate-900 hover:bg-slate-800 text-white transition-all cursor-pointer shadow-lg shadow-slate-900/20 active:scale-95 disabled:opacity-50 border-0"
               >
                 <Printer size={14} />
                 <span>PDF Hasil Bisnis</span>
@@ -173,7 +173,7 @@ export default function SembakoLaporan() {
                 disabled={!data}
                 className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/60 hover:bg-muted text-foreground transition-all cursor-pointer disabled:opacity-50"
               >
-                <FileText size={14} className="text-amber-500" />
+                <FileText size={14} className="text-slate-600" />
                 <span>PDF Arus Kas</span>
               </button>
             </div>
@@ -189,9 +189,9 @@ export default function SembakoLaporan() {
             {/* Overlay saat ganti periode / refetch */}
             {isFetching && !isLoading && (
               <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(6,9,15,0.55)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(2px)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#1C1208', border: '1px solid rgba(234,88,12,0.2)', borderRadius: 12, padding: '10px 20px' }}>
-                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(234,88,12,0.3)', borderTopColor: '#EA580C', animation: 'spin 0.7s linear infinite' }} />
-                  <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: '#FEF3C7', fontWeight: 600 }}>Memuat data...</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F8FAFC', border: '1px solid rgba(15,23,42,0.12)', borderRadius: 12, padding: '10px 20px' }}>
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(15,23,42,0.2)', borderTopColor: '#0F172A', animation: 'spin 0.7s linear infinite' }} />
+                  <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: '#0F172A', fontWeight: 600 }}>Memuat data...</span>
                 </div>
               </div>
             )}
@@ -370,7 +370,7 @@ function ProductMarginTable({ byProduct }) {
           </thead>
           <tbody>
             {products.map((p, i) => (
-              <tr key={i} style={{ borderBottom: `1px solid rgba(234,88,12,0.06)` }}>
+              <tr key={i} style={{ borderBottom: `1px solid rgba(15,23,42,0.05)` }}>
                 <td style={{ padding: '7px 4px', color: C.text, fontWeight: 600 }}>{p.name}</td>
                 <td style={{ padding: '7px 4px', color: C.muted, textAlign: 'right' }}>{p.qty} {p.unit}</td>
                 <td style={{ padding: '7px 4px', color: C.text, textAlign: 'right' }}>{formatIDR(p.revenue)}</td>
@@ -428,7 +428,7 @@ function TopCustomers({ byCustomer }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{
                   width: '20px', height: '20px', borderRadius: '6px',
-                  background: i < 3 ? 'rgba(234,88,12,0.2)' : 'transparent',
+                  background: i < 3 ? 'rgba(15,23,42,0.12)' : 'transparent',
                   color: i < 3 ? C.accent : C.muted,
                   fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>{i + 1}</span>
@@ -551,7 +551,7 @@ function InvoiceCollapsible({ sales }) {
                 {filtered.map(s => {
                   const st = STATUS_STYLE[s.payment_status] || STATUS_STYLE.belum_lunas
                   return (
-                    <tr key={s.id} style={{ borderBottom: `1px solid rgba(234,88,12,0.06)` }}>
+                    <tr key={s.id} style={{ borderBottom: `1px solid rgba(15,23,42,0.05)` }}>
                       <td style={{ padding: '7px 4px', color: C.text, fontWeight: 600 }}>{s.invoice_number}</td>
                       <td style={{ padding: '7px 4px', color: C.muted }}>{s.customer_name || '-'}</td>
                       <td style={{ padding: '7px 4px', color: C.muted, textAlign: 'right' }}>{fmtDate(s.transaction_date)}</td>

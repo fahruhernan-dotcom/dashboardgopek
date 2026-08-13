@@ -152,12 +152,12 @@ export function MobileWheelDatePicker({
           className={cn(
             "h-12 w-full rounded-xl px-4 flex items-center justify-start gap-3 transition-all",
             "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300",
-            "dark:bg-[#231A0E] dark:border-[#EA580C]/25 dark:hover:bg-[#2A1F13] dark:hover:border-[#EA580C]/40",
-            !value && "text-slate-400 dark:text-[#FCD34D]/60",
-            value && "text-slate-900 font-semibold text-sm dark:text-[#FEF3C7]"
+            "dark:bg-slate-900 dark:border-slate-800 dark:hover:bg-slate-800 dark:hover:border-slate-700",
+            !value && "text-slate-400 dark:text-slate-500",
+            value && "text-slate-900 font-semibold text-sm dark:text-slate-200"
           )}
         >
-          <CalendarIcon size={18} className={cn("transition-colors", value ? "text-slate-900 dark:text-[#EA580C]" : "text-slate-400 dark:text-[#4B6478]")} />
+          <CalendarIcon size={18} className={cn("transition-colors", value ? "text-slate-900 dark:text-slate-200" : "text-slate-400 dark:text-slate-500")} />
           <span className="flex-1 text-left">
             {value && isValid(new Date(value))
               ? format(new Date(value), 'dd MMM yyyy', { locale: idLocale })

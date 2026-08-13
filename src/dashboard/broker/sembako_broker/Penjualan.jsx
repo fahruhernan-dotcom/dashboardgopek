@@ -194,7 +194,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
               onClick={() => !quota.isAtLimit && setOpenWizard(true)}
               disabled={quota.isAtLimit}
               title={quota.isAtLimit ? 'Kuota transaksi bulan ini habis — Upgrade ke Pro' : undefined}
-              className="h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-white dark:text-tko-forest-950 dark:font-black bg-[#EA580C] dark:bg-tko-brand-500 hover:opacity-95 shadow-tko-brand disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border-none flex items-center"
+              className="h-10 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-white dark:text-tko-forest-950 dark:font-black bg-[#0F172A] dark:bg-tko-brand-500 hover:opacity-95 shadow-tko-brand disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border-none flex items-center"
               style={quota.isAtLimit ? { background: '#6B7280' } : {}}
             >
               {quota.isAtLimit ? <Lock size={14} className="mr-1" /> : <Plus size={15} className="mr-1" />}
@@ -224,18 +224,18 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
                 ? 'rgba(239,68,68,0.08)'
                 : quota.remaining <= 5
                   ? 'rgba(245,158,11,0.08)'
-                  : 'rgba(234,88,12,0.06)',
+                  : 'rgba(15,23,42,0.06)',
               border: `1px solid ${quota.isAtLimit
                 ? 'rgba(239,68,68,0.25)'
                 : quota.remaining <= 5
                   ? 'rgba(245,158,11,0.2)'
-                  : 'rgba(234,88,12,0.15)'}`,
+                  : 'rgba(15,23,42,0.12)'}`,
             }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <div
                 className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center"
-                style={{ background: quota.isAtLimit ? 'rgba(239,68,68,0.15)' : 'rgba(234,88,12,0.12)' }}
+                style={{ background: quota.isAtLimit ? 'rgba(239,68,68,0.15)' : 'rgba(15,23,42,0.08)' }}
               >
                 <span className="text-[11px]">{quota.isAtLimit ? '🔒' : '📊'}</span>
               </div>
@@ -262,7 +262,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${Math.min(100, (quota.used / quota.limit) * 100)}%`,
-                      background: quota.remaining <= 5 ? '#F59E0B' : '#EA580C',
+                      background: quota.remaining <= 5 ? '#F59E0B' : '#0F172A',
                     }}
                   />
                 </div>
@@ -273,7 +273,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
               <Link
                 to="/upgrade"
                 className="flex-shrink-0 text-[10px] font-black px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors"
-                style={{ color: '#EA580C', border: '1px solid rgba(234,88,12,0.3)' }}
+                style={{ color: '#0F172A', border: '1px solid rgba(15,23,42,0.3)' }}
               >
                 Upgrade
               </Link>

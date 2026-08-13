@@ -84,9 +84,9 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
       style={{
-        background: 'linear-gradient(135deg, #2D1A08 0%, #1C1208 100%)',
+        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
         borderRadius: '20px',
-        border: '1px solid rgba(234,88,12,0.3)',
+        border: '1px solid rgba(51,65,85,0.4)',
         padding: '20px',
         marginBottom: '18px',
         position: 'relative',
@@ -110,7 +110,7 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10,
-          background: 'rgba(234,88,12,0.15)',
+          background: 'rgba(15,23,42,0.12)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <Rocket size={18} color={C.accent} />
@@ -159,7 +159,7 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
               height: '100%', borderRadius: 3,
               background: progressPct >= 75
                 ? 'linear-gradient(90deg, #021a02, #021a02)'
-                : `linear-gradient(90deg, ${C.accent}, #F97316)`,
+                : `linear-gradient(90deg, ${C.accent}, #475569)`,
             }}
           />
         </div>

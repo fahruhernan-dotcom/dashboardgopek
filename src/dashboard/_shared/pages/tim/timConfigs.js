@@ -42,12 +42,12 @@ export const PETERNAK_TIM_CONFIG = {
 
 // ── BROKER SEMBAKO ───────────────────────────────────────────────────────────
 export const BROKER_SEMBAKO_TIM_CONFIG = {
-  accent: '#EA580C',
-  accentHover: '#D44E0A',
-  accentRgb: '234, 88, 12',
+  accent: '#0F172A',
+  accentHover: '#1E293B',
+  accentRgb: '15, 23, 42',
 
   roleBadgeMap: {
-    owner:   { label: 'Owner',         class: 'bg-[#EA580C]/10 text-[#EA580C] border-[#EA580C]/20' },
+    owner:   { label: 'Owner',         class: 'bg-[#0F172A]/10 text-[#0F172A] border-[#0F172A]/20' },
     admin:   { label: 'Admin',         class: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
     sales:   { label: 'Sales',         class: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
     gudang:  { label: 'Gudang',        class: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },

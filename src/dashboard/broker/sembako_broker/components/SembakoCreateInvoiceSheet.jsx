@@ -20,6 +20,7 @@ import {
   CustomSelect, InputRupiah, ProgressIndicator, SummaryLine,
   PAYMENT_TERMS_DAYS, PAYMENT_TERMS_LABEL,
   CUSTOMER_TYPE_OPTIONS,
+  RokokUnitCalculator,
 } from './sembakoSaleUtils'
 import { SembakoSuccessCard } from './SembakoSuccessCard'
 
@@ -34,6 +35,14 @@ const INPUT_BG = C.input    // #F1F5F9
 
 const inputCn = `w-full h-12 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl px-4 text-[#0F172A] text-sm font-semibold focus:border-[#0F172A]/50 focus:outline-none focus:ring-1 focus:ring-[#0F172A]/20 transition-colors appearance-none`
 const labelCn = `block text-[9px] font-black text-[#64748B] uppercase tracking-[0.15em] mb-1.5`
+
+const getFactor = (u) => {
+  if (u === 'bal kecil') return 10
+  if (u === 'bal besar') return 20
+  if (u === 'karton (bal kecil)' || u === 'karton kecil') return 80
+  if (u === 'karton (bal besar)' || u === 'karton besar') return 80
+  return 1
+}
 
 // ─── Mobile Customer Search Overlay ──────────────────────────────────────────
 function MobileCustomerSearch({ customers, value, onSelect, onAddNew, onClose }) {
@@ -79,7 +88,7 @@ function MobileCustomerSearch({ customers, value, onSelect, onAddNew, onClose })
           <button
             onClick={() => { onAddNew(); onClose() }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all"
-            style={{ background: `rgba(234,88,12,0.08)`, border: `1px dashed ${ACCENT}`, color: ACCENT }}
+            style={{ background: `rgba(15,23,42,0.08)`, border: `1px dashed ${ACCENT}`, color: ACCENT }}
           >
             <Plus size={16} /> Tambah Toko Baru
           </button>
@@ -93,7 +102,7 @@ function MobileCustomerSearch({ customers, value, onSelect, onAddNew, onClose })
             onClick={() => { onSelect(c.id); onClose() }}
             className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-all"
             style={{
-              background: value === c.id ? 'rgba(234,88,12,0.1)' : SURFACE,
+              background: value === c.id ? 'rgba(15,23,42,0.08)' : SURFACE,
               border: `1px solid ${value === c.id ? ACCENT : BORDER}`,
             }}
           >
@@ -216,9 +225,12 @@ function QuickAddProduct({ form, onChange, onSave, onCancel, saving }) {
 
 // ─── Product Item Row ─────────────────────────────────────────────────────────
 function ProductItemRow({ item, idx, products: _products, productOptions, total: _total, overStock, onChangeItem, onRemove, onAddNew, isOnly, allBatches = [] }) {
+  const [isUnitDropdownOpen, setIsUnitDropdownOpen] = useState(false)
+  const [isFifoExpanded, setIsFifoExpanded] = useState(false)
   const prod = useMemo(() => _products.find(p => p.id === item.product_id), [item.product_id, _products])
+  const factor = getFactor(item.selectedUnit || item.unit || 'slop')
   const subtotal = Math.round((item.quantity || 0) * (item.price_per_unit || 0))
-  const hpp = item.cogs_per_unit || 0
+  const hpp = (item.cogs_per_unit || 0) * factor
   const isBelowHpp = hpp > 0 && item.price_per_unit > 0 && item.price_per_unit < hpp
   const marginPerUnit = item.price_per_unit > 0 && hpp > 0 ? item.price_per_unit - hpp : null
 
@@ -231,7 +243,8 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
   }, [item.product_id, allBatches])
 
   const fifoBreakdown = useMemo(() => {
-    const qty = Number(item.quantity) || 0
+    const factor = getFactor(item.selectedUnit || item.unit || 'slop')
+    const qty = (Number(item.quantity) || 0) * factor
     if (qty <= 0 || prodBatches.length === 0) return []
 
     let remaining = qty
@@ -292,15 +305,64 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
           </button>
         )}
       </div>
+      
+      {item.unit === 'slop' && (
+        <div className="mt-2.5">
+          <label className={labelCn}>Satuan Transaksi</label>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsUnitDropdownOpen(!isUnitDropdownOpen)}
+              className="w-full h-12 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl px-4 flex items-center justify-between text-[#0F172A] text-sm font-semibold focus:outline-none placeholder-slate-400 cursor-pointer"
+              style={{ fontFamily: 'DM Sans' }}
+            >
+              <span className="capitalize">{item.selectedUnit || 'slop'}</span>
+              <ChevronDown size={16} className="text-slate-500" style={{ transform: isUnitDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            </button>
+            {isUnitDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsUnitDropdownOpen(false)} />
+                <div className="absolute left-0 right-0 mt-1.5 bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl shadow-xl z-50 overflow-hidden py-1" style={{ top: '100%' }}>
+                  {[
+                    { value: 'slop', label: 'slop (1 slop)' },
+                    { value: 'bal kecil', label: 'bal kecil (10 slop)' },
+                    { value: 'bal besar', label: 'bal besar (20 slop)' },
+                    { value: 'karton (bal kecil)', label: 'karton (80 slop - kcl)' },
+                    { value: 'karton (bal besar)', label: 'karton (80 slop - bsr)' }
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        onChangeItem(idx, 'selectedUnit', opt.value)
+                        setIsUnitDropdownOpen(false)
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-between border-none bg-transparent cursor-pointer"
+                      style={{ fontFamily: 'DM Sans' }}
+                    >
+                      <span>{opt.label}</span>
+                      {(item.selectedUnit || 'slop') === opt.value && (
+                        <Check size={16} className="text-[#16A34A]" strokeWidth={3} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Row: qty + price */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 mt-2.5">
         <div>
-          <label className={labelCn}>QTY ({item.unit || '…'})</label>
+          <div className="flex items-end h-8 mb-1.5">
+            <label className={labelCn} style={{ marginBottom: 0 }}>QTY</label>
+          </div>
           <input
             type="text"
             inputMode="decimal"
-            value={item.quantity || ''}
+            value={item.quantity === 0 || item.quantity === '0' ? '' : item.quantity || ''}
             onChange={e => {
               const val = e.target.value
               if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
@@ -315,8 +377,14 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
           )}
         </div>
         <div>
-          <label className={labelCn}>Harga / Unit</label>
-          <InputRupiah value={item.price_per_unit} onChange={v => onChangeItem(idx, 'price_per_unit', v)} />
+          <div className="flex items-end h-8 mb-1.5">
+            <label className={labelCn} style={{ marginBottom: 0 }}>Harga / {item.selectedUnit || item.unit || 'Unit'}</label>
+          </div>
+          <InputRupiah
+            value={item.price_per_unit}
+            onChange={v => onChangeItem(idx, 'price_per_unit', v)}
+            className={inputCn}
+          />
         </div>
       </div>
 
@@ -324,53 +392,80 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
       {prod && (
         <div className="space-y-3 pt-1 border-t border-[#E2E8F0] mt-1">
           {/* Price Suggestions Row */}
-          <div className="flex flex-wrap gap-1.5 items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5">
-            <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider mr-1 select-none">
-              Saran Harga:
-            </span>
-            
-            {/* Standard Price */}
-            {prod.sell_price > 0 && prod.sell_price !== Number(item.price_per_unit) && (
-              <button
-                type="button"
-                onClick={() => onChangeItem(idx, 'price_per_unit', prod.sell_price)}
-                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 active:scale-95 transition-all cursor-pointer"
-              >
-                Std: {formatIDR(prod.sell_price)}
-              </button>
-            )}
-            
-            {/* HPP Markups */}
-            {hpp > 0 && [1.00, 1.10, 1.15, 1.20].map((multiplier, mIdx) => {
-              const markupPrice = Math.round(hpp * multiplier)
-              const label = multiplier === 1.00 ? 'HPP (Modal)' : `+${Math.round((multiplier - 1) * 100)}%`
-              if (markupPrice === Number(item.price_per_unit)) return null
-              return (
+          <div
+            onClick={() => setIsFifoExpanded(!isFifoExpanded)}
+            className="flex flex-wrap gap-1.5 items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5 cursor-pointer select-none active:bg-slate-50 transition-colors"
+          >
+            <div className="flex justify-between items-center w-full mb-1">
+              <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider mr-1 select-none flex items-center gap-1">
+                Saran Harga:
+                <ChevronDown size={10} style={{ transform: isFifoExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+              </span>
+              {hpp > 0 && !isFifoExpanded && (
                 <button
-                  key={mIdx}
                   type="button"
-                  onClick={() => onChangeItem(idx, 'price_per_unit', markupPrice)}
-                  className={`text-[10px] font-bold px-2 py-1 rounded-lg border active:scale-95 transition-all cursor-pointer font-mono ${
-                    multiplier === 1.00 
-                      ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' 
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
-                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onChangeItem(idx, 'price_per_unit', hpp)
+                  }}
+                  className="text-[10px] font-black text-rose-700 bg-rose-50 hover:bg-rose-100/80 border border-rose-300/30 rounded-lg px-2 py-0.5 outline-none transition-all active:scale-95 cursor-pointer flex items-center gap-1 select-none"
+                  style={{ fontFamily: 'DM Sans' }}
                 >
-                  {label}: {formatIDR(markupPrice)}
+                  <span>HPP: {formatIDR(hpp)}</span>
                 </button>
-              )
-            })}
+              )}
+            </div>
+            
+            <div className="flex flex-wrap gap-1.5 items-center w-full">
+              {/* Standard Price */}
+              {prod.sell_price > 0 && (prod.sell_price * factor) !== Number(item.price_per_unit) && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onChangeItem(idx, 'price_per_unit', prod.sell_price * factor)
+                  }}
+                  className="text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 active:scale-95 transition-all cursor-pointer"
+                >
+                  Std: {formatIDR(prod.sell_price * factor)}
+                </button>
+              )}
+              
+              {/* HPP Markups */}
+              {hpp > 0 && isFifoExpanded && [1.00, 1.10, 1.15, 1.20].map((multiplier, mIdx) => {
+                const markupPrice = Math.round(hpp * multiplier)
+                const label = multiplier === 1.00 ? 'HPP (Modal)' : `+${Math.round((multiplier - 1) * 100)}%`
+                if (markupPrice === Number(item.price_per_unit)) return null
+                return (
+                  <button
+                    key={mIdx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onChangeItem(idx, 'price_per_unit', markupPrice)
+                    }}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-lg border active:scale-95 transition-all cursor-pointer font-mono ${
+                      multiplier === 1.00 
+                        ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' 
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                    }`}
+                  >
+                    {label}: {formatIDR(markupPrice)}
+                  </button>
+                )
+              })}
+            </div>
           </div>
           
           {/* HPP Summary Row */}
-          {hpp > 0 && (
+          {hpp > 0 && isFifoExpanded && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-xs px-1">
                 <span className="font-bold uppercase tracking-wider text-slate-500 text-[10px]">
                   HPP Terbobot (FIFO)
                 </span>
                 <span className="font-black text-slate-800 font-mono text-xs">
-                  {formatIDR(hpp)} / {item.unit || 'slop'}
+                  {formatIDR(hpp)} / {item.selectedUnit || item.unit || 'slop'}
                 </span>
               </div>
 
@@ -381,16 +476,20 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
                     Alokasi FIFO Batch:
                   </div>
                   <div className="space-y-1.5">
-                    {fifoBreakdown.map((b, bIdx) => (
-                      <div key={bIdx} className="flex justify-between items-center text-[10px] font-mono leading-tight">
-                        <span className="text-[#0F172A] font-bold truncate max-w-[220px]">
-                          {b.qty} {item.unit || 'slop'} @ {formatIDR(b.buy_price)}
-                        </span>
-                        <span className="text-muted-foreground text-[9px] truncate max-w-[150px]" title={b.batch_code}>
-                          ({b.batch_code.includes('Fallback') ? 'Fallback' : b.batch_code.replace('BATCH-', '')})
-                        </span>
-                      </div>
-                    ))}
+                    {fifoBreakdown.map((b, bIdx) => {
+                      const qtyInUnit = b.qty / factor
+                      const buyPriceInUnit = b.buy_price * factor
+                      return (
+                        <div key={bIdx} className="flex justify-between items-center text-[10px] font-mono leading-tight">
+                          <span className="text-[#0F172A] font-bold truncate max-w-[220px]">
+                            {qtyInUnit} {item.selectedUnit || item.unit || 'slop'} @ {formatIDR(buyPriceInUnit)}
+                          </span>
+                          <span className="text-muted-foreground text-[9px] truncate max-w-[150px]" title={b.batch_code}>
+                            ({b.batch_code.includes('Fallback') ? 'Fallback' : b.batch_code.replace('BATCH-', '')})
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
                   
                   {/* Warning / Explanation note */}
@@ -422,7 +521,7 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
 
       {/* Subtotal pill */}
       {subtotal > 0 && (
-        <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: isBelowHpp ? 'rgba(239,68,68,0.07)' : `rgba(234,88,12,0.07)`, border: `1px solid ${isBelowHpp ? 'rgba(239,68,68,0.2)' : BORDER}` }}>
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: isBelowHpp ? 'rgba(239,68,68,0.07)' : `rgba(15,23,42,0.06)`, border: `1px solid ${isBelowHpp ? 'rgba(239,68,68,0.2)' : BORDER}` }}>
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: MUTED }}>Subtotal</span>
           <span className="text-sm font-black" style={{ color: isBelowHpp ? '#EF4444' : TEXT }}>{formatIDR(subtotal)}</span>
         </div>
@@ -441,7 +540,7 @@ const VEHICLE_TYPES = [
 ]
 
 const PAY_METHOD_CONFIG = {
-  cash:     { label: 'Cash',     color: '#EA580C', bg: 'rgba(234,88,12,0.12)' },
+  cash:     { label: 'Cash',     color: '#0F172A', bg: 'rgba(15,23,42,0.1)' },
   transfer: { label: 'Transfer', color: '#60A5FA', bg: 'rgba(96,165,250,0.12)' },
   qris:     { label: 'QRIS',     color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
 }
@@ -498,6 +597,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   const [newCustForm, setNewCustForm]       = useState({ customer_name: '', customer_type: 'warung', phone: '', address: '', payment_terms: 'cash' })
   const [quickAddProd, setQuickAddProd]     = useState(false)
   const [newProdForm, setNewProdForm]       = useState({ product_name: '', category: 'lainnya', unit: 'pcs', sell_price: 0 })
+  const [showCostConfirm, setShowCostConfirm] = useState(false)
 
   const [useDelivery, setUseDelivery]           = useState(true)
   const [deliveryStatus, setDeliveryStatus]     = useState('terkirim') // 'terkirim' | 'pending'
@@ -551,8 +651,13 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   }, [allSales, editId])
 
   const selectedCust = customers.find(c => c.id === custId)
-  const totalAmount  = items.reduce((s, i) => s + Math.round((i.quantity || 0) * (i.price_per_unit || 0)), 0)
-  const totalCogs    = items.reduce((s, i) => s + Math.round((i.quantity || 0) * (i.cogs_per_unit || 0)), 0)
+  const totalAmount  = items.reduce((s, i) => {
+    return s + Math.round((i.quantity || 0) * (i.price_per_unit || 0))
+  }, 0)
+  const totalCogs    = items.reduce((s, i) => {
+    const factor = getFactor(i.selectedUnit || i.unit || 'slop')
+    return s + Math.round((i.quantity || 0) * factor * (i.cogs_per_unit || 0))
+  }, 0)
   const grossProfit  = totalAmount - totalCogs
   const netProfit    = grossProfit - deliveryCost - otherCost
   const netMarginPct = totalAmount > 0 ? Math.round((netProfit / totalAmount) * 100) : 0
@@ -583,13 +688,14 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     if (Array.isArray(editSale.sembako_sale_items) && editSale.sembako_sale_items.length > 0) {
       setItems(editSale.sembako_sale_items.map(it => ({
         product_id: it.product_id, product_name: it.product_name, unit: it.unit,
+        selectedUnit: it.unit,
         quantity: it.quantity, price_per_unit: it.price_per_unit, cogs_per_unit: it.cogs_per_unit
       })))
       // Data lengkap — buka di step 1 (barang) supaya langsung bisa review/edit
       setStep(1)
     } else {
       // Items kosong (data lama) — buka di step 1 juga, customer sudah prefill, tinggal isi barang
-      setItems([{ product_id: '', product_name: '', unit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
+      setItems([{ product_id: '', product_name: '', unit: '', selectedUnit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
       setStep(1)
     }
   }, [open, editSale])
@@ -624,18 +730,43 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
   function handleItemChange(idx, field, val) {
     const next = [...items]
-    next[idx] = { ...next[idx], [field]: val }
+    
+    if (field === 'selectedUnit') {
+      const item = next[idx]
+      const prevUnit = item.selectedUnit || 'slop'
+      const newUnit = val
+      
+      const prevFactor = getFactor(prevUnit)
+      const newFactor = getFactor(newUnit)
+      
+      const currentQty = Number(item.quantity || 0)
+      const baseQty = currentQty * prevFactor
+      const newQty = newFactor > 0 ? (baseQty / newFactor) : baseQty
+      
+      const currentPrice = Number(item.price_per_unit || 0)
+      const basePrice = currentPrice / prevFactor
+      const newPrice = basePrice * newFactor
+      
+      next[idx] = {
+        ...item,
+        selectedUnit: newUnit,
+        quantity: String(newQty),
+        price_per_unit: newPrice
+      }
+    } else {
+      next[idx] = { ...next[idx], [field]: val }
+    }
     
     const item = next[idx]
-    if (field === 'product_id' || field === 'quantity') {
+    if (field === 'product_id' || field === 'quantity' || field === 'selectedUnit') {
       const pId = item.product_id
-      const qty = Number(item.quantity) || 0
       const p = products.find(x => x.id === pId)
       
       if (p) {
         if (field === 'product_id') {
           next[idx].product_name = p.product_name
           next[idx].unit         = p.unit
+          next[idx].selectedUnit = p.unit
           
           let lastPrice = 0
           if (custId) {
@@ -656,7 +787,10 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           .filter(b => b.product_id === pId && !b.is_deleted && (b.qty_sisa || 0) > 0)
           .sort((a, b) => new Date(a.created_at || a.purchase_date) - new Date(b.created_at || b.purchase_date))
           
-        let remaining = qty
+        const factor = getFactor(next[idx].selectedUnit || p.unit || 'slop')
+        const qtyInBase = (Number(next[idx].quantity) || 0) * factor
+        
+        let remaining = qtyInBase
         let totalCost = 0
         for (const batch of prodBatches) {
           if (remaining <= 0) break
@@ -667,7 +801,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         if (remaining > 0) {
           totalCost += remaining * (p.avg_buy_price || 0)
         }
-        next[idx].cogs_per_unit = qty > 0 ? Math.round(totalCost / qty) : (p.avg_buy_price || 0)
+        next[idx].cogs_per_unit = qtyInBase > 0 ? Math.round(totalCost / qtyInBase) : (p.avg_buy_price || 0)
       }
     }
     setItems(next)
@@ -676,7 +810,16 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   async function handleSubmit() {
     const validItems = items
       .filter(i => i.product_id && Number(i.quantity) > 0)
-      .map(i => ({ ...i, quantity: Number(i.quantity) }))
+      .map(i => {
+        const factor = getFactor(i.selectedUnit || i.unit || 'slop')
+        return {
+          ...i,
+          unit: i.unit || 'slop',
+          quantity: Number(i.quantity) * factor,
+          price_per_unit: Number(i.price_per_unit) / factor,
+          cogs_per_unit: Number(i.cogs_per_unit)
+        }
+      })
     if (!validItems.length) { toast.error('Tambahkan minimal 1 produk'); return }
 
     try {
@@ -751,6 +894,19 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       clearInvoiceDraft()
     } catch (err) {
       console.error(err)
+      toast.error('Gagal menyimpan transaksi')
+    }
+  }
+
+  const handleSaveInvoice = () => {
+    const validItems = items
+      .filter(i => i.product_id && Number(i.quantity) > 0)
+    if (!validItems.length) { toast.error('Tambahkan minimal 1 produk'); return }
+
+    if (deliveryCost === 0 && otherCost === 0) {
+      setShowCostConfirm(true)
+    } else {
+      handleSubmit()
     }
   }
 
@@ -1008,19 +1164,19 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                           <div>
                             <label className={labelCn}>Toko / Customer</label>
                             {customersLoading ? (
-                              <div className="h-12 rounded-xl animate-pulse" style={{ background: 'rgba(234,88,12,0.07)' }} />
+                              <div className="h-12 rounded-xl animate-pulse" style={{ background: 'rgba(15,23,42,0.06)' }} />
                             ) : customers.length === 0 ? (
                               /* Auto-show Quick Add when no customers exist */
                               <div
                                 className="rounded-xl px-4 py-3 text-center"
-                                style={{ background: 'rgba(234,88,12,0.04)', border: `1px dashed ${BORDER}` }}
+                                style={{ background: 'rgba(15,23,42,0.04)', border: `1px dashed ${BORDER}` }}
                               >
                                 <p className="text-sm font-semibold mb-2" style={{ color: TEXT }}>Belum ada toko / customer</p>
                                 <p className="text-xs mb-3" style={{ color: MUTED }}>Tambahkan toko pertama untuk mulai catat penjualan</p>
                                 <button
                                   onClick={() => setQuickAddCust(true)}
                                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
-                                  style={{ background: ACCENT, color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(234,88,12,0.3)' }}
+                                  style={{ background: ACCENT, color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(15,23,42,0.2)' }}
                                 >
                                   <Plus size={14} /> Tambah Toko Pertama
                                 </button>
@@ -1058,7 +1214,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                               <motion.div
                                 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
                                 className="rounded-xl p-3 space-y-1.5 text-sm"
-                                style={{ background: 'rgba(234,88,12,0.04)', border: `1px solid ${BORDER}` }}
+                                style={{ background: 'rgba(15,23,42,0.04)', border: `1px solid ${BORDER}` }}
                               >
                                 <div className="flex justify-between">
                                   <span style={{ color: MUTED, fontWeight: 600 }}>Tipe</span>
@@ -1163,7 +1319,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     {productsLoading && (
                       <div className="space-y-3">
                         {[1, 2].map(i => (
-                          <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: 'rgba(234,88,12,0.07)' }} />
+                          <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: 'rgba(15,23,42,0.06)' }} />
                         ))}
                       </div>
                     )}
@@ -1177,7 +1333,9 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                               .filter(it => it.product_id === item.product_id)
                               .reduce((s, it) => s + (it.quantity || 0), 0)
                           : 0
-                        const overStock = prod && item.quantity > ((prod.current_stock || 0) + originalQty)
+                        const factor = getFactor(item.selectedUnit || item.unit || 'slop')
+                        const qtyInBase = Number(item.quantity || 0) * factor
+                        const overStock = prod && qtyInBase > ((prod.current_stock || 0) + originalQty)
                         return (
                           <ProductItemRow
                             key={idx}
@@ -1198,7 +1356,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
                     {/* Add item */}
                     <button
-                      onClick={() => setItems([...items, { product_id: '', product_name: '', unit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])}
+                      onClick={() => setItems([...items, { product_id: '', product_name: '', unit: '', selectedUnit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])}
                       className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all"
                       style={{ border: `1px dashed ${BORDER}`, color: MUTED, background: 'transparent' }}
                     >
@@ -1386,7 +1544,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                                   type="button"
                                   onClick={() => setAddKurir(true)}
                                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all"
-                                  style={{ background: 'rgba(234,88,12,0.06)', border: `1px dashed ${ACCENT}`, color: ACCENT }}
+                                  style={{ background: 'rgba(15,23,42,0.06)', border: `1px dashed ${ACCENT}`, color: ACCENT }}
                                 >
                                   <Plus size={15} /> Tambah Kurir Baru
                                 </button>
@@ -1574,7 +1732,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className={labelCn}>Biaya Kirim</label>
-                        <InputRupiah value={deliveryCost} onChange={setDeliveryCost} />
+                        <InputRupiah id="delivery-cost-input" value={deliveryCost} onChange={setDeliveryCost} />
                       </div>
                       <div>
                         <label className={labelCn}>Biaya Lain</label>
@@ -1666,7 +1824,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
               </button>
             ) : (
               <button
-                onClick={handleSubmit}
+                onClick={handleSaveInvoice}
                 disabled={createSale.isPending || updateSale.isPending}
                 className="flex-[2] h-12 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all bg-[#0F172A] text-white hover:bg-slate-900"
                 style={{
@@ -1683,6 +1841,56 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           </div>
         </SheetContent>
       </Sheet>
+
+      <AnimatePresence>
+        {showCostConfirm && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-[#111C24] border border-[#E2E8F0] dark:border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5 text-left"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center mx-auto text-xl">
+                  🚚
+                </div>
+                <h3 className="font-display font-black text-lg text-[#0F172A] dark:text-white uppercase tracking-tight">
+                  Biaya Tambahan
+                </h3>
+                <p className="text-xs text-[#64748B] dark:text-slate-400 leading-relaxed">
+                  Apakah transaksi ini dikenakan <strong>Biaya Kirim</strong> atau <strong>Biaya Tambahan Lainnya</strong>?
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCostConfirm(false)
+                    handleSubmit()
+                  }}
+                  className="flex-1 h-12 rounded-xl text-xs font-bold text-[#64748B] dark:text-slate-400 bg-[#F1F5F9] dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  Tidak Ada
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCostConfirm(false)
+                    const element = document.getElementById('delivery-cost-input')
+                    if (element) {
+                      element.focus()
+                      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    }
+                  }}
+                  className="flex-1 h-12 rounded-xl text-xs font-black text-white bg-amber-600 hover:bg-amber-500 shadow-sm transition-all cursor-pointer"
+                >
+                  Ya, Tambah Biaya
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <SembakoSuccessCard
         isOpen={!!successData && !printData}

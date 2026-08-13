@@ -616,6 +616,10 @@ export default function SembakoRetur() {
                           { value: 'karton', label: 'Karton / Dus' },
                           { value: 'kg', label: 'Kg' },
                           { value: 'pack', label: 'Pack / Bungkus' },
+                          { value: 'bal kecil', label: 'Bal Kecil' },
+                          { value: 'bal besar', label: 'Bal Besar' },
+                          { value: 'karton bal kecil', label: 'Karton Bal Kecil' },
+                          { value: 'karton bal besar', label: 'Karton Bal Besar' },
                         ]}
                       />
                     )}

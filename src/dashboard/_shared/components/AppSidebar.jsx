@@ -211,7 +211,7 @@ export default function AppSidebar({ open, onClose }) {
   const brokerBase = getBrokerBasePath(tenant)
   const peternakBase = getXBasePath(tenant, profile)
 
-  const color = accentColor || (isSembako ? '#EA580C' : isEgg ? '#7C3AED' : isRPA ? '#F59E0B' : '#10B981')
+  const color = accentColor || (isSembako ? '#0F172A' : isEgg ? '#7C3AED' : isRPA ? '#F59E0B' : '#10B981')
 
   const getBerandaPath = (v, t = tenant) => {
     const bBase = getBrokerBasePath(t)
@@ -529,9 +529,9 @@ export default function AppSidebar({ open, onClose }) {
           <div className="px-3 pt-2 pb-1">
             <button
               onClick={() => navigate('/admin/dashboard')}
-              className="w-full py-2.5 px-3.5 bg-[#EA580C]/10 hover:bg-[#EA580C]/20 border border-[#EA580C]/30 text-[#EA580C] hover:text-orange-300 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer group"
+              className="w-full py-2.5 px-3.5 bg-[#0F172A]/10 hover:bg-[#0F172A]/20 border border-[#0F172A]/30 text-[#0F172A] dark:text-slate-200 hover:text-slate-300 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer group"
             >
-              <ShieldAlert size={14} className="text-[#EA580C] shrink-0" />
+              <ShieldAlert size={14} className="text-[#0F172A] dark:text-slate-200 shrink-0" />
               <span className="truncate">Switch ke Admin Pusat</span>
               <ArrowRight size={12} className="ml-auto opacity-70 group-hover:translate-x-0.5 transition-transform" />
             </button>
@@ -631,7 +631,7 @@ export default function AppSidebar({ open, onClose }) {
                                   {item.title}
                                 </span>
                                 {item.isDevItem ? (
-                                  <span className="text-[9px] font-black uppercase tracking-wider bg-[#EA580C]/20 text-[#EA580C] border border-[#EA580C]/40 rounded-md px-1.5 py-0.5 shrink-0 animate-pulse shadow-sm">
+                                  <span className="text-[9px] font-black uppercase tracking-wider bg-[#0F172A]/20 text-[#0F172A] border border-[#0F172A]/40 rounded-md px-1.5 py-0.5 shrink-0 animate-pulse shadow-sm">
                                     DEV
                                   </span>
                                 ) : item.badge && (
@@ -926,7 +926,7 @@ export default function AppSidebar({ open, onClose }) {
                 href={`${WA_URL}?text=${encodeURIComponent('Halo Admin, saya ingin memperpanjang masa aktif server Broker Dashboard saya.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-2.5 px-3 bg-[#EA580C] hover:bg-[#C2410C] text-white border border-orange-400/30 rounded-xl text-[12px] font-extrabold font-['Sora'] cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-orange-950/40 transition-all no-underline"
+                className="w-full py-2.5 px-3 bg-[#0F172A] hover:bg-slate-900 text-white border border-slate-700/30 rounded-xl text-[12px] font-extrabold font-['Sora'] cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-slate-950/40 transition-all no-underline"
               >
                 <MessageSquareText size={14} />
                 Perpanjang Masa Aktif

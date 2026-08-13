@@ -113,7 +113,7 @@ export default function Login() {
             app_role: 'dev',
             user_type: 'broker',
             sub_type: 'distributor_sembako',
-            business_name: 'Broker Dashboard Sembako',
+            business_name: '',
             onboarded: true
           }).select('*, tenants(sub_type, business_vertical)').single()
 

@@ -65,7 +65,22 @@ export function CollectionReminders({ sales, navigate, brokerBase, maxItems = 5,
       </div>
       <div style={isMobile ? { display: 'flex', flexDirection: 'column', gap: '8px' } : { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
         {visibleReminders.map(s => (
-          <div key={s.id} style={{ background: MC.card, borderRadius: '12px', padding: '12px', border: '1px solid #FCA5A5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+          <div 
+            key={s.id} 
+            onClick={() => navigate(`${brokerBase}/penjualan?saleId=${s.id}`)}
+            style={{ 
+              background: MC.card, 
+              borderRadius: '12px', 
+              padding: '12px', 
+              border: '1px solid #FCA5A5', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+              cursor: 'pointer',
+            }}
+            className="hover:bg-slate-50 dark:hover:bg-white/5 active:scale-[0.98] transition-all"
+          >
              <div>
                 <p style={{ fontSize: '13px', fontWeight: 800, color: MC.text }}>{s.sembako_customers?.customer_name || s.customer_name}</p>
                 <p style={{ fontSize: '11px', color: s.daysDiff < 0 ? MC.red : MC.amber, fontWeight: 750 }}>
@@ -74,11 +89,10 @@ export function CollectionReminders({ sales, navigate, brokerBase, maxItems = 5,
              </div>
              <div style={{ textAlign: 'right' }}>
                 <p style={{ fontSize: '14px', fontWeight: 850, color: MC.text }}>{formatIDR(s.remaining_amount)}</p>
-                <button 
-                 onClick={() => navigate(`${brokerBase}/penjualan?saleId=${s.id}`)}
-                 style={{ fontSize: '10px', color: MC.accent, fontWeight: 750, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                <span 
+                 style={{ fontSize: '10px', color: MC.accent, fontWeight: 750, display: 'inline-block' }}>
                    Detail <ChevronRight size={10} style={{ display: 'inline', verticalAlign: 'middle', marginTop: '-2px' }} />
-                </button>
+                </span>
              </div>
           </div>
         ))}

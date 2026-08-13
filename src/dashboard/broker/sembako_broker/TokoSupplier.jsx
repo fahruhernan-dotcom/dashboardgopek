@@ -62,6 +62,9 @@ const CUSTOMER_TYPES = [
   'restoran',
   'catering',
   'grosir',
+  'semi_grosir',
+  'sales_keliling',
+  'perseorangan',
   'lainnya',
 ]
 

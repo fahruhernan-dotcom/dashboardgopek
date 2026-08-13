@@ -55,6 +55,30 @@ export default function KelolaAkunPage() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Nama Bisnis
+  const [businessName, setBusinessName] = useState('')
+  const [savingBusiness, setSavingBusiness] = useState(false)
+  useEffect(() => {
+    if (tenant?.business_name !== undefined) setBusinessName(tenant.business_name || '')
+  }, [tenant?.business_name])
+
+  const handleSaveBusinessName = async () => {
+    if (!tenant?.id) { toast.error('Tenant ID tidak ditemukan'); return }
+    setSavingBusiness(true)
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .update({ business_name: businessName.trim() })
+        .eq('id', tenant.id)
+      if (error) throw error
+      toast.success('Nama bisnis berhasil diperbarui!')
+    } catch (err) {
+      toast.error('Gagal simpan: ' + err.message)
+    } finally {
+      setSavingBusiness(false)
+    }
+  }
+
   const isDev = isDevUser(profile)
 
   const fetchAccounts = async () => {
@@ -150,7 +174,7 @@ export default function KelolaAkunPage() {
         app_role: selectedRole,
         user_type: 'broker',
         sub_type: 'distributor_sembako',
-        business_name: tenant?.business_name || 'Broker Dashboard Sembako',
+        business_name: tenant?.business_name || '',
         onboarded: true,
         created_at: new Date().toISOString()
       }
@@ -300,7 +324,7 @@ export default function KelolaAkunPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 28 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, background: 'linear-gradient(135deg, #EA580C, #D97706)', color: '#FFF', padding: '3px 10px', borderRadius: 99, textTransform: 'uppercase', letterSpacing: 0.5, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, background: 'linear-gradient(135deg, #0F172A, #334155)', color: '#FFF', padding: '3px 10px', borderRadius: 99, textTransform: 'uppercase', letterSpacing: 0.5, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <Crown size={12} /> DEV MODE ONLY
               </span>
             </div>
@@ -316,14 +340,51 @@ export default function KelolaAkunPage() {
             onClick={() => setShowAddModal(true)}
             style={{
               padding: '12px 20px', borderRadius: 12,
-              background: 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)',
+              background: 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
               border: 'none', color: '#FFF', fontSize: 13, fontWeight: 800,
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-              boxShadow: '0 6px 20px rgba(234, 88, 12, 0.25)'
+              boxShadow: '0 6px 20px rgba(15, 23, 42, 0.25)'
             }}
           >
             <UserPlus size={16} /> Buat Akun Baru
           </button>
+        </div>
+
+        {/* NAMA BISNIS */}
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16, padding: '20px 24px', marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <Store size={16} color="#0F172A" />
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Nama Bisnis / Toko</span>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input
+              type="text"
+              value={businessName}
+              onChange={e => setBusinessName(e.target.value)}
+              placeholder="Masukkan nama bisnis / toko Anda..."
+              style={{
+                flex: 1, height: 42, padding: '0 14px',
+                background: '#F8FAFC', border: '1px solid #CBD5E1',
+                borderRadius: 10, color: '#0F172A', fontSize: 14, outline: 'none'
+              }}
+              onKeyDown={e => e.key === 'Enter' && handleSaveBusinessName()}
+            />
+            <button
+              onClick={handleSaveBusinessName}
+              disabled={savingBusiness}
+              style={{
+                height: 42, padding: '0 18px', borderRadius: 10, border: 'none',
+                background: savingBusiness ? '#94A3B8' : 'linear-gradient(135deg, #0F172A, #334155)',
+                color: '#FFF', fontSize: 13, fontWeight: 700,
+                cursor: savingBusiness ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap'
+              }}
+            >
+              {savingBusiness ? 'Menyimpan...' : 'Simpan'}
+            </button>
+          </div>
+          <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>
+            Nama ini akan muncul di invoice dan header beranda.
+          </p>
         </div>
 
         {/* STATS ROW */}
@@ -401,7 +462,7 @@ export default function KelolaAkunPage() {
                           {acc.full_name || 'Pengguna'}
                           {isDevAcc && <Crown size={14} color="#D97706" />}
                           {isCurrentUser && (
-                            <span style={{ fontSize: 10, fontWeight: 800, background: '#FFEDD5', color: '#EA580C', border: '1px solid #FDBA74', padding: '2px 8px', borderRadius: 99 }}>
+                            <span style={{ fontSize: 10, fontWeight: 800, background: '#F1F5F9', color: '#0F172A', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: 99 }}>
                               ANDA
                             </span>
                           )}
@@ -475,7 +536,7 @@ export default function KelolaAkunPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <UserPlus size={20} color="#EA580C" /> Buat Akun Login Baru
+                <UserPlus size={20} color="#0F172A" /> Buat Akun Login Baru
               </div>
               <button onClick={() => { setShowAddModal(false); setShowPassword(false) }} style={{ background: 'none', border: 'none', color: '#64748B', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
@@ -560,12 +621,12 @@ export default function KelolaAkunPage() {
                         type="button"
                         onClick={() => { setSelectedRole(opt.value); setShowRoleDropdown(false) }}
                         style={{
-                          width: '100%', padding: '11px 14px', background: selectedRole === opt.value ? '#FFF7ED' : 'transparent',
+                          width: '100%', padding: '11px 14px', background: selectedRole === opt.value ? '#F1F5F9' : 'transparent',
                           border: 'none', borderBottom: '1px solid #F1F5F9', cursor: 'pointer',
                           textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2
                         }}
                       >
-                        <span style={{ fontSize: 13, fontWeight: 700, color: selectedRole === opt.value ? '#EA580C' : '#0F172A' }}>{opt.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: selectedRole === opt.value ? '#0F172A' : '#0F172A' }}>{opt.label}</span>
                         <span style={{ fontSize: 11, color: '#64748B' }}>{opt.sub}</span>
                       </button>
                     ))}
@@ -574,7 +635,7 @@ export default function KelolaAkunPage() {
               </div>
 
               {/* Role Info */}
-              <div style={{ background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#C2410C', lineHeight: 1.6 }}>
+              <div style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#334155', lineHeight: 1.6 }}>
                 {selectedRole === 'admin' && '🛒 Kasir/Admin dapat mengakses POS, stok, dan transaksi harian.'}
                 {selectedRole === 'owner' && '💼 Owner dapat melihat laporan profit, margin, dan audit log lengkap.'}
                 {selectedRole === 'dev' && '👑 Dev Superadmin memiliki full control termasuk kelola akun pengguna.'}
@@ -591,7 +652,7 @@ export default function KelolaAkunPage() {
                 <button
                   type="submit"
                   disabled={creating}
-                  style={{ flex: 2, height: 44, background: creating ? '#FDBA74' : 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)', border: 'none', color: '#FFF', borderRadius: 12, cursor: creating ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}
+                  style={{ flex: 2, height: 44, background: creating ? '#94A3B8' : 'linear-gradient(135deg, #0F172A 0%, #334155 100%)', border: 'none', color: '#FFF', borderRadius: 12, cursor: creating ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}
                 >
                   {creating ? 'Memproses...' : 'Simpan Akun Baru'}
                 </button>
@@ -607,7 +668,7 @@ export default function KelolaAkunPage() {
           <div style={{ width: '100%', maxWidth: 440, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: 28, boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Edit3 size={18} color="#EA580C" /> Edit Akun
+                <Edit3 size={18} color="#0F172A" /> Edit Akun
               </div>
               <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', color: '#64748B', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
@@ -667,12 +728,12 @@ export default function KelolaAkunPage() {
                         type="button"
                         onClick={() => { setEditRole(opt.value); setShowEditRoleDropdown(false) }}
                         style={{
-                          width: '100%', padding: '11px 14px', background: editRole === opt.value ? '#FFF7ED' : 'transparent',
+                          width: '100%', padding: '11px 14px', background: editRole === opt.value ? '#F1F5F9' : 'transparent',
                           border: 'none', borderBottom: '1px solid #F1F5F9', cursor: 'pointer',
                           textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2
                         }}
                       >
-                        <span style={{ fontSize: 13, fontWeight: 700, color: editRole === opt.value ? '#EA580C' : '#0F172A' }}>{opt.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: editRole === opt.value ? '#0F172A' : '#0F172A' }}>{opt.label}</span>
                         <span style={{ fontSize: 11, color: '#64748B' }}>{opt.sub}</span>
                       </button>
                     ))}
@@ -687,7 +748,7 @@ export default function KelolaAkunPage() {
                 <button onClick={() => setEditUser(null)} style={{ flex: 1, height: 42, background: 'transparent', border: '1px solid #CBD5E1', color: '#64748B', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                   Batal
                 </button>
-                <button onClick={handleSaveEdit} disabled={savingEdit} style={{ flex: 2, height: 42, background: savingEdit ? '#FDBA74' : 'linear-gradient(135deg, #EA580C 0%, #D97706 100%)', border: 'none', color: '#FFF', borderRadius: 10, cursor: savingEdit ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}>
+                <button onClick={handleSaveEdit} disabled={savingEdit} style={{ flex: 2, height: 42, background: savingEdit ? '#94A3B8' : 'linear-gradient(135deg, #0F172A 0%, #334155 100%)', border: 'none', color: '#FFF', borderRadius: 10, cursor: savingEdit ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 800 }}>
                   {savingEdit ? 'Memproses...' : 'Simpan Perubahan'}
                 </button>
               </div>
@@ -708,7 +769,7 @@ export default function KelolaAkunPage() {
               Anda akan menghapus akun:
             </p>
             <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>{deleteTarget.full_name}</p>
-            <p style={{ fontSize: 12, color: '#EA580C', marginBottom: 20 }}>{deleteTarget.email}</p>
+            <p style={{ fontSize: 12, color: '#334155', marginBottom: 20 }}>{deleteTarget.email}</p>
             <p style={{ fontSize: 12, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 12px', marginBottom: 20 }}>
               ⚠️ Tindakan ini tidak dapat dibatalkan!
             </p>

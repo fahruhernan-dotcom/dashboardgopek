@@ -46,16 +46,8 @@ BEGIN
             );
         END IF;
 
-        -- 3. Add to tenant_memberships if table exists
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tenant_memberships') THEN
-            IF NOT EXISTS (SELECT 1 FROM tenant_memberships WHERE tenant_id = '00000000-0000-0000-0000-000000000002' AND user_id = v_user_id) THEN
-                INSERT INTO tenant_memberships (tenant_id, user_id, role)
-                VALUES ('00000000-0000-0000-0000-000000000002', v_user_id, 'owner');
-            END IF;
-        END IF;
-
         RAISE NOTICE 'Akun fahruhernansakti@gmail.com berhasil dijadikan DEV Superadmin!';
     ELSE
-        RAISE NOTICE 'User fahruhernansakti@gmail.com belum ada di auth.users. Membuat user di auth.users...';
+        RAISE NOTICE 'User fahruhernansakti@gmail.com belum ada di auth.users. Silakan mendaftar via aplikasi terlebih dahulu.';
     END IF;
 END $$;

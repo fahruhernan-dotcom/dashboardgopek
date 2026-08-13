@@ -1,16 +1,10 @@
 import React, { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { formatIDR, formatIDRShort } from '@/lib/format'
 import { BrokerBaseCard } from '@/dashboard/_shared/components/transactions/BrokerBaseCard'
-import { ChevronDown, Truck, User, Package } from 'lucide-react'
+import { ChevronDown, User, Package } from 'lucide-react'
 import {
-  useSembakoDeliveries,
-  useSembakoEmployees,
-  useSembakoCustomers,
-  useSembakoSalesPendingDelivery,
-  useStartSembakoDelivery,
   useCompleteSembakoDelivery,
   useCreateSembakoDelivery,
 } from '@/lib/hooks/useSembakoData'
@@ -99,13 +93,13 @@ function MiniDeliveryRow({ delivery, onStart, onComplete, onNavigate }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }}>
           <User size={10} color="var(--text-muted)" style={{ flexShrink: 0 }} />
           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {isDirect ? 'Diserahkan Langsung' : (driverName || '—')}
+            {isDirect ? 'Diambil Sendiri' : (driverName || '—')}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
           <Truck size={10} color="var(--text-muted)" style={{ flexShrink: 0 }} />
           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
-            {isDirect ? 'Tanpa Kurir' : (vehicleName || '—')}
+            {isDirect ? 'Ambil di Toko' : (vehicleName || '—')}
           </span>
         </div>
       </div>
@@ -279,79 +273,76 @@ export function TambahTripSheet({ open, onClose, prefillSale, employees = [] }) 
 }
 
 
-// ── Sale delivery panel (shown in mobile expand) ──────────────────────────────
-function SaleDeliveryPanel({ sale, onOpenDetail, onEdit }) {
-  const { data: allDeliveries = [] } = useSembakoDeliveries()
-  const { data: employees = [] } = useSembakoEmployees()
-  const { data: customers = [] } = useSembakoCustomers()
-  const { data: salesPending = [] } = useSembakoSalesPendingDelivery()
-  const startDelivery = useStartSembakoDelivery()
-  const completeDelivery = useCompleteSembakoDelivery()
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  const saleDeliveries = allDeliveries.filter(d => d.sale_id === sale.id && !d.is_deleted)
-  const allDone = saleDeliveries.length > 0 && saleDeliveries.every(d => d.status === 'delivered')
-
-  const handleNavigateToDelivery = (deliveryId) => {
-    const pengirimanPath = location.pathname.replace('/penjualan', '/pengiriman')
-    navigate(`${pengirimanPath}?highlightDelivery=${deliveryId}`)
-  }
-
-  const isDirectSale = saleDeliveries.length > 0 && saleDeliveries.every(d => {
-    const driver = d.sembako_employees?.full_name || d.driver_name
-    const vehicle = [d.vehicle_type, d.vehicle_plate].filter(v => v && v !== '-').join(' ')
-    return !driver && !vehicle
-  })
+// ── Sale items panel (shown in mobile expand) ─────────────────────────────────
+function SaleItemsPanel({ sale, onOpenDetail, onEdit }) {
+  const items = Array.isArray(sale.sembako_sale_items) ? sale.sembako_sale_items : []
 
   return (
     <div style={{
       background: 'var(--bg-subtle)',
       borderRadius: '16px',
-      border: `1px solid var(--border-soft)`,
+      border: '1px solid var(--border-soft)',
       padding: '12px 14px 14px',
     }}>
       {/* Section header */}
       <p style={{
         fontSize: '9px', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase',
-        color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px',
+        color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '5px',
       }}>
-        <Truck size={11} color="var(--text-muted)" />
-        {isDirectSale ? `Penyerahan Barang (${saleDeliveries.length})` : `Pengiriman (${saleDeliveries.length})`}
+        <Package size={11} color="var(--text-muted)" />
+        {`Item (${items.length})`}
       </p>
 
+      {/* Invoice number */}
+      {sale.invoice_number && (
+        <p style={{
+          fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)',
+          fontFamily: 'monospace', letterSpacing: '0.05em',
+          marginBottom: '10px', opacity: 0.7,
+        }}>
+          {sale.invoice_number}
+        </p>
+      )}
 
-      {/* Delivery list */}
-      {saleDeliveries.length === 0 ? (
+      {/* Items list */}
+      {items.length === 0 ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 0', marginBottom: '10px' }}>
           <Package size={13} color={C.muted} />
-          <p style={{ fontSize: '12px', color: C.muted, margin: 0, fontWeight: 600 }}>Belum ada pengiriman</p>
+          <p style={{ fontSize: '12px', color: C.muted, margin: 0, fontWeight: 600 }}>Belum ada item</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-          {saleDeliveries.map(d => (
-            <MiniDeliveryRow
-              key={d.id}
-              delivery={d}
-              onStart={id => startDelivery.mutate(id)}
-              onComplete={id => completeDelivery.mutate(id)}
-              onNavigate={handleNavigateToDelivery}
-            />
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', marginBottom: '10px' }}>
+          {items.map((it, i) => {
+            const qty = it.quantity ?? 0
+            const price = Number(it.sell_price ?? it.price_per_unit ?? it.unit_price ?? 0)
+            const subtotal = it.subtotal ?? Math.round(qty * price)
+            return (
+              <div key={it.id ?? i} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '7px 2px',
+                borderBottom: i < items.length - 1 ? '1px solid var(--border-soft)' : 'none',
+              }}>
+                {/* Nama produk */}
+                <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {it.product_name || it.sembako_products?.product_name || '—'}
+                  </p>
+                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>
+                    {qty} {it.unit || 'unit'} × {formatIDR(price)}
+                  </p>
+                </div>
+                {/* Subtotal */}
+                <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, tabularNums: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                  {formatIDR(subtotal)}
+                </p>
+              </div>
+            )
+          })}
         </div>
       )}
 
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '8px' }}>
-        {!allDone && (
-          <button
-            onClick={e => { e.stopPropagation(); setSheetOpen(true) }}
-            style={{ ...sBtn(true), flex: 1, padding: '10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
-          >
-            <Truck size={13} /> Buat Pengiriman
-          </button>
-        )}
         <button
           onClick={e => { e.stopPropagation(); onEdit?.(sale) }}
           style={{ ...sBtn(false), flex: 1, padding: '10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
@@ -365,15 +356,6 @@ function SaleDeliveryPanel({ sale, onOpenDetail, onEdit }) {
           Detail Invoice
         </button>
       </div>
-
-      <TambahTripSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        prefillSale={sale}
-        salesPending={salesPending}
-        employees={employees}
-        customers={customers}
-      />
     </div>
   )
 }
@@ -522,7 +504,7 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
       {/* Row 2: invoice info + delivery badge */}
       <div className="flex items-center justify-between pl-11">
         <p className="text-[11px] font-semibold text-muted-foreground tracking-wide tabular-nums truncate">
-          {sale.invoice_number || '-'} · {fmtDateLocal(sale.transaction_date)}
+          {fmtDateLocal(sale.transaction_date)}
         </p>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 900, padding: '2px 8px', borderRadius: '99px', background: deliveryBadge.bg, border: `1px solid ${deliveryBadge.border}`, color: deliveryBadge.color, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
           {deliveryBadge.icon && <span style={{ opacity: 0.7 }}>{deliveryBadge.icon}</span>}
@@ -664,7 +646,9 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
           <span className="text-[11px] font-bold text-muted-foreground leading-none">jenis</span>
           <span className="text-[11px] text-muted-foreground leading-none mx-0.5">·</span>
           <span className="text-[14px] font-black text-foreground tabular-nums leading-none">{noItems ? '—' : netQty}</span>
-          <span className="text-[11px] font-bold text-muted-foreground leading-none">{itemUnit}{totalReturnQty > 0 ? ` (-${totalReturnQty})` : ''}</span>
+          <span className="text-[11px] font-bold text-muted-foreground leading-none">
+            {itemUnit}{totalReturnQty > 0 ? ` (-${totalReturnQty})` : ''}
+          </span>
         </div>
         <span className="font-sans text-[16px] font-black text-foreground tabular-nums leading-none shrink-0">
           {expanded ? formatIDR(totalAmount) : formatIDRShort(totalAmount)}
@@ -717,7 +701,7 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
                 style={{ overflow: 'hidden' }}
               >
                 <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: '12px', marginTop: '4px' }}>
-                  <SaleDeliveryPanel sale={sale} onOpenDetail={onOpenDetail} onEdit={onEdit} />
+                  <SaleItemsPanel sale={sale} onOpenDetail={onOpenDetail} onEdit={onEdit} />
                 </div>
               </motion.div>
             )}

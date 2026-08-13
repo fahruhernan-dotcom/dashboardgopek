@@ -1,24 +1,17 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { PDFDownloadLink } from '@/lib/pdfFallback.jsx'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Download, Printer, Save, Loader2, CheckCircle2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { Download, Printer, Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { generateInvoiceNumber } from '@/lib/invoice/invoiceUtils'
 import { SembakoInvoice } from './templates/SembakoInvoice'
 import { SembakoInvoicePaper } from '@/dashboard/broker/sembako_broker/SembakoInvoicePreview'
-import { useSaveInvoice } from '@/lib/invoice/useInvoice'
-import { generateInvoiceNumber } from '@/lib/invoice/invoiceUtils'
 
 export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpen, onClose }) {
-  const [invoiceNumber] = useState(() => generateInvoiceNumber('sembako_sale'))
-  const [saved, setSaved] = useState(false)
-
   const { tenant } = useAuth()
-  const { mutate: saveInvoice, isPending: isSaving } = useSaveInvoice()
-
   if (!isOpen || !data) return null
 
   // Normalize data for both paper preview & PDF generation
@@ -26,7 +19,7 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
   const cust = data.customer || inv?.sembako_customers || inv?.customer || {}
   const rawItems = data.items || inv?.sembako_sale_items || inv?.items || []
 
-  const invNo = inv?.invoice_number || data.invoiceNumber || invoiceNumber
+  const invNo = inv?.invoice_number || data.invoiceNumber || generateInvoiceNumber('sembako_sale')
   const txnDate = inv?.transaction_date || data.transactionDate || new Date().toISOString()
   const dueDate = inv?.due_date || data.dueDate || null
 
@@ -88,30 +81,6 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
 
   const fileName = `Invoice_${invNo}.pdf`
 
-  const handleSave = () => {
-    saveInvoice(
-      {
-        invoice_type: 'sembako_sale',
-        reference_id: inv?.id || null,
-        recipient_name: paperData.customer_name,
-        total_amount: totalAmount,
-        metadata: {
-          invoice_number: invNo,
-          generated_by: data.generatedBy || 'Admin GPK',
-        },
-      },
-      {
-        onSuccess: () => {
-          setSaved(true)
-          toast.success('Invoice tersimpan ke riwayat')
-        },
-        onError: (err) => {
-          toast.error('Gagal simpan: ' + err.message)
-        },
-      }
-    )
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent
@@ -138,24 +107,7 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
 
         {/* Action Bar */}
         <div className="shrink-0 p-4 sm:px-6 sm:py-4 border-t border-white/[0.08] flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
-          {/* Simpan ke riwayat */}
-          <Button
-            variant="outline"
-            onClick={handleSave}
-            disabled={isSaving || saved}
-            className="flex-1 sm:flex-none h-11 border-white/10 bg-white/[0.03] text-[#94A3B8] font-semibold text-[10px] sm:text-xs uppercase tracking-widest rounded-xl hover:bg-white/[0.06] disabled:opacity-50"
-          >
-            {isSaving ? (
-              <Loader2 size={14} className="animate-spin mr-1 sm:mr-2" />
-            ) : saved ? (
-              <CheckCircle2 size={14} className="text-emerald-400 mr-1 sm:mr-2" />
-            ) : (
-              <Save size={14} className="mr-1 sm:mr-2" />
-            )}
-            {saved ? 'Tersimpan' : 'Simpan'}
-          </Button>
 
-          {/* Print */}
           <Button
             variant="outline"
             onClick={() => window.print()}

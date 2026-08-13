@@ -169,7 +169,7 @@ function StokSaatIni({ products, allBatches = [], onTambah, onAdjust, onShowHist
                             <div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <span style={{ fontSize: 11, fontFamily: 'DM Sans', fontWeight: 700, color: '#94A3B8' }}>{batchCode}</span>
-                                {i === 0 && <span style={{ fontSize: 9, background: 'rgba(234,88,12,0.15)', color: C.accent, padding: '1px 6px', borderRadius: 10, fontWeight: 700, letterSpacing: '0.04em' }}>FIFO NEXT</span>}
+                                {i === 0 && <span style={{ fontSize: 9, background: 'rgba(15,23,42,0.12)', color: C.accent, padding: '1px 6px', borderRadius: 10, fontWeight: 700, letterSpacing: '0.04em' }}>FIFO NEXT</span>}
                               </div>
                               <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'DM Sans', marginTop: 2 }}>
                                 Tgl Masuk: {dateStr}
@@ -202,7 +202,7 @@ function StokSaatIni({ products, allBatches = [], onTambah, onAdjust, onShowHist
                       <button
                         type="button"
                         onClick={() => onTambah(product.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(234,88,12,0.12)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '7px 14px', color: C.accent, fontFamily: 'DM Sans', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(15,23,42,0.12)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '7px 14px', color: C.accent, fontFamily: 'DM Sans', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
                       >
                         <Plus size={14} /> Stok Masuk
                       </button>
@@ -442,7 +442,7 @@ function getActionStyle(action_type) {
   if (type.includes('TAMBAH')) {
     return { label: '✨ PRODUK BARU', bg: 'rgba(20,184,166,0.15)', color: '#2DD4BF', border: 'rgba(20,184,166,0.3)' }
   }
-  return { label: `📋 ${type}`, bg: 'rgba(234,88,12,0.15)', color: '#EA580C', border: 'rgba(234,88,12,0.3)' }
+  return { label: `📋 ${type}`, bg: 'rgba(15,23,42,0.12)', color: '#0F172A', border: 'rgba(15,23,42,0.2)' }
 }
 
 function AuditLogTab() {
@@ -525,7 +525,7 @@ function SkeletonBox({ w = '100%', h = 16, r = 8, mb = 0, opacity = 1 }) {
   return (
     <div style={{
       width: w, height: h, borderRadius: r,
-      background: 'linear-gradient(90deg, rgba(234,88,12,0.07) 0%, rgba(234,88,12,0.13) 50%, rgba(234,88,12,0.07) 100%)',
+      background: 'linear-gradient(90deg, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0.12) 50%, rgba(15,23,42,0.06) 100%)',
       backgroundSize: '200% 100%',
       animation: 'shimmer 1.4s infinite',
       marginBottom: mb, opacity,

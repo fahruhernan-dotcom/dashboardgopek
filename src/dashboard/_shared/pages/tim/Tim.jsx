@@ -390,87 +390,75 @@ export default function Tim({ hideMobileHeader = false, roleConfig }) {
           )}
         </div>
 
-        <div className={cn("border border-white/8 shadow-sm transition-all duration-300", isDesktop ? "p-6" : "p-4")} style={{ background: cardBg, borderRadius: cardRadius }}>
+        <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
           {loadingTenant ? (
-            <div className="py-8 flex justify-center text-tx-3"><Loader2 className="animate-spin" /></div>
+            <div className="py-8 flex justify-center text-muted-foreground"><Loader2 className="animate-spin" /></div>
           ) : isEditingProfile ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-black uppercase tracking-widest text-[#4B6478]">Nama Bisnis</Label>
-                  <Input 
+            <div className="p-4 md:p-5 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Nama Bisnis</label>
+                  <Input
                     value={profileForm.business_name}
                     onChange={(e) => setProfileForm({...profileForm, business_name: e.target.value})}
-                    placeholder="Contoh: UD Ayam Jaya"
-                    className="border-white/10 h-12 rounded-xl text-[16px]"
-                    style={{ background: inputBg }}
+                    placeholder="Contoh: Gopek Distributor"
+                    className="h-10 rounded-xl text-sm bg-background border-border/60 focus-visible:ring-1 focus-visible:ring-amber-500/40"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-black uppercase tracking-widest text-[#4B6478]">No HP Bisnis</Label>
-                  <PhoneInput 
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">No HP Bisnis</label>
+                  <PhoneInput
                     value={profileForm.phone}
                     onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
                     placeholder="0812..."
-                    className="border-white/10 h-12 rounded-xl text-[16px]"
-                    style={{ background: inputBg }}
+                    className="h-10 rounded-xl text-sm bg-background border-border/60 focus-visible:ring-1 focus-visible:ring-amber-500/40"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-[11px] font-black uppercase tracking-widest text-[#4B6478]">Lokasi / Kota</Label>
-                <Input 
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Lokasi / Kota</label>
+                <Input
                   value={profileForm.location}
                   onChange={(e) => setProfileForm({...profileForm, location: e.target.value})}
                   placeholder="Contoh: Boyolali, Jawa Tengah"
-                  className="border-white/10 h-12 rounded-xl text-[16px]"
-                  style={{ background: inputBg }}
+                  className="h-10 rounded-xl text-sm bg-background border-border/60 focus-visible:ring-1 focus-visible:ring-amber-500/40"
                 />
               </div>
-              <div className="flex items-center gap-3 pt-2">
-                <Button 
+              <div className="flex items-center gap-2 pt-1">
+                <Button
                   onClick={() => updateTenantMutation.mutate(profileForm)}
                   disabled={updateTenantMutation.isPending || !profileForm.business_name}
-                  className="text-white font-bold h-11 px-6 rounded-xl flex-1 md:flex-none"
+                  className="text-white font-semibold h-9 px-5 rounded-xl text-sm"
                   style={{ background: accent }}
                 >
-                  {updateTenantMutation.isPending ? <Loader2 size={18} className="animate-spin mr-2" /> : <Save size={18} className="mr-2" />}
-                  Simpan Perubahan
+                  {updateTenantMutation.isPending ? <Loader2 size={15} className="animate-spin mr-1.5" /> : <Save size={15} className="mr-1.5" />}
+                  Simpan
                 </Button>
-                <Button 
+                <Button
                   variant="ghost"
                   onClick={() => {
                     setIsEditingProfile(false);
-                    // Reset form to latest data
-                    if (tenant) {
-                      setProfileForm({
-                        business_name: tenant.business_name || '',
-                        phone: tenant.phone || '',
-                        location: tenant.location || ''
-                      });
-                    }
+                    if (tenant) setProfileForm({ business_name: tenant.business_name || '', phone: tenant.phone || '', location: tenant.location || '' });
                   }}
                   disabled={updateTenantMutation.isPending}
-                  className="text-tx-3 hover:text-tx-1 h-11 px-6 rounded-xl"
+                  className="text-muted-foreground hover:text-foreground h-9 px-4 rounded-xl text-sm"
                 >
                   Batal
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-1">
-                <p className="text-[11px] font-black uppercase tracking-widest text-[#4B6478]">Nama Bisnis</p>
-                <p className="text-[16px] font-semibold text-tx-1">{tenant?.business_name || '-'}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[11px] font-black uppercase tracking-widest text-[#4B6478]">No HP Bisnis</p>
-                <p className="text-[16px] font-semibold text-tx-1">{tenant?.phone || '-'}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[11px] font-black uppercase tracking-widest text-[#4B6478]">Lokasi / Kota</p>
-                <p className="text-[16px] font-semibold text-tx-1">{tenant?.location || '-'}</p>
-              </div>
+            <div className="divide-y divide-border/30">
+              {[
+                { label: 'Nama Bisnis', value: tenant?.business_name },
+                { label: 'No HP',       value: tenant?.phone },
+                { label: 'Lokasi',      value: tenant?.location },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between px-4 py-3">
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
+                  <span className="text-sm font-semibold text-foreground">{value || <span className="text-muted-foreground/50 font-normal">—</span>}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>

@@ -32,7 +32,7 @@ const SALARY_TYPES = [
   { value: 'bulanan', label: 'Bulanan', color: '#10B981' },
   { value: 'borongan', label: 'Borongan', color: '#F59E0B' },
   { value: 'komisi', label: 'Komisi', color: '#A78BFA' },
-  { value: 'campuran', label: 'Campuran', color: '#EA580C' },
+  { value: 'campuran', label: 'Campuran', color: '#0F172A' },
 ]
 const STATUS_COLOR = { aktif: '#10B981', nonaktif: '#EF4444', cuti: '#F59E0B' }
 const ROLES = ['gudang', 'sales', 'kurir', 'admin', 'lainnya']

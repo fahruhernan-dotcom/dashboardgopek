@@ -46,7 +46,7 @@ const salesChartConfig = {
   },
   netProfit: {
     label: "Net Profit",
-    color: "#EA580C",
+    color: "#0F172A",
   },
 }
 
@@ -302,7 +302,7 @@ export function SalesAndCashChart({
           <span style={{ fontSize: '10px', fontWeight: 800, color: MC.muted, letterSpacing: '0.05em' }}>📊 GRAFIK PROFITABILITAS (GROSS vs NET PROFIT)</span>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <LegendDot color="#10B981" label="Gross Profit" />
-            <LegendDot color="#EA580C" label="Net Profit" />
+            <LegendDot color="#0F172A" label="Net Profit" />
           </div>
         </div>
         <div style={{ width: '100%', height: chartHeightPx }}>
@@ -314,8 +314,8 @@ export function SalesAndCashChart({
                   <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="colorNetProfit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#EA580C" stopOpacity={0.06}/>
-                  <stop offset="95%" stopColor="#EA580C" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#0F172A" stopOpacity={0.06}/>
+                  <stop offset="95%" stopColor="#0F172A" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
@@ -351,11 +351,11 @@ export function SalesAndCashChart({
                 type="monotone"
                 dataKey="netProfit"
                 name="Net Profit"
-                stroke="#EA580C"
+                stroke="#0F172A"
                 strokeWidth={2}
                 fill="url(#colorNetProfit)"
                 isAnimationActive={false}
-                activeDot={{ r: 5, fill: '#EA580C', stroke: MC.card, strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: '#0F172A', stroke: MC.card, strokeWidth: 2 }}
               />
             </AreaChart>
           </ChartContainer>

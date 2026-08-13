@@ -87,7 +87,7 @@ export async function getTenantId() {
   try {
     await supabase.from('tenants').upsert({
       id: fallbackId,
-      business_name: 'Broker Dashboard Sembako',
+      business_name: '',
       business_vertical: 'distributor_sembako'
     }, { onConflict: 'id' })
   } catch (e) {

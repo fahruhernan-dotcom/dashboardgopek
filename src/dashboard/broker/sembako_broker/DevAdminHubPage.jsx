@@ -205,17 +205,17 @@ export default function DevAdminHubPage() {
   }, [systemLogs, logFilter, logSearch])
 
   return (
-    <div className="bg-slate-50 min-h-screen text-slate-900 p-4 sm:p-8 space-y-6 selection:bg-[#EA580C]/30 selection:text-orange-900">
+    <div className="bg-slate-50 min-h-screen text-slate-900 p-4 sm:p-8 space-y-6 selection:bg-[#0F172A]/30 selection:text-slate-900">
       
       {/* Header Admin Console */}
       <header className="relative z-10 bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#EA580C] to-amber-600 border border-orange-400/30 flex items-center justify-center text-white shadow-md shadow-orange-600/20 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0F172A] to-slate-800 border border-slate-700/30 flex items-center justify-center text-white shadow-md shadow-slate-900/20 shrink-0">
             <Terminal size={28} />
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Badge className="bg-orange-50 text-[#EA580C] border border-orange-200 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 animate-pulse">
+              <Badge className="bg-slate-100 text-[#0F172A] border border-slate-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 animate-pulse">
                 DEV MODE ACTIVE
               </Badge>
               <Badge className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold px-2 py-0.5">
@@ -252,7 +252,7 @@ export default function DevAdminHubPage() {
             variant="outline" 
             className="h-12 rounded-2xl bg-white border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold gap-2 px-4 shadow-sm cursor-pointer"
           >
-            <RefreshCw size={14} className={cn(isCheckingPing && "animate-spin text-[#EA580C]")} />
+            <RefreshCw size={14} className={cn(isCheckingPing && "animate-spin text-slate-900")} />
             Ping System
           </Button>
         </div>
@@ -264,25 +264,25 @@ export default function DevAdminHubPage() {
           <TabsList className="bg-slate-200/70 border border-slate-300/60 p-1.5 h-14 rounded-2xl grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
             <TabsTrigger 
               value="logs" 
-              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#0F172A] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Activity size={16} /> Error & System Logs
             </TabsTrigger>
             <TabsTrigger 
               value="accounts" 
-              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#0F172A] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Users size={16} /> Kelola Akun Login
             </TabsTrigger>
             <TabsTrigger 
               value="diagnostics" 
-              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#0F172A] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Cpu size={16} /> Diagnostics & Cache
             </TabsTrigger>
             <TabsTrigger 
               value="recycle" 
-              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#EA580C] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#0F172A] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Trash2 size={16} /> Recycle Bin Data
             </TabsTrigger>
@@ -301,7 +301,7 @@ export default function DevAdminHubPage() {
                       value={logSearch}
                       onChange={e => setLogSearch(e.target.value)}
                       placeholder="Cari log kesalahan..."
-                      className="bg-[#111C24] border-white/10 pl-10 h-11 text-xs font-bold text-white rounded-xl focus:border-[#EA580C]"
+                      className="bg-[#111C24] border-white/10 pl-10 h-11 text-xs font-bold text-white rounded-xl focus:border-[#0F172A]"
                     />
                   </div>
 
@@ -313,7 +313,7 @@ export default function DevAdminHubPage() {
                         className={cn(
                           "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
                           logFilter === lvl 
-                            ? "bg-[#EA580C] text-white shadow-md" 
+                            ? "bg-[#0F172A] text-white shadow-md" 
                             : "text-slate-400 hover:text-white"
                         )}
                       >
@@ -422,7 +422,7 @@ export default function DevAdminHubPage() {
                     </div>
                     <Button 
                       onClick={handleFlushCache}
-                      className="!bg-[#EA580C] hover:!bg-[#D44E0A] !text-white rounded-xl text-xs font-bold h-10 px-4 cursor-pointer border-none"
+                      className="!bg-[#0F172A] hover:!bg-[#1E293B] !text-white rounded-xl text-xs font-bold h-10 px-4 cursor-pointer border-none"
                     >
                       Flush Cache
                     </Button>
