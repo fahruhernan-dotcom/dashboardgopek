@@ -83,13 +83,20 @@ export default function SembakoTokoSupplier() {
   const autoOpenToko = searchParams.get('action') === 'new'
   const [sub, setSub] = useState(() => searchParams.get('tab') || 'toko')
 
-  // Sync URL search params tab to state when search params change (e.g. going back/forward)
+  // Sync URL search params tab & action to state
   const tabParam = searchParams.get('tab') || 'toko'
   React.useEffect(() => {
     if (tabParam !== sub) {
       setSub(tabParam)
     }
-  }, [tabParam])
+    if (searchParams.get('action') === 'new') {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.delete('action')
+        return next
+      }, { replace: true })
+    }
+  }, [tabParam, searchParams, setSearchParams, sub])
 
   const handleTabChange = (newTab) => {
     setSub(newTab)
@@ -361,6 +368,12 @@ function SegmentSwitch({ sub, setSub }) {
 
 function TokoActions({ compact = false, autoOpen = false }) {
   const [open, setOpen] = useState(autoOpen)
+
+  React.useEffect(() => {
+    if (autoOpen) {
+      setOpen(true)
+    }
+  }, [autoOpen])
   const createCustomer = useCreateSembakoCustomer()
   const [form, setForm] = useState({
     customer_name: '',

@@ -599,7 +599,7 @@ export default function Gudang() {
   const { profile } = useAuth()
   const showAudit = canViewAuditLogs(profile)
   const tabsList = useMemo(() => showAudit ? ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar', '🔄 Retur Gudang', '📜 Log Perubahan'] : ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar', '🔄 Retur Gudang'], [showAudit])
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
   const preProductId = searchParams.get('product') || null
@@ -616,8 +616,13 @@ export default function Gudang() {
   React.useEffect(() => {
     if (searchParams.get('action') === 'add-stock') {
       setShowTambahSheet(true)
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.delete('action')
+        return next
+      }, { replace: true })
     }
-  }, [searchParams])
+  }, [searchParams, setSearchParams])
 
   const [showAdjustSheet, setShowAdjustSheet] = useState(false)
   const [selectedBatch, setSelectedBatch] = useState(null)

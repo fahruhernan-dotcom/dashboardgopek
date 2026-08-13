@@ -36,10 +36,11 @@ export default function SembakoPenjualan() {
     if (params.get('action') === 'new') {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpenWizard(true)
+      navigate(location.pathname, { replace: true })
     }
-  }, [location.search])
+  }, [location.search, location.pathname, navigate])
 
-  // URL cleanup: when wizard closes, strip ?action=new if present
+  // URL cleanup fallback
   useEffect(() => {
     if (!openWizard && location.search.includes('action=new')) {
       navigate(location.pathname, { replace: true })
