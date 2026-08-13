@@ -77,26 +77,29 @@ const PAYMENT_TERMS = [
 ]
 
 export default function SembakoTokoSupplier() {
-  const isDesktop = useMediaQuery('(min-width: 1024px)')
-  const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
-  const [searchParams, setSearchParams] = useSearchParams()
-  const autoOpenToko = searchParams.get('action') === 'new'
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [openTokoSheet, setOpenTokoSheet] = useState(false)
   const [sub, setSub] = useState(() => searchParams.get('tab') || 'toko')
 
-  // Sync URL search params tab & action to state
+  // Sync URL search params tab to state
   const tabParam = searchParams.get('tab') || 'toko'
   React.useEffect(() => {
     if (tabParam !== sub) {
       setSub(tabParam)
     }
-    if (searchParams.get('action') === 'new') {
-      setSearchParams(prev => {
-        const next = new URLSearchParams(prev)
-        next.delete('action')
-        return next
-      }, { replace: true })
+  }, [tabParam, sub])
+
+  // Sync URL action=new to openTokoSheet state
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const action = params.get('action')
+    if (action === 'new' || action === 'tambah') {
+      setOpenTokoSheet(true)
+      navigate(location.pathname, { replace: true })
     }
-  }, [tabParam, searchParams, setSearchParams, sub])
+  }, [location.search, location.pathname, navigate])
 
   const handleTabChange = (newTab) => {
     setSub(newTab)
@@ -270,7 +273,7 @@ export default function SembakoTokoSupplier() {
                   <FileSpreadsheet size={15} className="text-[#0F172A]" />
                   <span>Import CSV</span>
                 </button>
-                {sub === 'toko' ? <TokoActions compact autoOpen={autoOpenToko} /> : <SupplierActions compact />}
+                {sub === 'toko' ? <TokoActions compact open={openTokoSheet} onOpenChange={setOpenTokoSheet} /> : <SupplierActions compact />}
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -281,7 +284,7 @@ export default function SembakoTokoSupplier() {
                   <FileSpreadsheet size={15} className="text-[#0F172A]" />
                   <span>Import CSV</span>
                 </button>
-                {sub === 'toko' ? <TokoActions compact autoOpen={autoOpenToko} /> : <SupplierActions compact />}
+                {sub === 'toko' ? <TokoActions compact open={openTokoSheet} onOpenChange={setOpenTokoSheet} /> : <SupplierActions compact />}
               </div>
             )
           }
@@ -366,14 +369,17 @@ function SegmentSwitch({ sub, setSub }) {
   )
 }
 
-function TokoActions({ compact = false, autoOpen = false }) {
-  const [open, setOpen] = useState(autoOpen)
-
-  React.useEffect(() => {
-    if (autoOpen) {
-      setOpen(true)
+function TokoActions({ compact = false, open: externalOpen, onOpenChange: externalOnOpenChange }) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = externalOpen !== undefined
+  const open = isControlled ? externalOpen : internalOpen
+  const setOpen = (val) => {
+    if (isControlled) {
+      externalOnOpenChange?.(val)
+    } else {
+      setInternalOpen(val)
     }
-  }, [autoOpen])
+  }
   const createCustomer = useCreateSembakoCustomer()
   const [form, setForm] = useState({
     customer_name: '',

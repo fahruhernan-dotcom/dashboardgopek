@@ -14,7 +14,7 @@ import {
   useSembakoReturns,
   useUpdateSembakoReturnStatus,
 } from '@/lib/hooks/useSembakoData'
-import { useSearchParams, useOutletContext } from 'react-router-dom'
+import { useSearchParams, useOutletContext, useLocation, useNavigate } from 'react-router-dom'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { C, fmtDate, CustomSelect, InputRupiah } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
@@ -599,7 +599,9 @@ export default function Gudang() {
   const { profile } = useAuth()
   const showAudit = canViewAuditLogs(profile)
   const tabsList = useMemo(() => showAudit ? ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar', '🔄 Retur Gudang', '📜 Log Perubahan'] : ['Stok Saat Ini', 'Riwayat Masuk', 'Riwayat Keluar', '🔄 Retur Gudang'], [showAudit])
-  const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
   const preProductId = searchParams.get('product') || null
@@ -610,19 +612,17 @@ export default function Gudang() {
 
   const [activeTab, setActiveTab] = useState(0)
   const [importCsvOpen, setImportCsvOpen] = useState(false)
-  const [showTambahSheet, setShowTambahSheet] = useState(!!preProductId || searchParams.get('action') === 'add-stock')
+  const [showTambahSheet, setShowTambahSheet] = useState(!!preProductId || searchParams.get('action') === 'add-stock' || searchParams.get('action') === 'tambah')
   const [tambahProductId, setTambahProductId] = useState(preProductId)
 
   React.useEffect(() => {
-    if (searchParams.get('action') === 'add-stock') {
+    const params = new URLSearchParams(location.search)
+    const action = params.get('action')
+    if (action === 'add-stock' || action === 'tambah') {
       setShowTambahSheet(true)
-      setSearchParams(prev => {
-        const next = new URLSearchParams(prev)
-        next.delete('action')
-        return next
-      }, { replace: true })
+      navigate(location.pathname, { replace: true })
     }
-  }, [searchParams, setSearchParams])
+  }, [location.search, location.pathname, navigate])
 
   const [showAdjustSheet, setShowAdjustSheet] = useState(false)
   const [selectedBatch, setSelectedBatch] = useState(null)
