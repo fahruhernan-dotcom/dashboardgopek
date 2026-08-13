@@ -27,21 +27,28 @@ export default function SembakoPenjualan() {
   const navigate = useNavigate()
   const [openWizard, setOpenWizard] = useState(() => {
     const params = new URLSearchParams(window.location.search)
-    return params.get('action') === 'new'
+    const act = params.get('action')
+    return act === 'new' || act === 'tambah'
   })
-  const actionHandledRef = useRef(false)
 
+  // Watch for ?action=new without competing with mount render
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const action = params.get('action')
     if (action === 'new' || action === 'tambah') {
-      if (!actionHandledRef.current) {
-        actionHandledRef.current = true
-        setOpenWizard(true)
-        navigate(location.pathname, { replace: true })
+      setOpenWizard(true)
+    }
+  }, [location.search])
+
+  const handleOpenWizardChange = useCallback((isOpen) => {
+    setOpenWizard(isOpen)
+    if (!isOpen) {
+      const params = new URLSearchParams(location.search)
+      if (params.get('action')) {
+        params.delete('action')
+        const searchStr = params.toString()
+        navigate(location.pathname + (searchStr ? `?${searchStr}` : ''), { replace: true })
       }
-    } else {
-      actionHandledRef.current = false
     }
   }, [location.search, location.pathname, navigate])
 
@@ -49,7 +56,7 @@ export default function SembakoPenjualan() {
     <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: '96px' }}>
       {!isDesktop && <BrokerMobileHeader title="Penjualan" onMenuClick={() => setSidebarOpen(true)} />}
       <div style={{ maxWidth: '1600px', margin: '0 auto', fontFamily: "'Sora', 'Inter', sans-serif" }}>
-        <TabInvoice isDesktop={isDesktop} openWizard={openWizard} setOpenWizard={setOpenWizard} />
+        <TabInvoice isDesktop={isDesktop} openWizard={openWizard} setOpenWizard={handleOpenWizardChange} />
       </div>
     </div>
   )

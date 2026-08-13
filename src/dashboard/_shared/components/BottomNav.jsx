@@ -28,6 +28,7 @@ import {
   Wheat,
   Receipt,
   Boxes,
+  RotateCcw,
   Scale,
   HeartPulse,
   FileText,
@@ -476,11 +477,11 @@ export default function BottomNav() {
   }
 
   const sembakoSpeedItems = isSembako ? [
-    { label: 'Transaksi Baru',     icon: Receipt, onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/penjualan?action=new`) } },
-    { label: 'Tambah Toko',        icon: Store,   onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/toko-supplier?action=new`) } },
-    { label: 'Tambah Stok',        icon: Boxes,   onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/gudang?action=add-stock`) } },
-    { label: 'Tambah Produk',      icon: Package, onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/produk?action=new`) } },
-    { label: 'Tambah Pengeluaran', icon: Wallet,  onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/laporan`) } },
+    { label: 'Transaksi Baru', icon: Receipt,   onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/penjualan?action=new`) } },
+    { label: 'Tambah Toko',    icon: Store,     onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/toko-supplier?action=new`) } },
+    { label: 'Tambah Stok',    icon: Boxes,     onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/gudang?action=add-stock`) } },
+    { label: 'Tambah Produk',  icon: Package,   onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/produk?action=new`) } },
+    { label: 'Retur Barang',   icon: RotateCcw, onClick: () => { setFabMenuOpen(false); navigate(`${brokerBase}/retur?action=new`) } },
   ] : null
 
   // ── Domba Fattening Speed Dial items ─────────────────────────────────────────

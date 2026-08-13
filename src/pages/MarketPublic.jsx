@@ -4,7 +4,7 @@ import { MessageCircle, Plus, Search, X, ChevronDown, MapPin, Store, Clock } fro
 import { useNavigate } from 'react-router-dom'
 import { useMarketListings } from '@/lib/hooks/useMarket'
 import { formatDistanceToNow } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale } from 'date-fns/locale/id'
 
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'

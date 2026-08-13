@@ -613,26 +613,22 @@ export default function Produk() {
 
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('Semua')
-  const [sheet, setSheet] = useState(null) // null | 'new' | product object
+  const [sheet, setSheet] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    const act = params.get('action')
+    return (act === 'new' || act === 'tambah') ? 'new' : null
+  })
   const [showInactive, setShowInactive] = useState(false)
   const [productToDelete, setProductToDelete] = useState(null)
   const [importCsvOpen, setImportCsvOpen] = useState(false)
-
-  const actionHandledRef = useRef(false)
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const action = params.get('action')
     if (action === 'new' || action === 'tambah') {
-      if (!actionHandledRef.current) {
-        actionHandledRef.current = true
-        setSheet('new')
-        navigate(location.pathname, { replace: true })
-      }
-    } else {
-      actionHandledRef.current = false
+      setSheet('new')
     }
-  }, [location.search, location.pathname, navigate])
+  }, [location.search])
 
   const categories = useMemo(() => {
     const cats = [...new Set(products.map(p => p.category).filter(Boolean))]

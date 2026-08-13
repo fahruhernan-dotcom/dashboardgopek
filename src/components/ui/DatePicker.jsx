@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { format } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale } from 'date-fns/locale/id'
 import { CalendarIcon, X } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {

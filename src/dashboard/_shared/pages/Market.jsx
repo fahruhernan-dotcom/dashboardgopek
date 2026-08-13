@@ -18,7 +18,7 @@ import {
   useMyConnections
 } from '@/lib/hooks/useBrokerConnections'
 import { formatDistanceToNow } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale } from 'date-fns/locale/id'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { logSupabaseError } from '@/lib/logger/supabaseLogger'
 import { logError } from '@/lib/logger/errorLogger'

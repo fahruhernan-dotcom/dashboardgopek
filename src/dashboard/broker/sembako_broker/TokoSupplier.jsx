@@ -82,7 +82,11 @@ export default function SembakoTokoSupplier() {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [openTokoSheet, setOpenTokoSheet] = useState(false)
+  const [openTokoSheet, setOpenTokoSheet] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    const act = params.get('action')
+    return act === 'new' || act === 'tambah'
+  })
   const [sub, setSub] = useState(() => searchParams.get('tab') || 'toko')
 
   // Sync URL search params tab to state
@@ -93,22 +97,15 @@ export default function SembakoTokoSupplier() {
     }
   }, [tabParam, sub])
 
-  const actionHandledRef = React.useRef(false)
-
-  // Sync URL action=new to openTokoSheet state
+  // Sync URL action=new to openTokoSheet state safely
   React.useEffect(() => {
     const params = new URLSearchParams(location.search)
     const action = params.get('action')
     if (action === 'new' || action === 'tambah') {
-      if (!actionHandledRef.current) {
-        actionHandledRef.current = true
-        setOpenTokoSheet(true)
-        navigate(location.pathname, { replace: true })
-      }
-    } else {
-      actionHandledRef.current = false
+      setOpenTokoSheet(true)
+      setSub('toko')
     }
-  }, [location.search, location.pathname, navigate])
+  }, [location.search])
 
   const handleTabChange = (newTab) => {
     setSub(newTab)

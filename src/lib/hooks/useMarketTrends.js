@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { format, parseISO, eachDayOfInterval } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale } from 'date-fns/locale/id'
 
 /**
  * useMarketTrends

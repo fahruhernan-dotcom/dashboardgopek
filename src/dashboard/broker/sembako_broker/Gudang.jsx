@@ -612,24 +612,20 @@ export default function Gudang() {
 
   const [activeTab, setActiveTab] = useState(0)
   const [importCsvOpen, setImportCsvOpen] = useState(false)
-  const [showTambahSheet, setShowTambahSheet] = useState(!!preProductId || searchParams.get('action') === 'add-stock' || searchParams.get('action') === 'tambah')
+  const [showTambahSheet, setShowTambahSheet] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    const act = params.get('action')
+    return !!preProductId || act === 'add-stock' || act === 'tambah'
+  })
   const [tambahProductId, setTambahProductId] = useState(preProductId)
-
-  const actionHandledRef = React.useRef(false)
 
   React.useEffect(() => {
     const params = new URLSearchParams(location.search)
     const action = params.get('action')
     if (action === 'add-stock' || action === 'tambah') {
-      if (!actionHandledRef.current) {
-        actionHandledRef.current = true
-        setShowTambahSheet(true)
-        navigate(location.pathname, { replace: true })
-      }
-    } else {
-      actionHandledRef.current = false
+      setShowTambahSheet(true)
     }
-  }, [location.search, location.pathname, navigate])
+  }, [location.search])
 
   const [showAdjustSheet, setShowAdjustSheet] = useState(false)
   const [selectedBatch, setSelectedBatch] = useState(null)

@@ -5,7 +5,7 @@ import {
   startOfWeek, startOfMonth, endOfMonth, subMonths, addMonths, addDays,
   format, isSameDay, eachDayOfInterval, isSameMonth,
 } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale } from 'date-fns/locale/id'
 import { formatIDR } from '@/lib/format'
 import { C } from '../sembakoSaleUtils'
 

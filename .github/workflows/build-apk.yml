@@ -32,8 +32,11 @@ jobs:
 
       - name: Build Web Production Bundle
         env:
-          VITE_SUPABASE_URL: "${{ secrets.VITE_SUPABASE_URL }}"
-          VITE_SUPABASE_ANON_KEY: "${{ secrets.VITE_SUPABASE_ANON_KEY }}"
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || vars.VITE_SUPABASE_URL || '' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY || '' }}
+          VITE_MAIA_API_KEY: ${{ secrets.VITE_MAIA_API_KEY || '' }}
+          VITE_AI_MODEL: ${{ secrets.VITE_AI_MODEL || 'xai/grok-4-1-fast-reasoning-latest' }}
+          VITE_WHATSAPP_NUMBER: ${{ secrets.VITE_WHATSAPP_NUMBER || '' }}
         run: npm run build
 
       - name: Sync Capacitor Android

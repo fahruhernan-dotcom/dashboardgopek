@@ -110,6 +110,27 @@ class SyncEngine {
               const { error } = await supabase.from('sembako_products').update(item.payload).eq('id', item.payload.id)
               if (error) throw error
             }
+          } else if (item.entity === 'customers') {
+            if (item.action === 'CREATE') {
+              const { error } = await supabase.from('sembako_customers').insert(item.payload)
+              if (error) throw error
+            } else if (item.action === 'UPDATE') {
+              const { error } = await supabase.from('sembako_customers').update(item.payload).eq('id', item.payload.id)
+              if (error) throw error
+            }
+          } else if (item.entity === 'suppliers') {
+            if (item.action === 'CREATE') {
+              const { error } = await supabase.from('sembako_suppliers').insert(item.payload)
+              if (error) throw error
+            } else if (item.action === 'UPDATE') {
+              const { error } = await supabase.from('sembako_suppliers').update(item.payload).eq('id', item.payload.id)
+              if (error) throw error
+            }
+          } else if (item.entity === 'payments') {
+            if (item.action === 'CREATE') {
+              const { error } = await supabase.from('sembako_payments').insert(item.payload)
+              if (error) throw error
+            }
           } else if (item.entity === 'returns') {
             if (item.action === 'CREATE') {
               const { error } = await supabase.from('sembako_returns').insert(item.payload)

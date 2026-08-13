@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Button } from './button'
 import { CalendarIcon } from 'lucide-react'
 import { format, getDaysInMonth, isValid, subYears } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale } from 'date-fns/locale/id'
 import { cn } from '@/lib/utils'
 
 const ITEM_HEIGHT = 40

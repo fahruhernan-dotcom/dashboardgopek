@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RotateCcw, Plus, Search, Filter, AlertCircle, CheckCircle2, Clock, PackageX, User, Store, ArrowUpRight, ArrowDownLeft, X, ChevronDown, Check, FileText, Link2, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,7 +16,7 @@ import {
   useUpdateSembakoReturnStatus,
   useDeleteSembakoReturn
 } from '@/lib/hooks/useSembakoData'
-import { useNavigate, useParams, useOutletContext } from 'react-router-dom'
+import { useNavigate, useParams, useOutletContext, useLocation } from 'react-router-dom'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { useBackHandler } from '@/lib/hooks/useBackHandler'
 import { formatDate } from '@/lib/format'
@@ -26,6 +26,7 @@ const fmt = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
 export default function SembakoRetur() {
   const { brokerType } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
 
@@ -41,25 +42,37 @@ export default function SembakoRetur() {
 
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('all') // 'all', 'sale_return', 'purchase_return'
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    const act = params.get('action')
+    return act === 'new' || act === 'tambah'
+  })
+
+  // Sync URL action=new to sheetOpen state
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const action = params.get('action')
+    if (action === 'new' || action === 'tambah') {
+      setSheetOpen(true)
+    }
+  }, [location.search])
 
   // Confirmation state for deleting/cancelling retur
   const [confirmCancelReturn, setConfirmCancelReturn] = useState(null)
   const [selectedReturnDetail, setSelectedReturnDetail] = useState(null)
 
-  // Close modal on Android hardware back button
-  useBackHandler(sheetOpen, () => setSheetOpen(false))
-
-  // Close modal on Esc key press
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && sheetOpen) {
-        setSheetOpen(false)
-      }
+  const handleCloseSheet = useCallback(() => {
+    setSheetOpen(false)
+    const params = new URLSearchParams(location.search)
+    if (params.get('action')) {
+      params.delete('action')
+      const searchStr = params.toString()
+      navigate(location.pathname + (searchStr ? `?${searchStr}` : ''), { replace: true })
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [sheetOpen])
+  }, [location.search, location.pathname, navigate])
+
+  // Close modal on Android hardware back button or Escape
+  useBackHandler(sheetOpen, handleCloseSheet)
 
   // Form State for new Return
   const [form, setForm] = useState({
@@ -389,7 +402,7 @@ export default function SembakoRetur() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4"
-            onClick={() => setSheetOpen(false)}
+            onClick={handleCloseSheet}
           >
             <motion.div
               initial={{ y: '100%' }}
@@ -404,7 +417,7 @@ export default function SembakoRetur() {
                   <RotateCcw className="text-[#0F172A]" size={20} />
                   <h2 className="text-base font-bold text-foreground">Catat Retur Produk</h2>
                 </div>
-                <button onClick={() => setSheetOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={handleCloseSheet} className="text-muted-foreground hover:text-foreground">
                   <X size={18} />
                 </button>
               </div>

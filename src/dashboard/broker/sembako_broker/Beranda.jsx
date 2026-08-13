@@ -18,7 +18,7 @@ import {
 import {
   startOfWeek, startOfMonth, subMonths, addDays, format,
 } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale } from 'date-fns/locale/id'
 import { C } from './components/sembakoSaleUtils'
 import { SembakoTambahStokSheet } from './components/SembakoTambahStokSheet'
 import { SembakoCreateInvoiceSheet } from './components/SembakoCreateInvoiceSheet'
