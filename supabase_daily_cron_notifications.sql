@@ -33,14 +33,14 @@ BEGIN
         -- Hitung transaksi hari ini untuk tenant
         SELECT 
             COUNT(id),
-            COALESCE(SUM(grand_total), 0)
+            COALESCE(SUM(total_amount), 0)
         INTO 
             v_sales_count,
             v_total_amount
         FROM public.sembako_sales
         WHERE tenant_id = v_tenant.id
           AND created_at >= v_today_start
-          AND (status IS NULL OR status != 'CANCELLED');
+          AND (is_deleted IS NULL OR is_deleted = false);
 
         v_total_fmt := 'Rp ' || TO_CHAR(v_total_amount, 'FM999G999G999G999');
 

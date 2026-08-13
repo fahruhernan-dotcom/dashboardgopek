@@ -17,6 +17,8 @@ import { AgendaSection } from './BerandaAgenda'
 import { CollectionReminders } from './CollectionReminders'
 import { SembakoOnboardingChecklist } from '../SembakoOnboardingChecklist'
 import { useSembakoProducts, useSembakoAllBatches, useSembakoCustomers, useSembakoSales } from '@/lib/hooks/useSembakoData'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { canViewProfit } from '@/lib/auth/business-roles'
 
 const MC = {
   bg: 'var(--bg-page)',
@@ -60,6 +62,8 @@ export function MobileBeranda({
   const { brokerType } = useParams()
   const brokerBase = `/broker/${brokerType}`
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
+  const { profile } = useAuth()
+  const showProfit = canViewProfit(profile)
 
   const [showTodayDetail, setShowTodayDetail] = useState(false)
   const [showInventoryDetail, setShowInventoryDetail] = useState(false)
@@ -452,18 +456,20 @@ export function MobileBeranda({
             >
               <Plus size={12} className="text-slate-600 dark:text-tko-text-muted" /> Toko
             </button>
-            <button
-              onClick={() => navigate(`${brokerBase}/laporan`)}
-              style={{
-                flex: 1, height: '44px', borderRadius: '10px',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                fontWeight: 700, fontSize: '11px',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-              className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-xs active:scale-95 transition-all"
-            >
-              <Receipt size={12} className="text-slate-600 dark:text-tko-text-muted" /> Pengeluaran
-            </button>
+            {showProfit && (
+              <button
+                onClick={() => navigate(`${brokerBase}/laporan`)}
+                style={{
+                  flex: 1, height: '44px', borderRadius: '10px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  fontWeight: 700, fontSize: '11px',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+                className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 dark:bg-tko-bg-surface dark:border-tko-border-soft dark:text-tko-text-primary dark:hover:bg-tko-bg-subtle shadow-tko-xs active:scale-95 transition-all"
+              >
+                <Receipt size={12} className="text-slate-600 dark:text-tko-text-muted" /> Laporan
+              </button>
+            )}
           </div>
         </div>
 
@@ -615,30 +621,32 @@ export function MobileBeranda({
                   {formatIDR(stats?.penjualan?.totalOutstanding || 0)}
                 </p>
                 <p style={{ fontSize: '9px', color: MC.muted, marginTop: '2px' }}>
-                  Pengeluaran bulan ini: {formatIDR(totalExp)}
+                  {showProfit ? `Pengeluaran bulan ini: ${formatIDR(totalExp)}` : 'Akses Operasional Kasir'}
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setShowFinanceDetail(!showFinanceDetail)}
-              style={{
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-soft)',
-                borderRadius: '8px',
-                padding: '6px 10px',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-              className="hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all shadow-tko-xs"
-            >
-              {showFinanceDetail ? 'Tutup' : 'Detail'}
-              {showFinanceDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
+            {showProfit && (
+              <button
+                onClick={() => setShowFinanceDetail(!showFinanceDetail)}
+                style={{
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-soft)',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+                className="hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all shadow-tko-xs"
+              >
+                {showFinanceDetail ? 'Tutup' : 'Detail'}
+                {showFinanceDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+            )}
           </div>
 
           <AnimatePresence>
@@ -735,18 +743,20 @@ export function MobileBeranda({
           />
         </div>
 
-        {/* Sales Performance Chart + Cash Summary */}
-        <SalesAndCashChart
-          weeklyData={weeklyChartData}
-          monthlyData={monthlyChartData}
-          chartPeriod={chartPeriod}
-          setChartPeriod={setChartPeriod}
-          isDesktop={false}
-          unrealizedProfitSnapshot={unrealizedProfitSnapshot}
-          cashSummary={cashSummary}
-          stats={stats}
-          layout={layout}
-        />
+        {/* Sales Performance Chart + Cash Summary (Khusus Owner) */}
+        {showProfit && (
+          <SalesAndCashChart
+            weeklyData={weeklyChartData}
+            monthlyData={monthlyChartData}
+            chartPeriod={chartPeriod}
+            setChartPeriod={setChartPeriod}
+            isDesktop={false}
+            unrealizedProfitSnapshot={unrealizedProfitSnapshot}
+            cashSummary={cashSummary}
+            stats={stats}
+            layout={layout}
+          />
+        )}
 
         {/* Invoice Terbaru (Sliced to max 3 on mobile) */}
         <div style={{

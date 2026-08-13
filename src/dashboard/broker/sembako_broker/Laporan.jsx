@@ -9,6 +9,7 @@ import {
 import FinancialReportPdfModal from '@/dashboard/broker/sembako_broker/components/FinancialReportPdfModal'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { getSubscriptionStatus } from '@/lib/subscriptionUtils'
+import { canViewProfit } from '@/lib/auth/business-roles'
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
 } from 'recharts'
@@ -35,9 +36,10 @@ const STATUS_STYLE = {
 export default function SembakoLaporan() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
-  const { tenant } = useAuth()
+  const { tenant, profile } = useAuth()
   const sub = getSubscriptionStatus(tenant)
   const isStarter = sub.status !== 'active' && sub.status !== 'trial'
+  const isAllowed = canViewProfit(profile)
 
   // Compute before useState so initial values are stable regardless of isStarter.
   // Rules of Hooks: all hooks must be called unconditionally before any early return.
@@ -53,6 +55,30 @@ export default function SembakoLaporan() {
   const [pdfModal, setPdfModal] = useState({ open: false, type: 'business_result' })
 
   const { data, isLoading, isFetching, isError, error, refetch } = useSembakoLaporan(startDate, endDate)
+
+  // ── Role Access Wall — Khusus Owner & Dev ──────────────────────────────────
+  if (!isAllowed) {
+    return (
+      <div style={{ background: C.bg, minHeight: '100vh' }}>
+        {!isDesktop && <BrokerMobileHeader title="Laporan Bisnis" onMenuClick={() => setSidebarOpen(true)} />}
+        <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center gap-6">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-amber-500/10 border border-amber-500/20 text-amber-500">
+            <Lock size={28} />
+          </div>
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3 bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <BarChart3 size={11} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Khusus Owner</span>
+            </div>
+            <h2 className="font-display font-black text-xl text-white mb-2">Akses Terbatas</h2>
+            <p className="text-sm max-w-xs leading-relaxed text-slate-400">
+              Laporan Keuangan & Analisis Laba Bisnis hanya dapat diakses oleh akun <span className="text-white font-bold">Pemilik Toko (Owner)</span>.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // ── Upgrade wall — must come after all hooks ──────────────────────────────
   if (isStarter) {

@@ -49,6 +49,55 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
     return [...rawPayments].sort((a, b) => new Date(a.payment_date) - new Date(b.payment_date))
   }, [sale])
 
+  const costDetails = useMemo(() => {
+    if (!sale) return null
+    const otherCost = Number(sale.other_cost) || 0
+    const deliveryCost = Number(sale.delivery_cost) || 0
+    const fuelCost = Number(sale.fuel_cost || sale.sembako_deliveries?.[0]?.fuel_cost || 0)
+    if (otherCost <= 0 && deliveryCost <= 0 && fuelCost <= 0) return null
+
+    const notesList = [
+      sale.notes,
+      ...(Array.isArray(sale.sembako_deliveries) ? sale.sembako_deliveries.map(d => d.notes) : [])
+    ].filter(Boolean).join(' ')
+
+    const detectedCategories = []
+    if (/bensin|bbm|pertalite|solar/i.test(notesList) || fuelCost > 0) {
+      detectedCategories.push({ id: 'bensin', label: 'Bensin', icon: '⛽', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' })
+    }
+    if (/rokok/i.test(notesList)) {
+      detectedCategories.push({ id: 'rokok', label: 'Rokok Sopir', icon: '🚬', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' })
+    }
+    if (/makan|konsumsi/i.test(notesList)) {
+      detectedCategories.push({ id: 'makan', label: 'Uang Makan', icon: '🍽️', color: '#059669', bg: '#F0FDF4', border: '#BBF7D0' })
+    }
+    if (/parkir|tol/i.test(notesList)) {
+      detectedCategories.push({ id: 'parkir_tol', label: 'Tol / Parkir', icon: '🅿️', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' })
+    }
+    if (/bongkar|kuli|muat/i.test(notesList)) {
+      detectedCategories.push({ id: 'bongkar', label: 'Bongkar Muat', icon: '📦', color: '#DB2777', bg: '#FDF2F8', border: '#FBCFE8' })
+    }
+
+    let extractedCostNotes = ''
+    const costMatch = notesList.match(/\[Biaya Operasional:[^\]]*\(([^)]+)\)\]/) || notesList.match(/Biaya Tambahan:\s*([^,\n]+(?:,[^,\n]+)*)/)
+    if (costMatch && costMatch[1]) {
+      extractedCostNotes = costMatch[1].trim()
+    } else if (sale.notes && !sale.notes.includes('[Biaya Operasional:')) {
+      if (otherCost > 0 && /bensin|rokok|makan|tol|parkir|bongkar|biaya/i.test(sale.notes)) {
+        extractedCostNotes = sale.notes.trim()
+      }
+    }
+
+    return {
+      otherCost,
+      deliveryCost,
+      fuelCost,
+      detectedCategories,
+      costNotes: extractedCostNotes,
+      rawNotes: sale.notes || ''
+    }
+  }, [sale])
+
   const [payTarget, setPayTarget] = useState(null)
   const [invoiceModal, setInvoiceModal] = useState({ open: false, type: null })
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -145,7 +194,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
     }
 
     const initialForm = items.map(it => {
-      const itemPrice = Number(it.price_per_unit ?? it.sell_price ?? it.unit_price ?? it.price_per_kg ?? 0)
+      const itemPrice = Number(it.sell_price || it.price_per_unit || it.unit_price || it.price_per_kg || (Number(it.quantity) > 0 && it.subtotal ? Number(it.subtotal) / Number(it.quantity) : 0) || 0)
       const existingReturs = saleReturns.filter(r => r.product_id === it.product_id || r.product_name === it.product_name)
       const alreadyReturned = existingReturs.reduce((s, r) => s + Number(r.quantity || 0), 0)
       const maxQty = Math.max(0, Number(it.quantity || 0) - alreadyReturned)
@@ -242,6 +291,8 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
     } catch { /* error handled by hook */ }
   }
 
+
+
   return (
     <>
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -280,12 +331,11 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
           </SheetHeader>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Section: Customer */}
-            <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: '16px' }}>
-              <p style={sLabel}>TOKO / CUSTOMER</p>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)' }}>
-                  <Store size={20} />
+            {/* Section: Customer Info */}
+            <div style={{ background: 'var(--bg-page)', borderRadius: '16px', padding: '16px', border: `1px solid ${C.border}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '12px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Store size={20} color={C.accent} />
                 </div>
                 <div>
                   <p style={{ fontSize: '15px', fontWeight: 800, color: C.text }}>{sale.sembako_customers?.customer_name || sale.customer_name || 'Umum'}</p>
@@ -308,7 +358,7 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                   </thead>
                   <tbody>
                     {items.map((it, idx) => {
-                      const itemPrice = Number(it.price_per_unit ?? it.sell_price ?? it.unit_price ?? it.price_per_kg ?? 0)
+                      const itemPrice = Number(it.sell_price || it.price_per_unit || it.unit_price || it.price_per_kg || (Number(it.quantity) > 0 && it.subtotal ? Number(it.subtotal) / Number(it.quantity) : 0) || 0)
                       const itemReturs = saleReturns.filter(r => r.product_id === it.product_id || r.product_name === it.product_name)
                       const returQty = itemReturs.reduce((s, r) => s + Number(r.quantity || 0), 0)
                       const netQty = Math.max(0, Number(it.quantity || 0) - returQty)
@@ -341,11 +391,9 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                           </td>
                           <td style={{ padding: '12px', textAlign: 'right', color: C.text, fontWeight: 700 }}>
                             {formatIDR(netQty * itemPrice)}
-                            {returQty > 0 && (
-                              <span style={{ fontSize: '10px', color: C.muted, display: 'block', fontWeight: 500 }}>
-                                @{formatIDR(itemPrice)}
-                              </span>
-                            )}
+                            <span style={{ fontSize: '10px', color: C.muted, display: 'block', fontWeight: 500 }}>
+                              @{formatIDR(itemPrice)}
+                            </span>
                             {isOwner && (
                               <span style={{ fontSize: '10px', color: '#10B981', display: 'block', fontWeight: 700, marginTop: '2.5px' }}>
                                 Laba: {formatIDR(netQty * (itemPrice - it.cogs_per_unit))}
@@ -389,16 +437,122 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
               </div>
             )}
 
-            {/* Section: Financials */}
+            {/* Section: Financials & Cost Breakdown */}
             <div style={{ background: 'var(--bg-page)', borderRadius: '16px', padding: '16px', border: `1px solid ${C.border}` }}>
-              <DetailRow label="Subtotal Barang" value={formatIDR(itemsSubtotal)} />
+              <p style={{ ...sLabel, marginBottom: '10px' }}>RINCIAN KEUANGAN & BIAYA</p>
+              <DetailRow label="Subtotal Barang" value={formatIDR(itemsSubtotal)} bold />
               {totalReturnAmount > 0 && (
                 <DetailRow label="Potongan Retur Barang" value={`-${formatIDR(totalReturnAmount)}`} color={C.red} bold />
               )}
               {deliveryCost > 0 && (
                 <DetailRow label="Biaya Kirim (Tanggungan Seller)" value={formatIDR(deliveryCost)} color="var(--text-muted)" />
               )}
-              {otherCost > 0 && <DetailRow label="Biaya Lainnya" value={formatIDR(otherCost)} />}
+              {otherCost > 0 && (
+                <DetailRow label="Biaya Operasional Lainnya" value={formatIDR(otherCost)} color="var(--text-muted)" />
+              )}
+
+              {/* Rincian Operasional & Kategori Pengeluaran (BBM, Rokok, Makan, Tol, Bongkar) */}
+              {costDetails && (costDetails.otherCost > 0 || costDetails.detectedCategories.length > 0 || costDetails.fuelCost > 0) && (
+                <div style={{ background: 'var(--bg-surface)', border: `1px solid ${C.border}`, borderRadius: '12px', padding: '12px 14px', margin: '8px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '13px' }}>🛠️</span>
+                      <p style={{ fontSize: '11px', fontWeight: 800, color: C.text, textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                        Rincian Biaya Operasional
+                      </p>
+                    </div>
+                    {costDetails.otherCost > 0 && (
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#D97706', fontFamily: 'Sora' }}>
+                        {formatIDR(costDetails.otherCost)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Badges / Chips Kategori yang dicentang */}
+                  {costDetails.detectedCategories.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                      {costDetails.detectedCategories.map((cat, cIdx) => (
+                        <span
+                          key={cIdx}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 9px',
+                            borderRadius: '8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            background: cat.bg,
+                            color: cat.color,
+                            border: `1px solid ${cat.border}`,
+                          }}
+                        >
+                          <span>{cat.icon}</span>
+                          <span>{cat.label}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Keterangan / Notes Rincian */}
+                  {costDetails.costNotes ? (
+                    <div style={{ background: 'rgba(15,23,42,0.03)', borderRadius: '8px', padding: '6px 10px', marginTop: '4px' }}>
+                      <p style={{ fontSize: '11px', color: C.text, margin: 0, fontWeight: 500 }}>
+                        <span style={{ color: C.muted, fontWeight: 700 }}>Rincian:</span> "{costDetails.costNotes}"
+                      </p>
+                    </div>
+                  ) : costDetails.rawNotes && costDetails.rawNotes.includes('Biaya') ? (
+                    <div style={{ background: 'rgba(15,23,42,0.03)', borderRadius: '8px', padding: '6px 10px', marginTop: '4px' }}>
+                      <p style={{ fontSize: '11px', color: C.text, margin: 0, fontWeight: 500 }}>
+                        <span style={{ color: C.muted, fontWeight: 700 }}>Keterangan:</span> "{costDetails.rawNotes}"
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {/* Internal Fuel Cost if present */}
+                  {costDetails.fuelCost > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: `1px dashed ${C.border}`, fontSize: '11px', color: C.muted }}>
+                      <span>⛽ Biaya BBM Internal Armada:</span>
+                      <strong style={{ color: C.text, fontWeight: 800 }}>{formatIDR(costDetails.fuelCost)}</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Rincian Armada & Pengiriman jika ada */}
+              {deliveries.length > 0 && (
+                <div style={{ background: 'var(--bg-surface)', border: `1px solid ${C.border}`, borderRadius: '12px', padding: '10px 12px', margin: '8px 0' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 800, color: C.muted, textTransform: 'uppercase', marginBottom: '6px', margin: 0 }}>
+                    🚚 Rincian Logistik Pengiriman:
+                  </p>
+                  {deliveries.map((d, dIdx) => (
+                    <div key={d.id || dIdx} style={{ fontSize: '11px', color: C.text, display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: C.muted }}>Kurir / Sopir:</span>
+                        <strong style={{ color: C.text }}>{d.driver_name || d.employees?.full_name || 'Kurir Toko'}</strong>
+                      </div>
+                      {(d.vehicle_type || d.vehicle_plate) && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: C.muted }}>Kendaraan & Plat:</span>
+                          <span>{[d.vehicle_type, d.vehicle_plate].filter(Boolean).join(' - ')}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: C.muted }}>Status Pengiriman:</span>
+                        <strong style={{ color: d.status === 'delivered' ? '#16A34A' : '#D97706', textTransform: 'capitalize' }}>
+                          {d.status === 'delivered' ? '✓ Terkirim' : d.status || 'Disiapkan'}
+                        </strong>
+                      </div>
+                      {d.notes && d.notes.includes('Biaya') && (
+                        <div style={{ fontSize: '10px', color: C.muted, marginTop: '2px', fontStyle: 'italic' }}>
+                          Info: {d.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div style={{ height: 1, background: C.border, margin: '12px 0' }} />
               <DetailRow label={totalReturnAmount > 0 ? "Total Tagihan (Nota Bersih)" : "Total Tagihan"} value={formatIDR(grandTotal)} highlight />
               

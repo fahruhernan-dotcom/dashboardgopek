@@ -351,7 +351,10 @@ export function calculateSaleFinancials(sale, returnsList = [], products = []) {
   const effectiveCogs = Math.max(0, totalCogs - totalReturnCogs)
 
   const itemsSubtotalFromItems = items.length > 0
-    ? items.reduce((s, i) => s + Math.round((i.quantity || 0) * (Number(i.price_per_unit ?? i.sell_price ?? i.unit_price ?? 0))), 0)
+    ? items.reduce((s, i) => {
+        const p = Number(i.sell_price || i.price_per_unit || i.unit_price || (i.quantity > 0 && i.subtotal ? i.subtotal / i.quantity : 0) || 0)
+        return s + Math.round((Number(i.quantity) || 0) * p)
+      }, 0)
     : 0
   // itemsSubtotal for display only (gross sebelum retur)
   // sale.subtotal dari hook = initialSubtotal (gross), aman dipakai

@@ -8,10 +8,7 @@ export const isAdminUser = (profile) => profile?.role === BUSINESS_ROLES.ADMIN |
 
 export const canViewProfit = (profile) =>
   isDevUser(profile) ||
-  isOwnerUser(profile) ||
-  isAdminUser(profile) ||
-  isManager(profile) ||
-  profile?.role === BUSINESS_ROLES.FINANCE;
+  isOwnerUser(profile);
 
 export const canManageAccounts = (profile) => isDevUser(profile);
 

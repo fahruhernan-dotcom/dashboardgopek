@@ -48,9 +48,12 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
     total_amount: totalAmount,
     paid_amount: paidAmount,
     remaining_amount: remainingAmount,
+    delivery_cost: Number(inv?.delivery_cost || data.delivery_cost || data.deliveryCost || 0),
+    other_cost: Number(inv?.other_cost || data.other_cost || data.otherCost || 0),
     payment_status: paymentStatus,
     items: normalizedItems,
     notes: inv?.notes || data.notes || '',
+    sembako_deliveries: inv?.sembako_deliveries || data.sembako_deliveries || [],
   }
 
   const pdfDoc = (
@@ -63,6 +66,8 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
         total_amount: totalAmount,
         paid_amount: paidAmount,
         remaining_amount: remainingAmount,
+        delivery_cost: paperData.delivery_cost,
+        other_cost: paperData.other_cost,
         payment_status: paymentStatus,
         notes: paperData.notes,
       }}

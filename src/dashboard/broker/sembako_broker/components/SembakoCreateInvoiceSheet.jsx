@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronLeft, Loader2, Search, Check, ChevronDown, Truck, Bike, Package2, Car } from 'lucide-react'
+import { Plus, X, ChevronLeft, Loader2, Search, Check, ChevronDown, Truck, Bike, Package2, Car, Fuel, Cigarette, Utensils, CircleParking, Package } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { PhoneInput } from '@/components/ui/PhoneInput'
@@ -23,6 +23,14 @@ import {
   RokokUnitCalculator,
 } from './sembakoSaleUtils'
 import { SembakoSuccessCard } from './SembakoSuccessCard'
+
+const PRESET_OTHER_COST_CATEGORIES = [
+  { id: 'bensin', label: 'Bensin', Icon: Fuel, color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+  { id: 'rokok', label: 'Rokok Sopir', Icon: Cigarette, color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  { id: 'makan', label: 'Uang Makan', Icon: Utensils, color: '#059669', bg: '#F0FDF4', border: '#BBF7D0' },
+  { id: 'parkir_tol', label: 'Tol / Parkir', Icon: CircleParking, color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
+  { id: 'bongkar', label: 'Bongkar Muat', Icon: Package, color: '#DB2777', bg: '#FDF2F8', border: '#FBCFE8' },
+]
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const ACCENT   = C.accent   // #0F172A
@@ -580,16 +588,38 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   const recordPayment  = useRecordSembakoPayment()
   const createEmployee = useCreateSembakoEmployee()
 
-  const [step, setStep]           = useState(0)
-  const [custId, setCustId]       = useState('')
-  const [txnDate, setTxnDate]     = useState(new Date().toISOString().slice(0, 10))
-  const [dueDate, setDueDate]     = useState(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10) })
-  const [items, setItems]         = useState([{ product_id: '', product_name: '', unit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
-  const [deliveryCost, setDeliveryCost] = useState(0)
-  const [otherCost, setOtherCost] = useState(0)
-  const [payAmount, setPayAmount] = useState(0)
-  const [payMethod, setPayMethod] = useState('cash')
-  const [notes, setNotes]         = useState('')
+  function getSavedInvoiceDraft() {
+    try {
+      const saved = localStorage.getItem('sembako_invoice_wizard_draft') || localStorage.getItem('sembako_invoice_wizard_draft_backup')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {
+      // ignore
+    }
+    return null
+  }
+
+  const [step, setStep]           = useState(() => getSavedInvoiceDraft()?.step ?? 0)
+  const [custId, setCustId]       = useState(() => getSavedInvoiceDraft()?.custId ?? '')
+  const [txnDate, setTxnDate]     = useState(() => getSavedInvoiceDraft()?.txnDate ?? new Date().toISOString().slice(0, 10))
+  const [dueDate, setDueDate]     = useState(() => {
+    const d = getSavedInvoiceDraft()?.dueDate
+    if (d) return d
+    const dt = new Date()
+    dt.setDate(dt.getDate() + 1)
+    return dt.toISOString().slice(0, 10)
+  })
+  const [items, setItems]         = useState(() => {
+    const savedItems = getSavedInvoiceDraft()?.items
+    if (Array.isArray(savedItems) && savedItems.length > 0) return savedItems
+    return [{ product_id: '', product_name: '', unit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }]
+  })
+  const [deliveryCost, setDeliveryCost] = useState(() => getSavedInvoiceDraft()?.deliveryCost ?? 0)
+  const [otherCost, setOtherCost] = useState(() => getSavedInvoiceDraft()?.otherCost ?? 0)
+  const [selectedCostChips, setSelectedCostChips] = useState(() => getSavedInvoiceDraft()?.selectedCostChips ?? [])
+  const [otherCostNotes, setOtherCostNotes]       = useState(() => getSavedInvoiceDraft()?.otherCostNotes ?? '')
+  const [payAmount, setPayAmount] = useState(() => getSavedInvoiceDraft()?.payAmount ?? 0)
+  const [payMethod, setPayMethod] = useState(() => getSavedInvoiceDraft()?.payMethod ?? 'cash')
+  const [notes, setNotes]         = useState(() => getSavedInvoiceDraft()?.notes ?? '')
 
   const [showCustSearch, setShowCustSearch] = useState(false)
   const [quickAddCust, setQuickAddCust]     = useState(false)
@@ -598,13 +628,13 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   const [newProdForm, setNewProdForm]       = useState({ product_name: '', category: 'lainnya', unit: 'pcs', sell_price: 0 })
   const [showCostConfirm, setShowCostConfirm] = useState(false)
 
-  const [useDelivery, setUseDelivery]           = useState(true)
+  const [useDelivery, setUseDelivery]           = useState(() => getSavedInvoiceDraft()?.useDelivery ?? true)
   const [deliveryStatus, setDeliveryStatus]     = useState('terkirim') // 'terkirim' | 'pending'
-  const [deliveryDriver, setDeliveryDriver]     = useState('')
-  const [deliveryVehicle, setDeliveryVehicle]   = useState('')
-  const [deliveryPlate, setDeliveryPlate]       = useState('')
-  const [deliveryArea, setDeliveryArea]         = useState('')
-  const [fuelCost, setFuelCost]                 = useState(0)
+  const [deliveryDriver, setDeliveryDriver]     = useState(() => getSavedInvoiceDraft()?.deliveryDriver ?? '')
+  const [deliveryVehicle, setDeliveryVehicle]   = useState(() => getSavedInvoiceDraft()?.deliveryVehicle ?? '')
+  const [deliveryPlate, setDeliveryPlate]       = useState(() => getSavedInvoiceDraft()?.deliveryPlate ?? '')
+  const [deliveryArea, setDeliveryArea]         = useState(() => getSavedInvoiceDraft()?.deliveryArea ?? '')
+  const [fuelCost, setFuelCost]                 = useState(() => getSavedInvoiceDraft()?.fuelCost ?? 0)
   const [addKurir, setAddKurir]                 = useState(false)
   const [newKurirForm, setNewKurirForm]         = useState({ full_name: '', phone: '' })
 
@@ -664,8 +694,6 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   // ── Edit prefill ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!open) {
-      // Reset step ketika sheet ditutup supaya buka ulang selalu mulai dari awal
-      setStep(0)
       setSuccessData(null)
       lastPrefillKeyRef.current = null
       return
@@ -684,6 +712,33 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     setOtherCost(editSale.other_cost || 0)
     setNotes(editSale.notes || '')
 
+    // Parse operational cost categories & notes from editSale.notes
+    if (editSale.notes) {
+      const match = editSale.notes.match(/\[Biaya Operasional:[^\]]*\(([^)]+)\)\]/)
+      if (match && match[1]) {
+        const fullDetail = match[1]
+        const parts = fullDetail.split(' - ')
+        const chipsPart = parts[0] || ''
+        const textPart = parts.length > 1 ? parts.slice(1).join(' - ') : (parts[0] || '')
+
+        const detected = []
+        if (/bensin|bbm|pertalite|solar/i.test(chipsPart)) detected.push('Bensin')
+        if (/rokok/i.test(chipsPart)) detected.push('Rokok Sopir')
+        if (/makan|konsumsi/i.test(chipsPart)) detected.push('Uang Makan')
+        if (/tol|parkir/i.test(chipsPart)) detected.push('Tol / Parkir')
+        if (/bongkar|kuli|muat/i.test(chipsPart)) detected.push('Bongkar Muat')
+
+        setSelectedCostChips(detected)
+        setOtherCostNotes(textPart)
+      } else {
+        setSelectedCostChips([])
+        setOtherCostNotes('')
+      }
+    } else {
+      setSelectedCostChips([])
+      setOtherCostNotes('')
+    }
+
     if (Array.isArray(editSale.sembako_sale_items) && editSale.sembako_sale_items.length > 0) {
       setItems(editSale.sembako_sale_items.map(it => ({
         product_id: it.product_id, product_name: it.product_name, unit: it.unit,
@@ -698,6 +753,17 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       setStep(1)
     }
   }, [open, editSale])
+
+  const handleToggleCostChip = useCallback((chipLabel) => {
+    setSelectedCostChips(prev => {
+      const exists = prev.includes(chipLabel)
+      const next = exists ? prev.filter(c => c !== chipLabel) : [...prev, chipLabel]
+      if (next.length > 0 && (!otherCostNotes || prev.join(', ') === otherCostNotes)) {
+        setOtherCostNotes(next.join(', '))
+      }
+      return next
+    })
+  }, [otherCostNotes])
 
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -824,6 +890,14 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     try {
       const custName = selectedCust?.customer_name || 'Umum'
 
+      let finalNotes = notes.trim()
+      if (otherCost > 0 && (selectedCostChips.length > 0 || otherCostNotes.trim())) {
+        const detailStr = [selectedCostChips.join(', '), otherCostNotes.trim()].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' - ')
+        const costTag = `[Biaya Operasional: Rp ${formatIDR(otherCost)}${detailStr ? ` (${detailStr})` : ''}]`
+        finalNotes = finalNotes.replace(/\[Biaya Operasional:[^\]]+\]/g, '').trim()
+        finalNotes = finalNotes ? `${finalNotes}\n${costTag}` : costTag
+      }
+
       if (editId) {
         await updateSale.mutateAsync({
           id: editId,
@@ -831,7 +905,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
             customer_id: custId || null, customer_name: custName,
             transaction_date: txnDate, due_date: dueDate || null,
             total_amount: totalAmount, total_cogs: totalCogs,
-            delivery_cost: deliveryCost, other_cost: otherCost, notes,
+            delivery_cost: deliveryCost, other_cost: otherCost, notes: finalNotes,
           },
           items: validItems,
         })
@@ -842,7 +916,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       const sale = await createSale.mutateAsync({
         customer_id: custId || null, customer_name: custName,
         transaction_date: txnDate, due_date: dueDate || null,
-        items: validItems, delivery_cost: deliveryCost, other_cost: otherCost, notes,
+        items: validItems, delivery_cost: deliveryCost, other_cost: otherCost, notes: finalNotes,
       })
 
       if (payAmount > 0 && sale?.id) {
@@ -855,6 +929,10 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       }
 
       if (useDelivery && sale?.id) {
+        const deliveryNotes = otherCost > 0 && selectedCostChips.length > 0
+          ? `Biaya Tambahan: ${selectedCostChips.join(', ')}${otherCostNotes ? ` (${otherCostNotes})` : ''}`
+          : (deliveryStatus === 'terkirim' ? 'Pengiriman langsung saat penjualan' : 'Jadwal pengiriman dari wizard penjualan')
+
         await createDelivery.mutateAsync({
           sale_id: sale.id,
           employee_id: deliveryDriver || null,
@@ -863,7 +941,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           delivery_date: txnDate,
           status: deliveryStatus || 'terkirim',
           delivered_at: deliveryStatus === 'terkirim' ? new Date().toISOString() : null,
-          notes: deliveryStatus === 'terkirim' ? 'Pengiriman langsung saat penjualan' : 'Jadwal pengiriman dari wizard penjualan',
+          notes: deliveryNotes,
         })
       }
 
@@ -893,7 +971,20 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       clearInvoiceDraft()
     } catch (err) {
       console.error(err)
-      toast.error('Gagal menyimpan transaksi')
+      toast.error(err?.message || 'Gagal menyimpan transaksi')
+      // Simpan backup darurat saat error agar data input tidak pernah hilang
+      try {
+        const backupData = {
+          custId, txnDate, dueDate, items, deliveryCost, otherCost,
+          selectedCostChips, otherCostNotes,
+          payAmount, payMethod, notes, useDelivery, deliveryDriver,
+          deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step
+        }
+        localStorage.setItem(INVOICE_DRAFT_KEY, JSON.stringify(backupData))
+        localStorage.setItem('sembako_invoice_wizard_draft_backup', JSON.stringify(backupData))
+      } catch (e) {
+        // ignore
+      }
     }
   }
 
@@ -911,12 +1002,18 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
   const INVOICE_DRAFT_KEY = 'sembako_invoice_wizard_draft'
   const EDIT_DRAFT_KEY = editId ? `sembako_edit_draft_v2_${editId}` : null
+  const draftLoadedRef = useRef(false)
 
   // ── Auto Draft Persistence ──────────────────────────────────────────────────
   useEffect(() => {
-    if (open && !editId) {
+    if (!open) {
+      draftLoadedRef.current = false
+      return
+    }
+
+    if (open && !editId && !draftLoadedRef.current) {
       try {
-        const saved = localStorage.getItem(INVOICE_DRAFT_KEY)
+        const saved = localStorage.getItem(INVOICE_DRAFT_KEY) || localStorage.getItem('sembako_invoice_wizard_draft_backup')
         if (saved) {
           const d = JSON.parse(saved)
           if (d.custId) setCustId(d.custId)
@@ -925,6 +1022,8 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           if (Array.isArray(d.items) && d.items.length > 0) setItems(d.items)
           if (d.deliveryCost !== undefined) setDeliveryCost(d.deliveryCost)
           if (d.otherCost !== undefined) setOtherCost(d.otherCost)
+          if (Array.isArray(d.selectedCostChips)) setSelectedCostChips(d.selectedCostChips)
+          if (d.otherCostNotes !== undefined) setOtherCostNotes(d.otherCostNotes)
           if (d.payAmount !== undefined) setPayAmount(d.payAmount)
           if (d.payMethod) setPayMethod(d.payMethod)
           if (d.notes) setNotes(d.notes)
@@ -938,6 +1037,8 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         }
       } catch (e) {
         console.warn('[Draft] Failed to load draft:', e)
+      } finally {
+        draftLoadedRef.current = true
       }
     }
     // Mode edit: coba load edit-draft yang tersimpan sebelumnya
@@ -946,7 +1047,6 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         const saved = localStorage.getItem(EDIT_DRAFT_KEY)
         if (saved) {
           const d = JSON.parse(saved)
-          // Hanya restore kalau timestamp-nya lebih baru dari data DB
           const prefillKey = `${editId}:${editSale?.updated_at || editSale?.transaction_date || ''}`
           if (d._prefillKey === prefillKey) {
             if (d.custId) setCustId(d.custId)
@@ -958,39 +1058,43 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
             if (d.payAmount !== undefined) setPayAmount(d.payAmount)
             if (d.payMethod) setPayMethod(d.payMethod)
             if (d.notes !== undefined) setNotes(d.notes)
-            // Jangan restore step — selalu mulai di step 1 (Items) saat edit
-            // supaya user langsung lihat produk yang mau diubah
             setStep(1)
             toast.info('Draft edit sebelumnya dipulihkan', { duration: 2500 })
           }
         }
       } catch (e) {
         console.warn('[EditDraft] Failed to load edit draft:', e)
+      } finally {
+        draftLoadedRef.current = true
       }
     }
   }, [open, editId])
 
   useEffect(() => {
-    if (open && !editId) {
-      const draftData = {
-        custId, txnDate, dueDate, items, deliveryCost, otherCost,
-        payAmount, payMethod, notes, useDelivery, deliveryDriver,
-        deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step
+    if (open && !editId && draftLoadedRef.current) {
+      const hasUserData = custId || (Array.isArray(items) && items.some(i => i.product_id || Number(i.quantity) > 0)) || deliveryCost > 0 || otherCost > 0 || notes
+      if (hasUserData) {
+        const draftData = {
+          custId, txnDate, dueDate, items, deliveryCost, otherCost,
+          selectedCostChips, otherCostNotes,
+          payAmount, payMethod, notes, useDelivery, deliveryDriver,
+          deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step
+        }
+        localStorage.setItem(INVOICE_DRAFT_KEY, JSON.stringify(draftData))
+        localStorage.setItem('sembako_invoice_wizard_draft_backup', JSON.stringify(draftData))
       }
-      localStorage.setItem(INVOICE_DRAFT_KEY, JSON.stringify(draftData))
     }
     // Mode edit: simpan progress edit ke localStorage per-invoice
-    if (open && editId && EDIT_DRAFT_KEY && lastPrefillKeyRef.current) {
+    if (open && editId && EDIT_DRAFT_KEY && lastPrefillKeyRef.current && draftLoadedRef.current) {
       const prefillKey = lastPrefillKeyRef.current
       const editDraftData = {
         _prefillKey: prefillKey,
         custId, txnDate, dueDate, items, deliveryCost, otherCost,
         payAmount, payMethod, notes
-        // step TIDAK disimpan — selalu buka dari step 1
       }
       localStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify(editDraftData))
     }
-  }, [open, editId, EDIT_DRAFT_KEY, custId, txnDate, dueDate, items, deliveryCost, otherCost, payAmount, payMethod, notes, useDelivery, deliveryDriver, deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step])
+  }, [open, editId, EDIT_DRAFT_KEY, custId, txnDate, dueDate, items, deliveryCost, otherCost, selectedCostChips, otherCostNotes, payAmount, payMethod, notes, useDelivery, deliveryDriver, deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step])
 
   const clearInvoiceDraft = useCallback(() => {
     localStorage.removeItem(INVOICE_DRAFT_KEY)
@@ -999,7 +1103,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10) }
     setStep(0); setCustId(''); setTxnDate(new Date().toISOString().slice(0, 10)); setDueDate(tomorrow())
     setItems([{ product_id: '', product_name: '', unit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
-    setDeliveryCost(0); setOtherCost(0); setNotes('')
+    setDeliveryCost(0); setOtherCost(0); setSelectedCostChips([]); setOtherCostNotes(''); setNotes('')
     setPayAmount(0); setPayMethod('cash')
     setUseDelivery(false); setDeliveryDriver(''); setDeliveryVehicle(''); setDeliveryPlate(''); setDeliveryArea(''); setFuelCost(0)
     setAddKurir(false); setNewKurirForm({ full_name: '', phone: '' })
@@ -1738,6 +1842,56 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                         <InputRupiah value={otherCost} onChange={setOtherCost} />
                       </div>
                     </div>
+
+                    {/* Operational Cost Preset Chips when otherCost > 0 */}
+                    <AnimatePresence>
+                      {otherCost > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-2.5 bg-amber-500/10 p-3.5 rounded-2xl border border-amber-500/20 overflow-hidden"
+                        >
+                          <label className="block text-[9px] font-black text-amber-700 uppercase tracking-[0.12em]">
+                            Kategori Biaya Operasional (Pilih Cepat):
+                          </label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {PRESET_OTHER_COST_CATEGORIES.map(cat => {
+                              const Icon = cat.Icon
+                              const active = selectedCostChips.includes(cat.label)
+                              return (
+                                <button
+                                  key={cat.id}
+                                  type="button"
+                                  onClick={() => handleToggleCostChip(cat.label)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95"
+                                  style={{
+                                    background: active ? cat.bg : '#FFFFFF',
+                                    color: active ? cat.color : '#64748B',
+                                    borderColor: active ? cat.border : BORDER,
+                                  }}
+                                >
+                                  <Icon size={13} style={{ color: active ? cat.color : '#94A3B8' }} />
+                                  <span>{cat.label}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-black text-amber-700 uppercase tracking-[0.12em] mb-1">
+                              Rincian / Keterangan Biaya Lain:
+                            </label>
+                            <input
+                              type="text"
+                              value={otherCostNotes}
+                              onChange={e => setOtherCostNotes(e.target.value)}
+                              placeholder="Contoh: Bensin 100k, Makan 50k, Tol 50k..."
+                              className="w-full h-10 bg-white border border-amber-200 rounded-xl px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-400"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Payment section */}
                     <div

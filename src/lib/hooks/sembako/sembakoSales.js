@@ -13,10 +13,14 @@ export function processSaleRow(sale, returnsData = [], itemsBySaleId = {}) {
   const itemsFromRel = Array.isArray(sale.sembako_sale_items) && sale.sembako_sale_items.length > 0 ? sale.sembako_sale_items : null
   const itemsFromDirect = itemsBySaleId[sale.id] && itemsBySaleId[sale.id].length > 0 ? itemsBySaleId[sale.id] : null
   const itemsRaw = itemsFromRel || itemsFromDirect || []
-  const items = itemsRaw.map(it => ({
-    ...it,
-    price_per_unit: Number(it.price_per_unit ?? it.sell_price ?? it.unit_price ?? it.price_per_kg ?? 0)
-  }))
+  const items = itemsRaw.map(it => {
+    const resolvedPrice = Number(it.sell_price || it.price_per_unit || it.unit_price || it.price_per_kg || (Number(it.quantity) > 0 && it.subtotal ? Number(it.subtotal) / Number(it.quantity) : 0) || 0)
+    return {
+      ...it,
+      price_per_unit: resolvedPrice,
+      sell_price: resolvedPrice
+    }
+  })
 
   const saleReturns = (returnsData || []).filter(r => {
     if (!r || r.is_deleted) return false
@@ -191,13 +195,17 @@ export const useCreateSembakoSale = () => {
           return rpcData
         }
         if (rpcError) {
-          // If error is an explicit stock error from Postgres exception, surface immediately
-          if (rpcError.message && (rpcError.message.includes('Stok') || rpcError.message.includes('Access Denied'))) {
-            throw new Error(rpcError.message)
+          console.warn('[useCreateSembakoSale] RPC error:', rpcError)
+          // Jika fungsi belum dibuat di DB (42883 / PGRST202), biarkan fallback client berjalan
+          if (rpcError.code === '42883' || rpcError.code === 'PGRST202') {
+            // fallback to client
+          } else {
+            // Lempar pesan error dari RPC langsung ke UI (misal: stok habis, akses ditolak, dll)
+            throw new Error(rpcError.message || 'Gagal memproses transaksi penjualan')
           }
         }
       } catch (rpcErr) {
-        if (rpcErr.message && (rpcErr.message.includes('Stok') || rpcErr.message.includes('Access Denied'))) {
+        if (rpcErr.message && !rpcErr.message.includes('create_sembako_sale_transaction')) {
           throw rpcErr
         }
         // Fallback to client preflight if RPC is not deployed yet

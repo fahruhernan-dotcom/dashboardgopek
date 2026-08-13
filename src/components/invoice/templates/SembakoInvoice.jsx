@@ -253,7 +253,9 @@ export function SembakoInvoice({
 }) {
   const totalAmount   = Number(invoice?.total_amount  || 0)
   const totalCost     = Number(invoice?.total_cost    || 0)
-  const netProfit     = Number(invoice?.net_profit    || (totalAmount - totalCost))
+  const deliveryCost  = Number(invoice?.delivery_cost || 0)
+  const otherCost     = Number(invoice?.other_cost    || 0)
+  const netProfit     = Number(invoice?.net_profit    || (totalAmount - totalCost - deliveryCost - otherCost))
   const paidAmount    = Number(invoice?.paid_amount   || 0)
   const remaining     = Number(invoice?.remaining_amount ?? Math.max(0, totalAmount - paidAmount))
   const isLunas       = invoice?.payment_status === 'lunas'
@@ -423,8 +425,24 @@ export function SembakoInvoice({
         <View style={s.summarySection}>
           <View style={s.summaryBox}>
             <View style={s.summaryRow}>
-              <Text style={s.summaryLabel}>Subtotal</Text>
-              <Text style={s.summaryVal}>{formatRupiahPDF(totalAmount)}</Text>
+              <Text style={s.summaryLabel}>Subtotal Produk</Text>
+              <Text style={s.summaryVal}>{formatRupiahPDF(items.reduce((s, i) => s + Number(i.subtotal ?? (Number(i.quantity_kg || i.quantity || 0) * Number(i.price_per_kg || i.price_per_unit || 0))), 0) || totalAmount)}</Text>
+            </View>
+            {deliveryCost > 0 && (
+              <View style={s.summaryRow}>
+                <Text style={s.summaryLabel}>Ongkos Kirim</Text>
+                <Text style={s.summaryVal}>+{formatRupiahPDF(deliveryCost)}</Text>
+              </View>
+            )}
+            {otherCost > 0 && (
+              <View style={s.summaryRow}>
+                <Text style={s.summaryLabel}>Biaya Lainnya</Text>
+                <Text style={s.summaryVal}>+{formatRupiahPDF(otherCost)}</Text>
+              </View>
+            )}
+            <View style={[s.summaryRow, { borderTopWidth: 1, borderTopColor: C.border, paddingTop: 4, marginTop: 2 }]}>
+              <Text style={[s.summaryLabel, { fontFamily: 'Helvetica-Bold' }]}>Total Tagihan</Text>
+              <Text style={[s.summaryVal, { fontFamily: 'Helvetica-Bold' }]}>{formatRupiahPDF(totalAmount)}</Text>
             </View>
             {paidAmount > 0 && (
               <View style={s.summaryRow}>
@@ -436,10 +454,10 @@ export function SembakoInvoice({
             )}
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>
-                {isLunas ? 'TOTAL' : 'SISA TAGIHAN'}
+                {isLunas ? 'STATUS' : 'SISA TAGIHAN'}
               </Text>
               <Text style={s.totalVal}>
-                {formatRupiahPDF(isLunas ? totalAmount : remaining)}
+                {isLunas ? 'LUNAS' : formatRupiahPDF(remaining)}
               </Text>
             </View>
           </View>

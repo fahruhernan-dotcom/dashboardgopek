@@ -33,7 +33,7 @@ BEGIN
         -- Hitung piutang yang belum lunas dan jatuh tempo hari ini atau besok
         SELECT 
             COUNT(s.id),
-            COALESCE(SUM(GREATEST(s.grand_total - COALESCE(s.paid_amount, 0), 0)), 0),
+            COALESCE(SUM(GREATEST(COALESCE(s.total_amount, 0) - COALESCE(s.paid_amount, 0), 0)), 0),
             STRING_AGG(DISTINCT COALESCE(s.customer_name, 'Pelanggan'), ', ')
         INTO 
             v_due_count,
@@ -41,8 +41,8 @@ BEGIN
             v_cust_names
         FROM public.sembako_sales s
         WHERE s.tenant_id = v_tenant.id
-          AND s.status != 'CANCELLED'
-          AND (s.payment_status IS NULL OR s.payment_status != 'PAID')
+          AND (s.is_deleted IS NULL OR s.is_deleted = false)
+          AND (s.payment_status IS NULL OR s.payment_status NOT IN ('lunas', 'PAID'))
           AND s.due_date IS NOT NULL
           AND s.due_date::DATE <= v_tomorrow
           AND s.due_date::DATE >= (v_today - INTERVAL '30 days'); -- Jangan sertakan piutang kedaluwarsa > 30 hari dalam cron harian
@@ -164,7 +164,7 @@ DECLARE
 BEGIN
     -- Ambil nama produk jika tersedia
     IF NEW.product_id IS NOT NULL THEN
-        SELECT name INTO v_prod_name FROM public.sembako_products WHERE id = NEW.product_id;
+        SELECT product_name INTO v_prod_name FROM public.sembako_products WHERE id = NEW.product_id;
     END IF;
 
     v_prod_name := COALESCE(v_prod_name, 'Produk');

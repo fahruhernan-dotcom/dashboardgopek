@@ -76,26 +76,31 @@ BEGIN
         v_inserted_count := v_inserted_count + 1;
     END LOOP;
 
-    -- Catat event ke notification_events audit log
-    INSERT INTO public.notification_events (
-        tenant_id,
-        event_type,
-        payload,
-        status,
-        recipient_count,
-        created_at
-    ) VALUES (
-        p_tenant_id,
-        p_type,
-        jsonb_build_object(
-            'title', p_title,
-            'body', p_body,
-            'data', p_data
-        ),
-        'PROCESSED',
-        v_inserted_count,
-        NOW()
-    );
+    -- Catat event ke notification_events audit log (Aman jika tabel belum dibuat atau skema berbeda)
+    BEGIN
+        INSERT INTO public.notification_events (
+            tenant_id,
+            event_type,
+            source_table,
+            payload,
+            status,
+            created_at
+        ) VALUES (
+            p_tenant_id,
+            p_type,
+            'system',
+            jsonb_build_object(
+                'title', p_title,
+                'body', p_body,
+                'data', p_data,
+                'recipient_count', v_inserted_count
+            ),
+            'completed',
+            NOW()
+        );
+    EXCEPTION WHEN OTHERS THEN
+        NULL;
+    END;
 
     RETURN v_inserted_count;
 END;
@@ -114,7 +119,8 @@ DECLARE
     v_total_fmt TEXT;
 BEGIN
     v_cust_name := COALESCE(NEW.customer_name, 'Pelanggan');
-    v_total_fmt := 'Rp ' || TO_CHAR(COALESCE(NEW.grand_total, 0), 'FM999G999G999G999');
+    -- Kolom pada sembako_sales adalah total_amount (BUKAN grand_total)
+    v_total_fmt := 'Rp ' || TO_CHAR(COALESCE(NEW.total_amount, 0), 'FM999G999G999G999');
 
     PERFORM public.dispatch_tenant_notification(
         NEW.tenant_id,
@@ -194,6 +200,7 @@ SET search_path = public
 AS $$
 BEGIN
     -- Hanya trigger jika stok baru turun ke atau di bawah batas minimum, dan sebelumnya di atas batas
+    -- Kolom nama produk di sembako_products adalah product_name (BUKAN name)
     IF NEW.min_stock_alert IS NOT NULL 
        AND NEW.min_stock_alert > 0 
        AND NEW.current_stock <= NEW.min_stock_alert 
@@ -203,10 +210,10 @@ BEGIN
             NEW.tenant_id,
             'LOW_STOCK',
             '⚠️ Peringatan Stok Menipis',
-            NEW.name || ' sisa ' || NEW.current_stock || ' ' || COALESCE(NEW.unit, 'item') || ' (Batas min: ' || NEW.min_stock_alert || ')',
+            COALESCE(NEW.product_name, 'Produk') || ' sisa ' || NEW.current_stock || ' ' || COALESCE(NEW.unit, 'item') || ' (Batas min: ' || NEW.min_stock_alert || ')',
             jsonb_build_object(
                 'product_id', NEW.id,
-                'product_name', NEW.name,
+                'product_name', NEW.product_name,
                 'current_stock', NEW.current_stock,
                 'route', '/broker/sembako/gudang'
             )
@@ -222,3 +229,4 @@ CREATE TRIGGER trg_notify_low_stock
 AFTER UPDATE OF current_stock ON public.sembako_products
 FOR EACH ROW
 EXECUTE FUNCTION public.trg_fn_notify_low_stock();
+
