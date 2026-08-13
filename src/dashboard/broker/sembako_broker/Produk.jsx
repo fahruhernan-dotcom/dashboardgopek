@@ -618,11 +618,19 @@ export default function Produk() {
   const [productToDelete, setProductToDelete] = useState(null)
   const [importCsvOpen, setImportCsvOpen] = useState(false)
 
+  const actionHandledRef = useRef(false)
+
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    if (params.get('action') === 'new') {
-      setSheet('new')
-      navigate(location.pathname, { replace: true })
+    const action = params.get('action')
+    if (action === 'new' || action === 'tambah') {
+      if (!actionHandledRef.current) {
+        actionHandledRef.current = true
+        setSheet('new')
+        navigate(location.pathname, { replace: true })
+      }
+    } else {
+      actionHandledRef.current = false
     }
   }, [location.search, location.pathname, navigate])
 

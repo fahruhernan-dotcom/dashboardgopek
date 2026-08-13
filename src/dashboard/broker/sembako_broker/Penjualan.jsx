@@ -27,25 +27,21 @@ export default function SembakoPenjualan() {
     const params = new URLSearchParams(window.location.search)
     return params.get('action') === 'new'
   })
-  const navigate = useNavigate()
-
-  const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
+  const actionHandledRef = useRef(false)
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    if (params.get('action') === 'new') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOpenWizard(true)
-      navigate(location.pathname, { replace: true })
+    const action = params.get('action')
+    if (action === 'new' || action === 'tambah') {
+      if (!actionHandledRef.current) {
+        actionHandledRef.current = true
+        setOpenWizard(true)
+        navigate(location.pathname, { replace: true })
+      }
+    } else {
+      actionHandledRef.current = false
     }
   }, [location.search, location.pathname, navigate])
-
-  // URL cleanup fallback
-  useEffect(() => {
-    if (!openWizard && location.search.includes('action=new')) {
-      navigate(location.pathname, { replace: true })
-    }
-  }, [openWizard, location.search, location.pathname, navigate])
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: '96px' }}>

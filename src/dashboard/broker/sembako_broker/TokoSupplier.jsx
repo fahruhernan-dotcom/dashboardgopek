@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom'
+import { useNavigate, useOutletContext, useSearchParams, useLocation } from 'react-router-dom'
 import { BrokerMobileHeader } from '@/dashboard/broker/_shared/components/BrokerMobileHeader'
 import { motion } from 'framer-motion'
 import {
@@ -77,9 +77,11 @@ const PAYMENT_TERMS = [
 ]
 
 export default function SembakoTokoSupplier() {
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const { setSidebarOpen = () => window.dispatchEvent(new Event('toggleMobileSidebar')) } = useOutletContext() || {}
   const location = useLocation()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [openTokoSheet, setOpenTokoSheet] = useState(false)
   const [sub, setSub] = useState(() => searchParams.get('tab') || 'toko')
 
@@ -91,13 +93,20 @@ export default function SembakoTokoSupplier() {
     }
   }, [tabParam, sub])
 
+  const actionHandledRef = React.useRef(false)
+
   // Sync URL action=new to openTokoSheet state
   React.useEffect(() => {
     const params = new URLSearchParams(location.search)
     const action = params.get('action')
     if (action === 'new' || action === 'tambah') {
-      setOpenTokoSheet(true)
-      navigate(location.pathname, { replace: true })
+      if (!actionHandledRef.current) {
+        actionHandledRef.current = true
+        setOpenTokoSheet(true)
+        navigate(location.pathname, { replace: true })
+      }
+    } else {
+      actionHandledRef.current = false
     }
   }, [location.search, location.pathname, navigate])
 
@@ -273,7 +282,18 @@ export default function SembakoTokoSupplier() {
                   <FileSpreadsheet size={15} className="text-[#0F172A]" />
                   <span>Import CSV</span>
                 </button>
-                {sub === 'toko' ? <TokoActions compact open={openTokoSheet} onOpenChange={setOpenTokoSheet} /> : <SupplierActions compact />}
+                {sub === 'toko' ? (
+                  <TokoActions
+                    compact
+                    open={openTokoSheet}
+                    onOpenChange={(v) => {
+                      setOpenTokoSheet(v)
+                      if (!v && location.search.includes('action=')) {
+                        navigate(location.pathname, { replace: true })
+                      }
+                    }}
+                  />
+                ) : <SupplierActions compact />}
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -284,7 +304,18 @@ export default function SembakoTokoSupplier() {
                   <FileSpreadsheet size={15} className="text-[#0F172A]" />
                   <span>Import CSV</span>
                 </button>
-                {sub === 'toko' ? <TokoActions compact open={openTokoSheet} onOpenChange={setOpenTokoSheet} /> : <SupplierActions compact />}
+                {sub === 'toko' ? (
+                  <TokoActions
+                    compact
+                    open={openTokoSheet}
+                    onOpenChange={(v) => {
+                      setOpenTokoSheet(v)
+                      if (!v && location.search.includes('action=')) {
+                        navigate(location.pathname, { replace: true })
+                      }
+                    }}
+                  />
+                ) : <SupplierActions compact />}
               </div>
             )
           }

@@ -615,12 +615,19 @@ export default function Gudang() {
   const [showTambahSheet, setShowTambahSheet] = useState(!!preProductId || searchParams.get('action') === 'add-stock' || searchParams.get('action') === 'tambah')
   const [tambahProductId, setTambahProductId] = useState(preProductId)
 
+  const actionHandledRef = React.useRef(false)
+
   React.useEffect(() => {
     const params = new URLSearchParams(location.search)
     const action = params.get('action')
     if (action === 'add-stock' || action === 'tambah') {
-      setShowTambahSheet(true)
-      navigate(location.pathname, { replace: true })
+      if (!actionHandledRef.current) {
+        actionHandledRef.current = true
+        setShowTambahSheet(true)
+        navigate(location.pathname, { replace: true })
+      }
+    } else {
+      actionHandledRef.current = false
     }
   }, [location.search, location.pathname, navigate])
 
@@ -757,7 +764,13 @@ export default function Gudang() {
             preselectedProductId={tambahProductId}
             products={products.filter(p => p.is_active && !p.is_deleted)}
             suppliers={suppliers}
-            onClose={() => { setShowTambahSheet(false); setTambahProductId(null) }}
+            onClose={() => {
+              setShowTambahSheet(false)
+              setTambahProductId(null)
+              if (location.search.includes('action=')) {
+                navigate(location.pathname, { replace: true })
+              }
+            }}
           />
         )}
       </AnimatePresence>
