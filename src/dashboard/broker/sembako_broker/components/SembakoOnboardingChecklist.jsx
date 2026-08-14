@@ -84,9 +84,10 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
       style={{
-        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
         borderRadius: '20px',
-        border: '1px solid rgba(51,65,85,0.4)',
+        border: '1px solid var(--border-soft, #E2E8F0)',
+        boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03)',
         padding: '20px',
         marginBottom: '18px',
         position: 'relative',
@@ -98,32 +99,32 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
         style={{
           position: 'absolute', top: 12, right: 12,
           width: 28, height: 28, borderRadius: 8,
-          background: 'rgba(255,255,255,0.05)', border: 'none',
+          background: 'rgba(0,0,0,0.04)', border: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer',
         }}
       >
-        <X size={14} color="#6B7280" />
+        <X size={14} color="#64748B" />
       </button>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10,
-          background: 'rgba(15,23,42,0.12)',
+          background: 'rgba(12, 61, 12, 0.08)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Rocket size={18} color={C.accent} />
+          <Rocket size={18} color="#0c3d0c" />
         </div>
         <div>
           <h3 style={{
-            fontSize: '15px', fontWeight: 800, color: C.text,
+            fontSize: '15px', fontWeight: 800, color: 'var(--text-primary, #0F172A)',
             fontFamily: 'DM Sans', margin: 0, lineHeight: 1.2,
           }}>
             Mulai Perjalanan Bisnis Anda
           </h3>
           <p style={{
-            fontSize: '11px', color: C.muted, margin: 0, marginTop: '2px',
+            fontSize: '11px', color: 'var(--text-muted, #64748B)', margin: 0, marginTop: '2px',
             fontWeight: 600,
           }}>
             Selesaikan {STEPS.length} langkah untuk memulai
@@ -137,18 +138,18 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: '6px',
         }}>
-          <span style={{ fontSize: '10px', fontWeight: 800, color: C.muted, letterSpacing: '0.08em' }}>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted, #64748B)', letterSpacing: '0.08em' }}>
             PROGRESS
           </span>
           <span style={{
             fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em',
-            color: progressPct >= 50 ? '#021a02' : C.accent,
+            color: '#0c3d0c',
           }}>
             {completedCount}/{STEPS.length}
           </span>
         </div>
         <div style={{
-          height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)',
+          height: 6, borderRadius: 3, background: '#E2E8F0',
           overflow: 'hidden',
         }}>
           <motion.div
@@ -157,9 +158,7 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
             transition={{ duration: 0.5, ease: 'easeOut' }}
             style={{
               height: '100%', borderRadius: 3,
-              background: progressPct >= 75
-                ? 'linear-gradient(90deg, #021a02, #021a02)'
-                : `linear-gradient(90deg, ${C.accent}, #475569)`,
+              background: 'linear-gradient(90deg, #0c3d0c, #16a34a)',
             }}
           />
         </div>
@@ -179,8 +178,9 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
               style={{
                 display: 'flex', alignItems: 'center', gap: '12px',
                 padding: '12px 14px', borderRadius: '14px',
-                background: done ? 'rgba(2, 26, 2,0.06)' : C.card,
-                border: `1px solid ${done ? 'rgba(2, 26, 2,0.2)' : C.border}`,
+                background: done ? 'rgba(12, 61, 12, 0.04)' : '#FFFFFF',
+                border: `1px solid ${done ? 'rgba(12, 61, 12, 0.2)' : 'var(--border-soft, #E2E8F0)'}`,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
                 cursor: done ? 'default' : 'pointer',
                 textAlign: 'left', width: '100%',
                 opacity: done ? 0.75 : 1,
@@ -190,32 +190,32 @@ export function SembakoOnboardingChecklist({ productsCount, batchesCount, custom
               {/* Step number / check */}
               <div style={{
                 width: 30, height: 30, borderRadius: 9, flexShrink: 0,
-                background: done ? 'rgba(2, 26, 2,0.15)' : `${C.accent}18`,
+                background: done ? 'rgba(12, 61, 12, 0.12)' : 'rgba(12, 61, 12, 0.08)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {done
-                  ? <Check size={14} color="#021a02" strokeWidth={3} />
-                  : <span style={{ fontSize: '11px', fontWeight: 900, color: C.accent }}>{idx + 1}</span>
+                  ? <Check size={14} color="#0c3d0c" strokeWidth={3} />
+                  : <span style={{ fontSize: '11px', fontWeight: 900, color: '#0c3d0c' }}>{idx + 1}</span>
                 }
               </div>
 
               {/* Label */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{
-                  fontSize: '13px', fontWeight: 700, color: done ? '#021a02' : C.text,
+                  fontSize: '13px', fontWeight: 700, color: done ? '#0c3d0c' : 'var(--text-primary, #0F172A)',
                   margin: 0, lineHeight: 1.2,
                   textDecoration: done ? 'line-through' : 'none',
                 }}>
                   {step.label}
                 </p>
-                <p style={{ fontSize: '11px', color: C.muted, margin: 0, marginTop: '2px' }}>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted, #64748B)', margin: 0, marginTop: '2px' }}>
                   {step.desc}
                 </p>
               </div>
 
               {/* Arrow */}
               {!done && (
-                <ChevronRight size={16} color={C.muted} style={{ flexShrink: 0 }} />
+                <ChevronRight size={16} color="#94A3B8" style={{ flexShrink: 0 }} />
               )}
             </motion.button>
           )
