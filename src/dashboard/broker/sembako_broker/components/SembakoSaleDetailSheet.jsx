@@ -363,10 +363,22 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
                       const returQty = itemReturs.reduce((s, r) => s + Number(r.quantity || 0), 0)
                       const netQty = Math.max(0, Number(it.quantity || 0) - returQty)
 
+                      const rawName = it.product_name || '—'
+                      const matchPkg = rawName.match(/\[(\d+(?:\.\d+)?\s*[^\]]+)\]/)
+                      const pkgTag = matchPkg ? matchPkg[1] : null
+                      const cleanProdName = rawName.replace(/\s*\[\d+[^\]]+\]/g, '').trim()
+
                       return (
                         <tr key={idx} style={{ borderTop: `1px solid ${C.border}` }}>
                           <td style={{ padding: '12px', color: C.text, fontWeight: 600 }}>
-                            {it.product_name}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span>{cleanProdName}</span>
+                              {pkgTag && (
+                                <span style={{ fontSize: '10px', fontWeight: 800, padding: '1.5px 6px', borderRadius: '6px', background: '#EEF2FF', color: '#4F46E5', textTransform: 'uppercase' }}>
+                                  {pkgTag}
+                                </span>
+                              )}
+                            </div>
                             {returQty > 0 && (
                               <span style={{ fontSize: '10px', color: '#DC2626', display: 'block', fontWeight: 700, marginTop: '2px' }}>
                                 🔄 Ada Retur: -{returQty} {it.unit || 'unit'}

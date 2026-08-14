@@ -313,6 +313,11 @@ function SaleItemsPanel({ sale, onOpenDetail, onEdit }) {
             const qty = it.quantity ?? 0
             const price = Number(it.sell_price ?? it.price_per_unit ?? it.unit_price ?? 0)
             const subtotal = it.subtotal ?? Math.round(qty * price)
+            const rawName = it.product_name || it.sembako_products?.product_name || '—'
+            const matchPkg = rawName.match(/\[(\d+(?:\.\d+)?\s*[^\]]+)\]/)
+            const pkgTag = matchPkg ? matchPkg[1] : null
+            const cleanProdName = rawName.replace(/\s*\[\d+[^\]]+\]/g, '').trim()
+
             return (
               <div key={it.id ?? i} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -321,9 +326,16 @@ function SaleItemsPanel({ sale, onOpenDetail, onEdit }) {
               }}>
                 {/* Nama produk */}
                 <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {it.product_name || it.sembako_products?.product_name || '—'}
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {cleanProdName}
+                    </p>
+                    {pkgTag && (
+                      <span style={{ fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: '#EEF2FF', color: '#4F46E5', textTransform: 'uppercase' }}>
+                        {pkgTag}
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>
                     {qty} {it.unit || 'unit'} × {formatIDR(price)}
                   </p>

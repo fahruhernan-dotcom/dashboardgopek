@@ -210,9 +210,23 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
                 const price = Number(item.sell_price ?? item.price_per_unit ?? item.price_per_kg ?? item.unit_price ?? (qty > 0 && item.subtotal ? item.subtotal / qty : 0) ?? 0)
                 const subtotal = Number(item.subtotal ?? Math.round(qty * price))
                 const unit = item.unit || 'pcs'
+                const rawName = item.product_name || '—'
+                const matchPkg = rawName.match(/\[(\d+(?:\.\d+)?\s*[^\]]+)\]/)
+                const pkgTag = matchPkg ? matchPkg[1] : null
+                const cleanProdName = rawName.replace(/\s*\[\d+[^\]]+\]/g, '').trim()
+
                 return (
                   <tr key={idx} className={cn("hover:bg-slate-50/80 transition-colors", idx % 2 === 0 ? "bg-white" : "bg-slate-50/40")}>
-                    <td className="py-2.5 px-3.5 font-bold text-slate-900">{item.product_name}</td>
+                    <td className="py-2.5 px-3.5 font-bold text-slate-900">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span>{cleanProdName}</span>
+                        {pkgTag && (
+                          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/60 uppercase">
+                            {pkgTag}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-2.5 px-3 text-center font-medium text-slate-700">
                       <span className="font-bold text-slate-900">{qty}</span> <span className="text-slate-500 text-[11px]">{unit}</span>
                     </td>

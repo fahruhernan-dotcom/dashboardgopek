@@ -380,6 +380,11 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
             className={inputCn}
             placeholder="0"
           />
+          {factor > 1 && Number(item.quantity) > 0 && (
+            <p className="text-[10px] font-bold text-indigo-600 mt-1 flex items-center gap-1">
+              <span>📦 = {Number(item.quantity) * factor} {item.unit || 'slop'}</span>
+            </p>
+          )}
           {overStock && (
             <p className="text-[10px] font-bold mt-1" style={{ color: '#EF4444' }}>Stok tidak cukup</p>
           )}
@@ -393,6 +398,11 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
             onChange={v => onChangeItem(idx, 'price_per_unit', v)}
             className={inputCn}
           />
+          {factor > 1 && Number(item.price_per_unit) > 0 && (
+            <p className="text-[10px] font-bold text-slate-500 mt-1">
+              ≈ {formatIDR(Math.round(Number(item.price_per_unit) / factor))} / {item.unit || 'slop'}
+            </p>
+          )}
         </div>
       </div>
 
@@ -740,11 +750,34 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     }
 
     if (Array.isArray(editSale.sembako_sale_items) && editSale.sembako_sale_items.length > 0) {
-      setItems(editSale.sembako_sale_items.map(it => ({
-        product_id: it.product_id, product_name: it.product_name, unit: it.unit,
-        selectedUnit: it.unit,
-        quantity: it.quantity, price_per_unit: it.price_per_unit, cogs_per_unit: it.cogs_per_unit
-      })))
+      setItems(editSale.sembako_sale_items.map(it => {
+        const matchPkg = (it.product_name || '').match(/\[(\d+(?:\.\d+)?)\s*([^\]]+)\]/)
+        let qty = it.quantity
+        let selectedUnit = it.unit
+        let price = it.sell_price || it.price_per_unit || 0
+        let cleanName = (it.product_name || '').replace(/\s*\[\d+[^\]]+\]/g, '').trim()
+
+        if (matchPkg) {
+          const inputQty = Number(matchPkg[1])
+          const inputUnit = matchPkg[2].trim()
+          const factor = getFactor(inputUnit)
+          if (factor > 1 && inputQty > 0) {
+            qty = inputQty
+            selectedUnit = inputUnit
+            price = Math.round(Number(it.sell_price || it.price_per_unit || 0) * factor)
+          }
+        }
+
+        return {
+          product_id: it.product_id,
+          product_name: cleanName,
+          unit: it.unit,
+          selectedUnit: selectedUnit,
+          quantity: qty,
+          price_per_unit: price,
+          cogs_per_unit: it.cogs_per_unit
+        }
+      }))
       // Data lengkap — buka di step 1 (barang) supaya langsung bisa review/edit
       setStep(1)
     } else {
@@ -877,11 +910,21 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       .filter(i => i.product_id && Number(i.quantity) > 0)
       .map(i => {
         const factor = getFactor(i.selectedUnit || i.unit || 'slop')
+        const inputQty = Number(i.quantity)
+        const inputUnit = i.selectedUnit || i.unit || 'slop'
+        const baseQty = inputQty * factor
+        const basePrice = Math.round(Number(i.price_per_unit) / factor)
+
+        const packagingTag = factor > 1 ? `[${inputQty} ${inputUnit}]` : ''
+        const cleanName = (i.product_name || '').replace(/\s*\[\d+[^\]]+\]/g, '').trim()
+        const finalName = packagingTag ? `${cleanName} ${packagingTag}` : cleanName
+
         return {
           ...i,
+          product_name: finalName,
           unit: i.unit || 'slop',
-          quantity: Number(i.quantity) * factor,
-          price_per_unit: Number(i.price_per_unit) / factor,
+          quantity: baseQty,
+          price_per_unit: basePrice,
           cogs_per_unit: Number(i.cogs_per_unit)
         }
       })
