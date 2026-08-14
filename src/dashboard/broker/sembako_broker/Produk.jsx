@@ -44,6 +44,19 @@ const CATEGORIES = [
 
 const UNITS = ['slop', 'pres', 'bal', 'karton', 'pack', 'bungkus', 'pcs', 'dus', 'bal kecil', 'bal besar', 'karton bal kecil', 'karton bal besar']
 
+const DEFAULT_CONVERSIONS = {
+  'karton': 80,
+  'karton bal kecil': 80,
+  'karton bal besar': 80,
+  'dus': 40,
+  'bal': 20,
+  'bal besar': 20,
+  'bal kecil': 10,
+  'pres': 10,
+  'pack': 10,
+  'renceng': 12,
+}
+
 const fmt = (n) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(Number(n) || 0))
 
 // ── Stock bar helpers ─────────────────────────────────────────────────────────
@@ -102,6 +115,12 @@ function ProductSheet({ product, onClose }) {
     conversion_rate: product?.conversion_rate || '',
   })
   const [catOpen, setCatOpen] = useState(false)
+  const [priceInputUnit, setPriceInputUnit] = useState('primary') // 'primary' (Retail) | 'secondary' (Grosir)
+  const [tempGrosirSellPrice, setTempGrosirSellPrice] = useState('')
+  const [tempGrosirBuyPrice, setTempGrosirBuyPrice] = useState('')
+
+  const convRate = Number(form.conversion_rate) > 0 ? Number(form.conversion_rate) : 1
+  const hasGrosirUnit = Boolean(form.secondary_unit && Number(form.conversion_rate) > 0)
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
@@ -286,13 +305,22 @@ function ProductSheet({ product, onClose }) {
                 placeholder="Pilih"
               />
             </Field>
-            <Field label="Satuan Grosir (Karton/Dus)">
+            <Field label="Satuan Penjualan (Karton/Dus/Bal)">
               <CustomSelect
                 id="product-sec-unit"
                 value={form.secondary_unit}
-                onChange={val => set('secondary_unit', val)}
+                onChange={val => {
+                  setForm(f => {
+                    const defaultRate = DEFAULT_CONVERSIONS[val] || ''
+                    return {
+                      ...f,
+                      secondary_unit: val,
+                      conversion_rate: val ? (f.conversion_rate || defaultRate) : ''
+                    }
+                  })
+                }}
                 options={['', ...UNITS].map(u => ({ value: u, label: u || 'Tidak ada' }))}
-                placeholder="Tanpa Grosir"
+                placeholder="Pilih Satuan Penjualan"
               />
             </Field>
           </div>
@@ -305,43 +333,186 @@ function ProductSheet({ product, onClose }) {
                   type="number"
                   value={form.conversion_rate}
                   onChange={e => set('conversion_rate', e.target.value)}
-                  placeholder="Contoh: 20 (1 Karton = 20 Slop)"
+                  placeholder="Contoh: 80 (1 Karton = 80 Slop)"
                   style={{ ...inputStyle, paddingLeft: 44 }}
                 />
                 <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C.accent, fontWeight: 800 }}>1x</span>
               </div>
+
+              {/* Quick Conversion Chips */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                {[
+                  { label: '80 (Karton)', val: 80 },
+                  { label: '40 (Dus)', val: 40 },
+                  { label: '20 (Bal Bsr)', val: 20 },
+                  { label: '10 (Bal Kcl/Pres)', val: 10 },
+                  { label: '12 (Lusin/Renceng)', val: 12 }
+                ].map(chip => (
+                  <button
+                    key={chip.val}
+                    type="button"
+                    onClick={() => set('conversion_rate', chip.val)}
+                    style={{
+                      padding: '3px 8px', borderRadius: 6,
+                      background: Number(form.conversion_rate) === chip.val ? '#0c3d0c' : '#F1F5F9',
+                      color: Number(form.conversion_rate) === chip.val ? '#FFFFFF' : '#475569',
+                      border: `1px solid ${Number(form.conversion_rate) === chip.val ? '#0c3d0c' : '#E2E8F0'}`,
+                      fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+
               <p style={{ fontSize: 10, color: TEXT_SEC, marginTop: 4, fontStyle: 'italic' }}>
                 * Saat jual "{form.secondary_unit}", stok terpotong otomatis sebanyak {form.conversion_rate || '...'} "{form.unit}".
               </p>
             </Field>
           )}
 
-          {/* Harga jual + beli dengan Rp Prefix */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="Harga Jual per Satuan">
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, fontWeight: 700, color: '#0F172A' }}>Rp</span>
-                <input
-                  id="sell-price" name="sell_price" type="text" inputMode="numeric"
-                  value={form.sell_price ? fmt(form.sell_price) : ''}
-                  onChange={e => set('sell_price', e.target.value.replace(/\D/g, ''))}
-                  placeholder="0"
-                  style={{ ...inputStyle, paddingLeft: 36 }}
-                />
+          {/* Unit Price Basis Selector & Inputs */}
+          <div>
+            {hasGrosirUnit && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, background: 'rgba(12,61,12,0.04)', border: '1px solid rgba(12,61,12,0.12)', borderRadius: 12, padding: '6px 10px' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#0c3d0c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Pilihan Input Harga
+                </span>
+                <div style={{ display: 'flex', gap: 4, background: '#E2E8F0', borderRadius: 8, padding: 2 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPriceInputUnit('primary')
+                      setTempGrosirSellPrice('')
+                      setTempGrosirBuyPrice('')
+                    }}
+                    style={{
+                      padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                      fontSize: 11, fontWeight: 800,
+                      background: priceInputUnit === 'primary' ? '#FFFFFF' : 'transparent',
+                      color: priceInputUnit === 'primary' ? '#0c3d0c' : '#64748B',
+                      boxShadow: priceInputUnit === 'primary' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    Per {form.unit || 'Satuan'} (Utama)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPriceInputUnit('secondary')
+                      if (form.sell_price) setTempGrosirSellPrice(String(Math.round(Number(form.sell_price) * convRate)))
+                      if (form.avg_buy_price) setTempGrosirBuyPrice(String(Math.round(Number(form.avg_buy_price) * convRate)))
+                    }}
+                    style={{
+                      padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                      fontSize: 11, fontWeight: 800,
+                      background: priceInputUnit === 'secondary' ? '#0c3d0c' : 'transparent',
+                      color: priceInputUnit === 'secondary' ? '#FFFFFF' : '#64748B',
+                      boxShadow: priceInputUnit === 'secondary' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    Per {form.secondary_unit} (Penjualan)
+                  </button>
+                </div>
               </div>
-            </Field>
-            <Field label="Harga Beli / HPP (Avg)">
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, fontWeight: 700, color: '#94A3B8' }}>Rp</span>
-                <input
-                  id="buy-price" name="avg_buy_price" type="text" inputMode="numeric"
-                  value={form.avg_buy_price ? fmt(form.avg_buy_price) : ''}
-                  onChange={e => set('avg_buy_price', e.target.value.replace(/\D/g, ''))}
-                  placeholder="0"
-                  style={{ ...inputStyle, paddingLeft: 36 }}
-                />
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {/* Harga Jual */}
+              <Field label={hasGrosirUnit && priceInputUnit === 'secondary' ? `Harga Jual (per ${form.secondary_unit})` : `Harga Jual (per ${form.unit || 'Satuan'})`}>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, fontWeight: 700, color: '#0F172A' }}>Rp</span>
+                  <input
+                    id="sell-price" name="sell_price" type="text" inputMode="numeric"
+                    value={
+                      hasGrosirUnit && priceInputUnit === 'secondary'
+                        ? (tempGrosirSellPrice ? fmt(tempGrosirSellPrice) : (form.sell_price ? fmt(Math.round(Number(form.sell_price) * convRate)) : ''))
+                        : (form.sell_price ? fmt(form.sell_price) : '')
+                    }
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '')
+                      if (hasGrosirUnit && priceInputUnit === 'secondary') {
+                        setTempGrosirSellPrice(val)
+                        set('sell_price', val ? Math.round(Number(val) / convRate) : '')
+                      } else {
+                        set('sell_price', val)
+                        if (hasGrosirUnit) setTempGrosirSellPrice(val ? Math.round(Number(val) * convRate) : '')
+                      }
+                    }}
+                    placeholder="0"
+                    style={{ ...inputStyle, paddingLeft: 36 }}
+                  />
+                </div>
+                {hasGrosirUnit && (
+                  <p style={{ fontSize: 10, color: '#0c3d0c', marginTop: 4, fontWeight: 700 }}>
+                    {priceInputUnit === 'secondary'
+                      ? `💡 = Rp ${fmt(form.sell_price || 0)} / ${form.unit}`
+                      : `💡 = Rp ${fmt(Math.round(Number(form.sell_price || 0) * convRate))} / ${form.secondary_unit}`
+                    }
+                  </p>
+                )}
+              </Field>
+
+              {/* Harga Beli / HPP */}
+              <Field label={hasGrosirUnit && priceInputUnit === 'secondary' ? `Harga Beli/HPP (per ${form.secondary_unit})` : `Harga Beli/HPP (per ${form.unit || 'Satuan'})`}>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, fontWeight: 700, color: '#94A3B8' }}>Rp</span>
+                  <input
+                    id="buy-price" name="avg_buy_price" type="text" inputMode="numeric"
+                    value={
+                      hasGrosirUnit && priceInputUnit === 'secondary'
+                        ? (tempGrosirBuyPrice ? fmt(tempGrosirBuyPrice) : (form.avg_buy_price ? fmt(Math.round(Number(form.avg_buy_price) * convRate)) : ''))
+                        : (form.avg_buy_price ? fmt(form.avg_buy_price) : '')
+                    }
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '')
+                      if (hasGrosirUnit && priceInputUnit === 'secondary') {
+                        setTempGrosirBuyPrice(val)
+                        set('avg_buy_price', val ? Math.round(Number(val) / convRate) : '')
+                      } else {
+                        set('avg_buy_price', val)
+                        if (hasGrosirUnit) setTempGrosirBuyPrice(val ? Math.round(Number(val) * convRate) : '')
+                      }
+                    }}
+                    placeholder="0"
+                    style={{ ...inputStyle, paddingLeft: 36 }}
+                  />
+                </div>
+                {hasGrosirUnit && (
+                  <p style={{ fontSize: 10, color: '#64748B', marginTop: 4, fontWeight: 600 }}>
+                    {priceInputUnit === 'secondary'
+                      ? `💡 = Rp ${fmt(form.avg_buy_price || 0)} / ${form.unit}`
+                      : `💡 = Rp ${fmt(Math.round(Number(form.avg_buy_price || 0) * convRate))} / ${form.secondary_unit}`
+                    }
+                  </p>
+                )}
+              </Field>
+            </div>
+
+            {/* Live Profit Margin Indicator */}
+            {Number(form.sell_price) > 0 && Number(form.avg_buy_price) > 0 && (
+              <div style={{
+                marginTop: 10, background: 'rgba(12,61,12,0.06)', border: '1px solid rgba(12,61,12,0.15)',
+                borderRadius: 12, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14 }}>📈</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#0c3d0c' }}>
+                      Margin Laba: Rp {fmt(Number(form.sell_price) - Number(form.avg_buy_price))} / {form.unit} ({(((Number(form.sell_price) - Number(form.avg_buy_price)) / Number(form.sell_price)) * 100).toFixed(1)}%)
+                    </div>
+                    {hasGrosirUnit && (
+                      <div style={{ fontSize: 10, color: '#166534', fontWeight: 600, marginTop: 1 }}>
+                        Laba per {form.secondary_unit}: Rp {fmt((Number(form.sell_price) - Number(form.avg_buy_price)) * convRate)}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </Field>
+            )}
           </div>
 
           {/* Stok alert */}
