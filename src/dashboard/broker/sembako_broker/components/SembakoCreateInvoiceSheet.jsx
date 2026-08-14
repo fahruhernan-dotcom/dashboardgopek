@@ -4,6 +4,7 @@ import { Plus, X, ChevronLeft, Loader2, Search, Check, ChevronDown, Truck, Bike,
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { formatIDR } from '@/lib/format'
 import {
@@ -610,13 +611,13 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
   const [step, setStep]           = useState(() => getSavedInvoiceDraft()?.step ?? 0)
   const [custId, setCustId]       = useState(() => getSavedInvoiceDraft()?.custId ?? '')
-  const [txnDate, setTxnDate]     = useState(() => getSavedInvoiceDraft()?.txnDate ?? new Date().toISOString().slice(0, 10))
+  const [txnDate, setTxnDate]     = useState(() => getSavedInvoiceDraft()?.txnDate ?? format(new Date(), 'yyyy-MM-dd'))
   const [dueDate, setDueDate]     = useState(() => {
     const d = getSavedInvoiceDraft()?.dueDate
     if (d) return d
     const dt = new Date()
     dt.setDate(dt.getDate() + 1)
-    return dt.toISOString().slice(0, 10)
+    return format(dt, 'yyyy-MM-dd')
   })
   const [items, setItems]         = useState(() => {
     const savedItems = getSavedInvoiceDraft()?.items
@@ -685,8 +686,8 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     localStorage.removeItem('sembako_invoice_wizard_draft_backup')
     if (EDIT_DRAFT_KEY) localStorage.removeItem(EDIT_DRAFT_KEY)
     lastPrefillKeyRef.current = null
-    const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10) }
-    setStep(0); setCustId(''); setTxnDate(new Date().toISOString().slice(0, 10)); setDueDate(tomorrow())
+    const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return format(d, 'yyyy-MM-dd') }
+    setStep(0); setCustId(''); setTxnDate(format(new Date(), 'yyyy-MM-dd')); setDueDate(tomorrow())
     setItems([{ product_id: '', product_name: '', unit: '', selectedUnit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
     setDeliveryCost(0); setOtherCost(0); setSelectedCostChips([]); setOtherCostNotes(''); setNotes('')
     setPayAmount(0); setPayMethod('cash')

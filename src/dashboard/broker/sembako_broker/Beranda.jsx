@@ -202,7 +202,16 @@ export default function SembakoBeranda() {
         const amt = Number(p.amount || p.amount_paid || 0)
         totalCashIn += amt
         const method = String(p.payment_method || '').toLowerCase()
-        const isToday = (p.payment_date && p.payment_date.startsWith(todayStrKey)) || (s.transaction_date && s.transaction_date.startsWith(todayStrKey))
+        let isToday = (p.payment_date && p.payment_date.startsWith(todayStrKey)) || (s.transaction_date && s.transaction_date.startsWith(todayStrKey))
+        if (!isToday && (s.created_at || p.created_at)) {
+          try {
+            const sc = s.created_at ? format(new Date(s.created_at), 'yyyy-MM-dd') : null
+            const pc = p.created_at ? format(new Date(p.created_at), 'yyyy-MM-dd') : null
+            if (sc === todayStrKey || pc === todayStrKey) isToday = true
+          } catch (e) {
+            // ignore
+          }
+        }
 
         if (method === 'transfer') {
           totalTransferMethod += amt

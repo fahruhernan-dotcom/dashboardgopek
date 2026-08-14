@@ -71,7 +71,20 @@ export function MobileBeranda({
 
   const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), [])
 
-  const todaySales = useMemo(() => sales.filter(s => s.transaction_date?.slice(0, 10) === todayStr), [sales, todayStr])
+  const todaySales = useMemo(() => sales.filter(s => {
+    if (!s) return false
+    const txnDateStr = s.transaction_date?.slice(0, 10)
+    if (txnDateStr === todayStr) return true
+    if (s.created_at) {
+      try {
+        const d = new Date(s.created_at)
+        if (!isNaN(d.getTime()) && format(d, 'yyyy-MM-dd') === todayStr) return true
+      } catch (e) {
+        // ignore
+      }
+    }
+    return false
+  }), [sales, todayStr])
   const todayOmzet = useMemo(() => todaySales.reduce((sum, s) => sum + Number(s.total_amount || 0), 0), [todaySales])
   const todayProfit = useMemo(() => todaySales.reduce((sum, s) => sum + Number(s.net_profit || 0), 0), [todaySales])
   const todayCash = useMemo(() => todaySales.reduce((sum, s) => sum + Number(s.paid_amount || 0), 0), [todaySales])
