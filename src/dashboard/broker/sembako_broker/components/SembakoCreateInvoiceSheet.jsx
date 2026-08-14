@@ -1832,14 +1832,20 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
 
                     {/* Cost inputs */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className={labelCn}>Biaya Kirim</label>
+                        <label className={labelCn}>Ongkos Kirim (Ke Pelanggan)</label>
                         <InputRupiah id="delivery-cost-input" value={deliveryCost} onChange={setDeliveryCost} />
+                        <p className="text-[10px] text-slate-500 mt-1 font-medium italic">
+                          * Ditagihkan ke nota customer (menambah total invoice).
+                        </p>
                       </div>
                       <div>
-                        <label className={labelCn}>Biaya Lain</label>
+                        <label className={labelCn}>Biaya Operasional Internal (Sopir/BBM)</label>
                         <InputRupiah value={otherCost} onChange={setOtherCost} />
+                        <p className="text-[10px] text-emerald-700 mt-1 font-medium italic">
+                          * Beban operasional toko (memotong laba bersih, <strong>tidak masuk nota pelanggan</strong>).
+                        </p>
                       </div>
                     </div>
 
@@ -1852,9 +1858,12 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                           exit={{ opacity: 0, height: 0 }}
                           className="space-y-2.5 bg-amber-500/10 p-3.5 rounded-2xl border border-amber-500/20 overflow-hidden"
                         >
-                          <label className="block text-[9px] font-black text-amber-700 uppercase tracking-[0.12em]">
-                            Kategori Biaya Operasional (Pilih Cepat):
-                          </label>
+                          <div className="flex items-center justify-between">
+                            <label className="block text-[9px] font-black text-amber-800 uppercase tracking-[0.12em]">
+                              Rincian Operasional Internal Sopir (Pilih Cepat):
+                            </label>
+                            <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">Internal Saja</span>
+                          </div>
                           <div className="flex flex-wrap gap-1.5">
                             {PRESET_OTHER_COST_CATEGORIES.map(cat => {
                               const Icon = cat.Icon
@@ -1878,14 +1887,14 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                             })}
                           </div>
                           <div>
-                            <label className="block text-[9px] font-black text-amber-700 uppercase tracking-[0.12em] mb-1">
-                              Rincian / Keterangan Biaya Lain:
+                            <label className="block text-[9px] font-black text-amber-800 uppercase tracking-[0.12em] mb-1">
+                              Catatan Pengeluaran Sopir:
                             </label>
                             <input
                               type="text"
                               value={otherCostNotes}
                               onChange={e => setOtherCostNotes(e.target.value)}
-                              placeholder="Contoh: Bensin 100k, Makan 50k, Tol 50k..."
+                              placeholder="Contoh: Bensin 100k, Rokok sopir 25k, Makan 50k..."
                               className="w-full h-10 bg-white border border-amber-200 rounded-xl px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-400"
                             />
                           </div>

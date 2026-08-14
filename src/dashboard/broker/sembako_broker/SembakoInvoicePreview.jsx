@@ -10,6 +10,18 @@ import { cn } from '@/lib/utils'
 import { terbilang } from '@/lib/invoice/invoiceUtils'
 
 /**
+ * Clean internal operational tags from customer-facing notes
+ */
+export function cleanCustomerNotes(notes) {
+  if (!notes || typeof notes !== 'string') return ''
+  return notes
+    .replace(/\[Biaya Operasional:[^\]]*\]/gi, '')
+    .replace(/\[Operasional:[^\]]*\]/gi, '')
+    .replace(/Biaya Tambahan:[^\n]+/gi, '')
+    .trim()
+}
+
+/**
  * SembakoInvoicePaper
  * Pure printable & responsive invoice paper component with premium aesthetics
  */
@@ -25,7 +37,6 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
   const customerAddress = data.customerAddress || data.customer_address || ''
 
   const deliveryCost = Number(data.delivery_cost || data.deliveryCost || 0)
-  const otherCost = Number(data.other_cost || data.otherCost || 0)
   const totalAmount = Number(data.total_amount || data.revenue || 0)
   const paidAmount = Number(data.paid_amount || data.payAmount || 0)
   const remainingAmount = Number(data.remaining_amount ?? Math.max(0, totalAmount - paidAmount))
@@ -49,6 +60,7 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
     return s + (Number(i.subtotal) || (qty * price))
   }, 0) || totalAmount
 
+  const customerNotes = cleanCustomerNotes(data.notes)
   const terbilangText = terbilang(isLunas ? totalAmount : remainingAmount)
 
   return (
@@ -220,17 +232,17 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
       {/* ── Summary & Grand Total Block ── */}
       {!isDelivery && (
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-5">
-          {/* Left: Notes or Payment Terms */}
+          {/* Left: Customer Notes */}
           <div className="w-full sm:flex-1 space-y-2">
-            {data.notes && (
+            {customerNotes ? (
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Catatan Nota:</p>
-                <p className="text-xs text-slate-700 font-medium mt-0.5 whitespace-pre-wrap">{data.notes}</p>
+                <p className="text-xs text-slate-700 font-medium mt-0.5 whitespace-pre-wrap">{customerNotes}</p>
               </div>
-            )}
+            ) : null}
           </div>
 
-          {/* Right: Detailed Cost Breakdown */}
+          {/* Right: Customer Bill Breakdown */}
           <div className="w-full sm:w-[340px] bg-slate-50/90 rounded-xl p-3.5 border border-slate-200 space-y-2">
             <div className="flex justify-between items-center text-xs text-slate-600">
               <span>Subtotal Produk</span>
@@ -240,26 +252,6 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
               <div className="flex justify-between items-center text-xs text-slate-600">
                 <span>Ongkos Kirim</span>
                 <span className="font-semibold text-slate-800">+{formatIDR(deliveryCost)}</span>
-              </div>
-            )}
-            {otherCost > 0 && (
-              <div>
-                <div className="flex justify-between items-center text-xs text-slate-600">
-                  <span>Biaya Operasional Lainnya</span>
-                  <span className="font-semibold text-slate-800">+{formatIDR(otherCost)}</span>
-                </div>
-                {(() => {
-                  const rawNotes = [data.notes, ...(Array.isArray(data.sembako_deliveries) ? data.sembako_deliveries.map(d => d.notes) : [])].filter(Boolean).join(' ')
-                  const costMatch = rawNotes.match(/\[Biaya Operasional:[^\]]*\(([^)]+)\)\]/) || rawNotes.match(/Biaya Tambahan:\s*([^,\n]+(?:,[^,\n]+)*)/)
-                  if (costMatch && costMatch[1]) {
-                    return (
-                      <p className="text-[10px] text-slate-500 italic mt-0.5 text-right font-medium">
-                        ({costMatch[1].trim()})
-                      </p>
-                    )
-                  }
-                  return null
-                })()}
               </div>
             )}
             <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-200">
@@ -310,29 +302,51 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
         </div>
       )}
 
-      {/* ── Payment History (If Any) ── */}
-      {!isDelivery && validPayments.length > 0 && (
+      {/* ── Payment History (Riwayat Pembayaran Pelanggan) ── */}
+      {!isDelivery && (validPayments.length > 0 || paidAmount > 0) && (
         <div className="mb-5 bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2">
           <div className="flex justify-between items-center border-b border-slate-200 pb-1.5">
-            <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-              <CreditCard size={12} className="text-slate-500" /> Riwayat Pembayaran Masuk
+            <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <CreditCard size={13} className="text-slate-600" /> Riwayat Pembayaran Pelanggan
             </p>
             <p className="text-xs font-black text-emerald-700">
               Total Diterima: {formatIDR(paidAmount)}
             </p>
           </div>
           <div className="space-y-1.5">
-            {validPayments.map((p, pIdx) => (
-              <div key={pIdx} className="flex justify-between items-center text-xs py-1 px-2 rounded-lg bg-white border border-slate-100">
-                <span className="text-slate-700 font-medium flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {formatDate(p.payment_date || p.created_at)} · <span className="font-bold uppercase text-slate-900">{p.payment_method || 'Cash'}</span>
-                  {p.notes && <span className="text-slate-400">({p.notes})</span>}
+            {validPayments.length > 0 ? (
+              validPayments.map((p, pIdx) => (
+                <div key={pIdx} className="flex justify-between items-center text-xs py-1.5 px-2.5 rounded-lg bg-white border border-slate-200/80 shadow-sm">
+                  <span className="text-slate-700 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>{formatDate(p.payment_date || p.created_at)}</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="font-bold uppercase text-slate-900 px-1.5 py-0.5 rounded bg-slate-100 text-[10px]">{p.payment_method || 'CASH'}</span>
+                    {p.notes && <span className="text-slate-500 italic text-[11px]">({p.notes})</span>}
+                  </span>
+                  <span className="font-black text-slate-900 font-mono">{formatIDR(p.amount || p.amount_paid)}</span>
+                </div>
+              ))
+            ) : (
+              <div className="flex justify-between items-center text-xs py-1.5 px-2.5 rounded-lg bg-white border border-slate-200/80 shadow-sm">
+                <span className="text-slate-700 font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>{formatDate(txnDate)}</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="font-bold uppercase text-slate-900 px-1.5 py-0.5 rounded bg-slate-100 text-[10px]">PEMBAYARAN SAAT TRANSAKSI</span>
                 </span>
-                <span className="font-black text-slate-900">{formatIDR(p.amount || p.amount_paid)}</span>
+                <span className="font-black text-slate-900 font-mono">{formatIDR(paidAmount)}</span>
               </div>
-            ))}
+            )}
           </div>
+        </div>
+      )}
+
+      {/* ── Surat Jalan Delivery Notes ── */}
+      {isDelivery && customerNotes && (
+        <div className="mb-5 bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Catatan Pengiriman:</p>
+          <p className="text-xs text-slate-700 font-medium mt-0.5 whitespace-pre-wrap">{customerNotes}</p>
         </div>
       )}
 

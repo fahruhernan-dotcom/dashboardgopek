@@ -182,6 +182,35 @@ const s = StyleSheet.create({
   paymentText:  { fontSize: 9, color: C.text, marginBottom: 3 },
   paymentNote:  { fontSize: 8, color: C.muted, marginTop: 4, fontFamily: 'Helvetica-Oblique' },
 
+  // Payment history table in PDF
+  paymentHistoryBox: {
+    marginBottom:    16,
+    paddingTop:      8,
+    paddingBottom:   8,
+    paddingLeft:     10,
+    paddingRight:    10,
+    backgroundColor: '#F8FAFC',
+    borderWidth:     1,
+    borderColor:     '#E2E8F0',
+    borderStyle:     'solid',
+    borderRadius:    6,
+  },
+  paymentHistoryHeader: {
+    flexDirection:   'row',
+    justifyContent:  'space-between',
+    paddingBottom:   4,
+    marginBottom:    4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#CBD5E1',
+    borderBottomStyle: 'solid',
+  },
+  paymentHistoryRow: {
+    flexDirection:   'row',
+    justifyContent:  'space-between',
+    paddingTop:      3,
+    paddingBottom:   3,
+  },
+
   // Signature
   sigSection: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 36 },
   sigBox:     { width: '40%', alignItems: 'center' },
@@ -247,8 +276,17 @@ const customerTypeLabels = {
 //   generatedBy: string
 //   showProfit: boolean    (false = sembunyikan kolom HPP & profit dari customer)
 
+function cleanCustomerNotes(notes) {
+  if (!notes || typeof notes !== 'string') return ''
+  return notes
+    .replace(/\[Biaya Operasional:[^\]]*\]/gi, '')
+    .replace(/\[Operasional:[^\]]*\]/gi, '')
+    .replace(/Biaya Tambahan:[^\n]+/gi, '')
+    .trim()
+}
+
 export function SembakoInvoice({
-  tenant, invoice, customer, items = [],
+  tenant, invoice, customer, items = [], payments = [],
   invoiceNumber, generatedBy, showProfit = false,
 }) {
   const totalAmount   = Number(invoice?.total_amount  || 0)
@@ -262,6 +300,10 @@ export function SembakoInvoice({
   const sc            = statusColors[invoice?.payment_status] || statusColors.belum_lunas
   const statusLabel   = statusLabels[invoice?.payment_status] || '-'
   const marginPct     = totalAmount > 0 ? ((netProfit / totalAmount) * 100).toFixed(1) : '0.0'
+
+  const rawPayments   = payments.length > 0 ? payments : (Array.isArray(invoice?.sembako_payments) ? invoice.sembako_payments : (Array.isArray(invoice?.payments) ? invoice.payments : []))
+  const validPayments = rawPayments.filter(p => !p.is_deleted)
+  const customerNotes = cleanCustomerNotes(invoice?.notes)
 
   return (
     <Document>
@@ -324,7 +366,7 @@ export function SembakoInvoice({
         </View>
 
         {/* TABLE */}
-        <View style={{ marginBottom: 20 }}>
+        <View style={{ marginBottom: 16 }}>
           {showProfit ? (
             /* ── WITH PROFIT (internal only) ── */
             <>
@@ -421,7 +463,7 @@ export function SembakoInvoice({
           </View>
         )}
 
-        {/* SUMMARY */}
+        {/* SUMMARY & BILLING SECTION */}
         <View style={s.summarySection}>
           <View style={s.summaryBox}>
             <View style={s.summaryRow}>
@@ -432,12 +474,6 @@ export function SembakoInvoice({
               <View style={s.summaryRow}>
                 <Text style={s.summaryLabel}>Ongkos Kirim</Text>
                 <Text style={s.summaryVal}>+{formatRupiahPDF(deliveryCost)}</Text>
-              </View>
-            )}
-            {otherCost > 0 && (
-              <View style={s.summaryRow}>
-                <Text style={s.summaryLabel}>Biaya Lainnya</Text>
-                <Text style={s.summaryVal}>+{formatRupiahPDF(otherCost)}</Text>
               </View>
             )}
             <View style={[s.summaryRow, { borderTopWidth: 1, borderTopColor: C.border, paddingTop: 4, marginTop: 2 }]}>
@@ -462,6 +498,38 @@ export function SembakoInvoice({
             </View>
           </View>
         </View>
+
+        {/* CUSTOMER NOTES (Cleaned from internal expense tags) */}
+        {customerNotes ? (
+          <View style={{ marginBottom: 14, padding: 8, backgroundColor: '#F8FAFC', borderRadius: 4, borderWidth: 1, borderColor: '#E2E8F0' }}>
+            <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.muted, marginBottom: 2 }}>CATATAN NOTA:</Text>
+            <Text style={{ fontSize: 8, color: C.text }}>{customerNotes}</Text>
+          </View>
+        ) : null}
+
+        {/* PAYMENT HISTORY */}
+        {validPayments.length > 0 && (
+          <View style={s.paymentHistoryBox}>
+            <View style={s.paymentHistoryHeader}>
+              <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.header }}>
+                RIWAYAT PEMBAYARAN PELANGGAN
+              </Text>
+              <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.ok }}>
+                Total Diterima: {formatRupiahPDF(paidAmount)}
+              </Text>
+            </View>
+            {validPayments.map((p, idx) => (
+              <View key={idx} style={s.paymentHistoryRow}>
+                <Text style={{ fontSize: 8, color: C.text }}>
+                  {formatDatePDF(p.payment_date || p.created_at)} · {(p.payment_method || 'CASH').toUpperCase()}{p.notes ? ` (${p.notes})` : ''}
+                </Text>
+                <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.text }}>
+                  {formatRupiahPDF(p.amount || p.amount_paid)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* TERBILANG */}
         <View style={s.terbilangBox}>

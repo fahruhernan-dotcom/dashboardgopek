@@ -35,6 +35,7 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
   const paidAmount = Number(inv?.paid_amount || data.paid_amount || 0)
   const remainingAmount = Number(inv?.remaining_amount ?? Math.max(0, totalAmount - paidAmount))
   const paymentStatus = inv?.payment_status || data.payment_status || (remainingAmount === 0 ? 'lunas' : paidAmount > 0 ? 'sebagian' : 'belum_lunas')
+  const payments = inv?.sembako_payments || data.payments || data.sembako_payments || []
 
   const paperData = {
     tenant: data.tenant || tenant || { business_name: 'GPK', phone: '-' },
@@ -52,6 +53,8 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
     other_cost: Number(inv?.other_cost || data.other_cost || data.otherCost || 0),
     payment_status: paymentStatus,
     items: normalizedItems,
+    payments: payments,
+    sembako_payments: payments,
     notes: inv?.notes || data.notes || '',
     sembako_deliveries: inv?.sembako_deliveries || data.sembako_deliveries || [],
   }
@@ -70,6 +73,7 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
         other_cost: paperData.other_cost,
         payment_status: paymentStatus,
         notes: paperData.notes,
+        sembako_payments: payments,
       }}
       customer={{
         customer_name: paperData.customer_name,
@@ -78,6 +82,7 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
         address: paperData.customer_address,
       }}
       items={normalizedItems}
+      payments={payments}
       invoiceNumber={invNo}
       generatedBy={data.generatedBy || 'Admin GPK'}
       showProfit={data.showProfit ?? false}
