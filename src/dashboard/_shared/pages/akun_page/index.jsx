@@ -139,9 +139,9 @@ export default function AkunPage() {
               onClick={() => navigate(`${basePath}/kelola-akun`)}
               style={{
                 width: '100%', padding: '13px 16px', borderRadius: 14,
-                background: 'oklch(0.65 0.20 290 / 0.12)',
-                border: '1px solid oklch(0.65 0.20 290 / 0.3)',
-                color: 'oklch(0.75 0.18 290)', fontSize: 13, fontWeight: 700,
+                background: 'rgba(124, 58, 237, 0.08)',
+                border: '1px solid rgba(124, 58, 237, 0.25)',
+                color: '#7C3AED', fontSize: 13, fontWeight: 700,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
                 textAlign: 'left',
               }}
@@ -149,7 +149,7 @@ export default function AkunPage() {
               <span style={{ fontSize: 18 }}>🔑</span>
               <div>
                 <div>Kelola Akun Login (Dev Mode)</div>
-                <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.7, marginTop: 2 }}>Buat & atur akun Admin / Owner / Dev</div>
+                <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.8, marginTop: 2 }}>Buat & atur akun Admin / Owner / Dev</div>
               </div>
             </button>
           </div>

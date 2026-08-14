@@ -1045,29 +1045,29 @@ export function DevUserAccountProvisioningCard({ accent, tenant }) {
         </button>
 
         {openModal && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-            <div style={{ background: '#13191A', border: '1px solid oklch(0.65 0.20 290 / 0.4)', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24 }}>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div style={{ background: T.surface, border: '1px solid ' + T.hairline, borderRadius: 16, width: '100%', maxWidth: 440, padding: 24, boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#fff', margin: 0 }}>Buat Akun Login Baru</h3>
-                <button onClick={() => setOpenModal(false)} style={{ background: 'none', border: 'none', color: '#9BA29B', cursor: 'pointer' }}><X size={20} /></button>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: T.text, margin: 0 }}>Buat Akun Login Baru</h3>
+                <button onClick={() => setOpenModal(false)} style={{ background: 'none', border: 'none', color: T.textMute, cursor: 'pointer' }}><X size={20} /></button>
               </div>
 
               <form onSubmit={handleCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#9BA29B', display: 'block', marginBottom: 4 }}>NAMA LENGKAP</label>
-                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required placeholder="Contoh: Budi Santoso" style={{ width: '100%', height: 40, background: '#0F1416', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0 12px', color: '#fff', fontSize: 13 }} />
+                  <label style={{ fontSize: 11, fontWeight: 700, color: T.textDim, display: 'block', marginBottom: 4 }}>NAMA LENGKAP</label>
+                  <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required placeholder="Contoh: Budi Santoso" style={{ width: '100%', height: 40, background: T.surfaceAlt, border: '1px solid ' + T.hairline, borderRadius: 8, padding: '0 12px', color: T.text, fontSize: 13, outline: 'none' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#9BA29B', display: 'block', marginBottom: 4 }}>EMAIL LOGIN</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="budi@kasir.com" style={{ width: '100%', height: 40, background: '#0F1416', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0 12px', color: '#fff', fontSize: 13 }} />
+                  <label style={{ fontSize: 11, fontWeight: 700, color: T.textDim, display: 'block', marginBottom: 4 }}>EMAIL LOGIN</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="budi@kasir.com" style={{ width: '100%', height: 40, background: T.surfaceAlt, border: '1px solid ' + T.hairline, borderRadius: 8, padding: '0 12px', color: T.text, fontSize: 13, outline: 'none' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#9BA29B', display: 'block', marginBottom: 4 }}>PASSWORD</label>
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Minimal 6 karakter" style={{ width: '100%', height: 40, background: '#0F1416', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0 12px', color: '#fff', fontSize: 13 }} />
+                  <label style={{ fontSize: 11, fontWeight: 700, color: T.textDim, display: 'block', marginBottom: 4 }}>PASSWORD</label>
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Minimal 6 karakter" style={{ width: '100%', height: 40, background: T.surfaceAlt, border: '1px solid ' + T.hairline, borderRadius: 8, padding: '0 12px', color: T.text, fontSize: 13, outline: 'none' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#9BA29B', display: 'block', marginBottom: 4 }}>ROLE HAK AKSES</label>
-                  <select value={role} onChange={e => setRole(e.target.value)} style={{ width: '100%', height: 40, background: '#0F1416', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0 12px', color: '#fff', fontSize: 13 }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: T.textDim, display: 'block', marginBottom: 4 }}>ROLE HAK AKSES</label>
+                  <select value={role} onChange={e => setRole(e.target.value)} style={{ width: '100%', height: 40, background: T.surfaceAlt, border: '1px solid ' + T.hairline, borderRadius: 8, padding: '0 12px', color: T.text, fontSize: 13, outline: 'none' }}>
                     <option value="admin">Admin (Kasir - Tanpa Akses Profit)</option>
                     <option value="owner">Owner (Pemilik - Akses Laporan & Profit)</option>
                     <option value="dev">Dev (Developer - Full Akses System)</option>

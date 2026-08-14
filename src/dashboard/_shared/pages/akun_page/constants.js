@@ -1,22 +1,22 @@
 // ─── Constants ────────────────────────────────────────────────
 
 export const VERTICAL_ACCENTS = {
-  peternak: { name: 'Peternakan',   base: 'oklch(0.72 0.15 155)', soft: 'oklch(0.72 0.15 155 / 0.16)' },
-  sembako:  { name: 'Sembako',      base: 'oklch(0.72 0.16 60)',  soft: 'oklch(0.72 0.16 60  / 0.16)' },
-  broker:   { name: 'Broker',       base: 'oklch(0.7  0.15 230)', soft: 'oklch(0.7  0.15 230 / 0.16)' },
-  rpa:      { name: 'Rumah Potong', base: 'oklch(0.65 0.20 15)',  soft: 'oklch(0.65 0.20 15  / 0.16)' },
-  admin:    { name: 'Administrasi', base: 'oklch(0.65 0.20 290)', soft: 'oklch(0.65 0.20 290 / 0.16)' },
+  peternak: { name: 'Peternakan',   base: '#16A34A', soft: 'rgba(22, 163, 74, 0.12)' },
+  sembako:  { name: 'Sembako',      base: '#0c3d0c', soft: 'rgba(12, 61, 12, 0.12)' },
+  broker:   { name: 'Broker',       base: '#0284C7', soft: 'rgba(2, 132, 199, 0.12)' },
+  rpa:      { name: 'Rumah Potong', base: '#DC2626', soft: 'rgba(220, 38, 38, 0.12)' },
+  admin:    { name: 'Administrasi', base: '#7C3AED', soft: 'rgba(124, 58, 237, 0.12)' },
 }
 
 export const ROLE_LABELS = {
-  dev:          { label: 'Developer',        bg: 'oklch(0.65 0.20 290 / 0.18)', fg: 'oklch(0.78 0.16 290)' },
-  owner:        { label: 'Pemilik (Owner)',  bg: 'oklch(0.78 0.16 80 / 0.18)',  fg: 'oklch(0.82 0.16 80)'  },
-  admin:        { label: 'Admin (Operator)', bg: 'oklch(0.7  0.18 240 / 0.18)', fg: 'oklch(0.78 0.16 240)' },
-  superadmin:   { label: 'Developer',        bg: 'oklch(0.65 0.20 290 / 0.18)', fg: 'oklch(0.78 0.16 290)' },
-  manajer:      { label: 'Manajer',          bg: 'oklch(0.65 0.18 280 / 0.18)', fg: 'oklch(0.78 0.16 280)' },
-  staff:        { label: 'Staff Gudang',     bg: 'oklch(0.65 0.16 200 / 0.18)', fg: 'oklch(0.78 0.14 210)' },
-  anak_kandang: { label: 'Anak Kandang',     bg: 'oklch(0.62 0.18 155 / 0.18)', fg: 'oklch(0.78 0.16 155)' },
-  view_only:    { label: 'Lihat Saja',       bg: 'oklch(0.6  0.02 250 / 0.2)',  fg: 'oklch(0.78 0.02 250)' },
+  dev:          { label: 'Developer',        bg: 'rgba(124, 58, 237, 0.12)', fg: '#7C3AED' },
+  owner:        { label: 'Pemilik (Owner)',  bg: 'rgba(217, 119, 6, 0.12)',  fg: '#D97706'  },
+  admin:        { label: 'Admin (Operator)', bg: 'rgba(2, 132, 199, 0.12)', fg: '#0284C7' },
+  superadmin:   { label: 'Developer',        bg: 'rgba(124, 58, 237, 0.12)', fg: '#7C3AED' },
+  manajer:      { label: 'Manajer',          bg: 'rgba(147, 51, 234, 0.12)', fg: '#9333EA' },
+  staff:        { label: 'Staff Gudang',     bg: 'rgba(13, 148, 136, 0.12)', fg: '#0D9488' },
+  anak_kandang: { label: 'Anak Kandang',     bg: 'rgba(22, 163, 74, 0.12)', fg: '#16A34A' },
+  view_only:    { label: 'Lihat Saja',       bg: 'rgba(100, 116, 139, 0.12)', fg: '#64748B' },
 }
 
 export const PERMISSION_MATRIX = {
@@ -40,18 +40,18 @@ export const PLAN_INFO = {
 }
 
 export const T = {
-  bg:             '#0A0E0C',
-  surface:        '#13191A',
-  surfaceAlt:     '#0F1416',
-  hairline:       'rgba(255,255,255,0.06)',
-  hairlineStrong: 'rgba(255,255,255,0.12)',
-  text:           '#F2F4F1',
-  textDim:        '#9BA29B',
-  textMute:       '#5A615C',
-  danger:         'oklch(0.7 0.18 25)',
-  warn:           'oklch(0.78 0.14 70)',
-  ok:             'oklch(0.72 0.15 155)',
-  shadow:         '0 1px 2px rgba(0,0,0,0.4), 0 12px 36px rgba(0,0,0,0.18)',
+  bg:             'var(--bg-page, #FBFCF8)',
+  surface:        'var(--bg-surface, #FFFFFF)',
+  surfaceAlt:     'var(--bg-subtle, #F8FAFC)',
+  hairline:       'var(--border-soft, #E2E8F0)',
+  hairlineStrong: 'var(--border-muted, #CBD5E1)',
+  text:           'var(--text-primary, #0F172A)',
+  textDim:        'var(--text-secondary, #475569)',
+  textMute:       'var(--text-muted, #64748B)',
+  danger:         '#EF4444',
+  warn:           '#F59E0B',
+  ok:             '#16A34A',
+  shadow:         '0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.03)',
 }
 
 export const APP_VERSION = 'v0.9.4 build 2026.05'
