@@ -177,7 +177,7 @@ function AppContentLayout() {
   }, [user?.id, tenant?.id, navigate])
 
   return (
-    <ErrorBoundary key={location.key}>
+    <ErrorBoundary>
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
           {/* Public Auth Routes */}

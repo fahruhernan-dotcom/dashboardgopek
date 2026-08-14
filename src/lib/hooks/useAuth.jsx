@@ -57,18 +57,46 @@ const throttleLastSeenUpdate = async (userId, tenantId) => {
   }
 }
 
+// Helper untuk membaca & menulis cached auth snapshot lokal (instant zero-flash startup)
+const getCachedAuthSnapshot = () => {
+  try {
+    const saved = localStorage.getItem('ternakos_auth_snapshot')
+    return saved ? JSON.parse(saved) : null
+  } catch {
+    return null
+  }
+}
+
+const saveCachedAuthSnapshot = (data) => {
+  try {
+    if (data && data.profile) {
+      localStorage.setItem('ternakos_auth_snapshot', JSON.stringify(data))
+    } else {
+      localStorage.removeItem('ternakos_auth_snapshot')
+    }
+  } catch {
+    /* silent */
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [profiles, setProfiles] = useState([])
-  const [ownerTenant, setOwnerTenant] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const initialSnapshot = getCachedAuthSnapshot()
+
+  const [user, setUser] = useState(initialSnapshot?.user || null)
+  const [profile, setProfile] = useState(initialSnapshot?.profile || null)
+  const [profiles, setProfiles] = useState(initialSnapshot?.profiles || [])
+  const [ownerTenant, setOwnerTenant] = useState(initialSnapshot?.ownerTenant || null)
+  // Jika sudah ada snapshot di localStorage, loading dimulai dengan false (instant render)
+  const [loading, setLoading] = useState(!initialSnapshot?.profile)
 
   const getPersistedTenantId = () => localStorage.getItem('ternakos_active_tenant_id')
   const setPersistedTenantId = (id) => localStorage.setItem('ternakos_active_tenant_id', id)
 
-  async function fetchAuthData(userId) {
-    setLoading(true)
+  async function fetchAuthData(userId, { silent = false } = {}) {
+    // Hanya tampilkan loading screen jika ini bukan silent refresh dan belum ada profile di memory/cache
+    if (!silent && !profile) {
+      setLoading(true)
+    }
     setLoggerContext({ userId, tenantId: null, vertical: null, role: null })
 
     const { data: legacyProfiles, error: profilesError } = await supabase
@@ -130,6 +158,7 @@ export function AuthProvider({ children }) {
       setProfile(null)
       setUser(null)
       setLoading(false)
+      saveCachedAuthSnapshot(null)
       return
     }
 
@@ -150,10 +179,19 @@ export function AuthProvider({ children }) {
     }
 
     const ownedMembership = combined.find(m => m.role === 'owner')
-    setOwnerTenant(ownedMembership?.tenants || active?.tenants)
+    const activeOwnerTenant = ownedMembership?.tenants || active?.tenants
+    setOwnerTenant(activeOwnerTenant)
 
     setProfile(active)
     setLoading(false)
+
+    // Simpan snapshot auth terbaru ke storage lokal
+    saveCachedAuthSnapshot({
+      user: { id: userId },
+      profile: active,
+      profiles: combined,
+      ownerTenant: activeOwnerTenant,
+    })
 
     setLoggerContext({
       userId: active?.auth_user_id || userId,
@@ -171,27 +209,31 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
-        fetchAuthData(session.user.id)
+        // Jika sudah ada profile di initial snapshot, lakukan fetch secara silent
+        fetchAuthData(session.user.id, { silent: Boolean(profile) })
       } else {
         setUser(null)
         setProfile(null)
         setProfiles([])
         setOwnerTenant(null)
         setLoading(false)
+        saveCachedAuthSnapshot(null)
       }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         if (session?.user) {
           setUser(session.user)
-          fetchAuthData(session.user.id)
+          // Token refresh atau window focus event selalu silent agar tidak merender LoadingScreen
+          fetchAuthData(session.user.id, { silent: true })
         } else {
           setUser(null)
           setProfile(null)
           setProfiles([])
           setOwnerTenant(null)
           setLoading(false)
+          saveCachedAuthSnapshot(null)
         }
       }
     )
@@ -203,8 +245,9 @@ export function AuthProvider({ children }) {
     const activeTenantId = profile?.tenants?.id || ownerTenant?.id
     if (!activeTenantId) return
 
+    const channelId = `public:tenants:${activeTenantId}:${Math.random().toString(36).slice(2, 9)}`
     const channel = supabase
-      .channel(`public:tenants:${activeTenantId}`)
+      .channel(channelId)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'tenants', filter: `id=eq.${activeTenantId}` },
@@ -218,7 +261,9 @@ export function AuthProvider({ children }) {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [profile?.tenants?.id, ownerTenant?.id])
 

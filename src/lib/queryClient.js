@@ -5,10 +5,11 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime:           1000 * 60 * 5,  // data fresh 5 menit — tidak refetch saat navigasi
-      gcTime:              1000 * 60 * 30, // cache tetap di memory 30 menit setelah tidak dipakai
+      gcTime:              1000 * 60 * 60 * 24, // cache tetap di memory 24 jam setelah tidak dipakai
       refetchOnWindowFocus: false,          // jangan refetch saat user alt-tab / klik window
-      refetchOnMount:      true,           // refetch jika cache kosong; skip jika data masih fresh (staleTime)
+      refetchOnMount:      false,          // gunakan cache langsung; hanya refetch jika cache kosong / stale
       refetchOnReconnect:  false,          // jangan refetch otomatis saat internet reconnect
+      placeholderData:     (previousData) => previousData, // pertahankan data lama saat background sync (tanpa layout shift)
       retry: (failureCount, error) => {
         const appError = normalizeSupabaseError(error)
         
