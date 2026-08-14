@@ -600,7 +600,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
   function getSavedInvoiceDraft() {
     try {
-      const saved = localStorage.getItem('sembako_invoice_wizard_draft') || localStorage.getItem('sembako_invoice_wizard_draft_backup')
+      const saved = localStorage.getItem('sembako_invoice_wizard_draft')
       if (saved) return JSON.parse(saved)
     } catch (e) {
       // ignore
@@ -674,6 +674,26 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   const [printData, setPrintData]     = useState(null)
   const [printMode, setPrintMode]     = useState('invoice')
   const lastPrefillKeyRef = useRef(null)
+  const isSavedRef = useRef(false)
+  const draftLoadedRef = useRef(false)
+
+  const INVOICE_DRAFT_KEY = 'sembako_invoice_wizard_draft'
+  const EDIT_DRAFT_KEY = editId ? `sembako_edit_draft_v2_${editId}` : null
+
+  const clearInvoiceDraft = useCallback(() => {
+    localStorage.removeItem('sembako_invoice_wizard_draft')
+    localStorage.removeItem('sembako_invoice_wizard_draft_backup')
+    if (EDIT_DRAFT_KEY) localStorage.removeItem(EDIT_DRAFT_KEY)
+    lastPrefillKeyRef.current = null
+    const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10) }
+    setStep(0); setCustId(''); setTxnDate(new Date().toISOString().slice(0, 10)); setDueDate(tomorrow())
+    setItems([{ product_id: '', product_name: '', unit: '', selectedUnit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
+    setDeliveryCost(0); setOtherCost(0); setSelectedCostChips([]); setOtherCostNotes(''); setNotes('')
+    setPayAmount(0); setPayMethod('cash')
+    setUseDelivery(false); setDeliveryDriver(''); setDeliveryVehicle(''); setDeliveryPlate(''); setDeliveryArea(''); setFuelCost(0)
+    setAddKurir(false); setNewKurirForm({ full_name: '', phone: '' })
+    setQuickAddCust(false); setQuickAddProd(false); setShowCustSearch(false)
+  }, [EDIT_DRAFT_KEY])
 
   // ── Derived data ────────────────────────────────────────────────────────────
   const customerOptions = useMemo(() =>
@@ -1011,23 +1031,11 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         transaction_date: txnDate, sembako_sale_items: validItems,
         remaining_amount: totalAmount - payAmount,
       })
+      isSavedRef.current = true
       clearInvoiceDraft()
     } catch (err) {
       console.error(err)
       toast.error(err?.message || 'Gagal menyimpan transaksi')
-      // Simpan backup darurat saat error agar data input tidak pernah hilang
-      try {
-        const backupData = {
-          custId, txnDate, dueDate, items, deliveryCost, otherCost,
-          selectedCostChips, otherCostNotes,
-          payAmount, payMethod, notes, useDelivery, deliveryDriver,
-          deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step
-        }
-        localStorage.setItem(INVOICE_DRAFT_KEY, JSON.stringify(backupData))
-        localStorage.setItem('sembako_invoice_wizard_draft_backup', JSON.stringify(backupData))
-      } catch (e) {
-        // ignore
-      }
     }
   }
 
@@ -1055,8 +1063,9 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     }
 
     if (open && !editId && !draftLoadedRef.current) {
+      isSavedRef.current = false
       try {
-        const saved = localStorage.getItem(INVOICE_DRAFT_KEY) || localStorage.getItem('sembako_invoice_wizard_draft_backup')
+        const saved = localStorage.getItem(INVOICE_DRAFT_KEY)
         if (saved) {
           const d = JSON.parse(saved)
           if (d.custId) setCustId(d.custId)
@@ -1077,6 +1086,8 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           if (d.deliveryArea) setDeliveryArea(d.deliveryArea)
           if (d.fuelCost !== undefined) setFuelCost(d.fuelCost)
           if (d.step !== undefined) setStep(d.step)
+        } else {
+          clearInvoiceDraft()
         }
       } catch (e) {
         console.warn('[Draft] Failed to load draft:', e)
@@ -1111,9 +1122,10 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         draftLoadedRef.current = true
       }
     }
-  }, [open, editId])
+  }, [open, editId, clearInvoiceDraft, EDIT_DRAFT_KEY, editSale])
 
   useEffect(() => {
+    if (isSavedRef.current) return
     if (open && !editId && draftLoadedRef.current) {
       const hasUserData = custId || (Array.isArray(items) && items.some(i => i.product_id || Number(i.quantity) > 0)) || deliveryCost > 0 || otherCost > 0 || notes
       if (hasUserData) {
@@ -1124,7 +1136,8 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step
         }
         localStorage.setItem(INVOICE_DRAFT_KEY, JSON.stringify(draftData))
-        localStorage.setItem('sembako_invoice_wizard_draft_backup', JSON.stringify(draftData))
+      } else {
+        localStorage.removeItem(INVOICE_DRAFT_KEY)
       }
     }
     // Mode edit: simpan progress edit ke localStorage per-invoice
@@ -1139,23 +1152,13 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     }
   }, [open, editId, EDIT_DRAFT_KEY, custId, txnDate, dueDate, items, deliveryCost, otherCost, selectedCostChips, otherCostNotes, payAmount, payMethod, notes, useDelivery, deliveryDriver, deliveryVehicle, deliveryPlate, deliveryArea, fuelCost, step])
 
-  const clearInvoiceDraft = useCallback(() => {
-    localStorage.removeItem(INVOICE_DRAFT_KEY)
-    if (EDIT_DRAFT_KEY) localStorage.removeItem(EDIT_DRAFT_KEY)
-    lastPrefillKeyRef.current = null
-    const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10) }
-    setStep(0); setCustId(''); setTxnDate(new Date().toISOString().slice(0, 10)); setDueDate(tomorrow())
-    setItems([{ product_id: '', product_name: '', unit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
-    setDeliveryCost(0); setOtherCost(0); setSelectedCostChips([]); setOtherCostNotes(''); setNotes('')
-    setPayAmount(0); setPayMethod('cash')
-    setUseDelivery(false); setDeliveryDriver(''); setDeliveryVehicle(''); setDeliveryPlate(''); setDeliveryArea(''); setFuelCost(0)
-    setAddKurir(false); setNewKurirForm({ full_name: '', phone: '' })
-    setQuickAddCust(false); setQuickAddProd(false); setShowCustSearch(false)
-  }, [EDIT_DRAFT_KEY])
-
   const handleClose = useCallback(() => {
+    if (isSavedRef.current) {
+      clearInvoiceDraft()
+      isSavedRef.current = false
+    }
     onOpenChange(false)
-  }, [onOpenChange])
+  }, [onOpenChange, clearInvoiceDraft])
 
   const handleCancelReset = useCallback(() => {
     clearInvoiceDraft()
@@ -2099,7 +2102,11 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
       <SembakoSuccessCard
         isOpen={!!successData && !printData}
-        onClose={() => { setSuccessData(null); handleClose() }}
+        onClose={() => {
+          setSuccessData(null)
+          clearInvoiceDraft()
+          handleClose()
+        }}
         data={successData}
         onPrint={(mode) => { setPrintData(successData); setPrintMode(mode) }}
       />
