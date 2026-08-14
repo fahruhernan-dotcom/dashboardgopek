@@ -226,18 +226,77 @@ export default function SembakoBeranda() {
 
     // Cash Out (Riil): Pembelian Supplier + Beban Operasional + Gaji Pegawai + Ongkir/Biaya Kirim
     // Catatan: COGS/HPP adalah beban akuntansi persediaan dan bukan kas keluar terpisah (kas keluar terjadi saat beli ke supplier).
-    const totalCashOutPurchases = suppliers.reduce((sum, s) => sum + (Number(s.total_paid_value) || 0), 0)
-    const totalCashOutExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
-    const totalCashOutPayroll = payroll.reduce((sum, p) => sum + (Number(p.total_pay) || 0), 0)
-    const totalCashOutCogs = sales.reduce((sum, s) => sum + (Number(s.total_cogs) || 0), 0)
+    
+    // 1. Pembayaran ke Supplier (Tunai vs Transfer)
+    let totalSupplierPaidTunai = 0
+    let totalSupplierPaidTransfer = 0
+    let todaySupplierPaidTunai = 0
+    let todaySupplierPaidTransfer = 0
+
+    if (supplierPayments && supplierPayments.length > 0) {
+      supplierPayments.filter(sp => !sp.is_deleted).forEach(sp => {
+        const amt = Number(sp.amount || 0)
+        const method = String(sp.payment_method || 'cash').toLowerCase()
+        const isSpToday = (sp.payment_date && sp.payment_date.startsWith(todayStrKey)) ||
+                          (sp.created_at && format(new Date(sp.created_at), 'yyyy-MM-dd') === todayStrKey)
+        if (method === 'transfer') {
+          totalSupplierPaidTransfer += amt
+          if (isSpToday) todaySupplierPaidTransfer += amt
+        } else {
+          totalSupplierPaidTunai += amt
+          if (isSpToday) todaySupplierPaidTunai += amt
+        }
+      })
+    } else {
+      const totalPaid = suppliers.reduce((sum, s) => sum + (Number(s.total_paid_value) || 0), 0)
+      totalSupplierPaidTunai = totalPaid
+    }
+
+    // 2. Pengeluaran Operasional (Tunai vs Transfer)
+    let totalExpensesTunai = 0
+    let totalExpensesTransfer = 0
+    expenses.forEach(e => {
+      const amt = Number(e.amount || 0)
+      const method = String(e.payment_method || 'cash').toLowerCase()
+      if (method === 'transfer') {
+        totalExpensesTransfer += amt
+      } else {
+        totalExpensesTunai += amt
+      }
+    })
+
+    // 3. Gaji Pegawai (Tunai vs Transfer)
+    let totalPayrollTunai = 0
+    let totalPayrollTransfer = 0
+    payroll.filter(p => !p.is_deleted && p.payment_status === 'paid').forEach(p => {
+      const amt = Number(p.total_pay || 0)
+      const method = String(p.payment_method || 'cash').toLowerCase()
+      if (method === 'transfer') {
+        totalPayrollTransfer += amt
+      } else {
+        totalPayrollTunai += amt
+      }
+    })
+
+    // 4. Biaya Pengiriman & Operasional Internal Penjualan (Kas Tunai)
     const totalCashOutDelivery = sales.reduce((sum, s) => sum + (Number(s.delivery_cost) || 0) + (Number(s.other_cost) || 0), 0)
-    const totalCashOut = totalCashOutPurchases + totalCashOutExpenses + totalCashOutPayroll + totalCashOutDelivery
+    const totalCashOutCogs = sales.reduce((sum, s) => sum + (Number(s.total_cogs) || 0), 0)
+
+    // Agregat Pengeluaran per Jalur Kas
+    const totalCashOutTunai = totalSupplierPaidTunai + totalExpensesTunai + totalPayrollTunai + totalCashOutDelivery
+    const totalCashOutTransfer = totalSupplierPaidTransfer + totalExpensesTransfer + totalPayrollTransfer
+    const totalCashOut = totalCashOutTunai + totalCashOutTransfer
+
+    const totalCashOutPurchases = totalSupplierPaidTunai + totalSupplierPaidTransfer
+    const totalCashOutExpenses = totalExpensesTunai + totalExpensesTransfer
+    const totalCashOutPayroll = totalPayrollTunai + totalPayrollTransfer
+
     const cashBalance = INITIAL_CAPITAL + totalCashIn - totalCashOut
 
-    // Realistic split of liquid cash between Physical Cash and Bank
-    const netCashInHand = Math.max(0, INITIAL_CAPITAL + totalCashMethod - totalCashOut)
-    const netBankBalance = Math.max(0, totalTransferMethod)
-    const totalLiquidCash = cashBalance > 0 ? cashBalance : (netCashInHand + netBankBalance)
+    // Posisi Saldo Kas Fisik vs Rekening Bank Riil
+    const netCashInHand = Math.max(0, INITIAL_CAPITAL + totalCashMethod - totalCashOutTunai)
+    const netBankBalance = Math.max(0, totalTransferMethod - totalCashOutTransfer)
+    const totalLiquidCash = netCashInHand + netBankBalance
 
     // Realized & Unrealized Profit: computed per sale as clean integers with no rounding discrepancies
     let totalRealizedProfit = 0

@@ -193,12 +193,11 @@ export function SalesAndCashChart({
                 <span style={kpiLabelStyle}>Kas Keluar</span>
               </div>
               <span style={kpiValueStyle}>{formatIDR(totalCashOut)}</span>
-              {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0 || totalCashOutCogs > 0 || totalCashOutDelivery > 0) && (
+              {(totalCashOutPurchases > 0 || totalCashOutExpenses > 0 || totalCashOutPayroll > 0 || totalCashOutDelivery > 0) && (
                 <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap', fontSize: '8px', color: MC.muted, fontFamily: "'Sora', 'Inter', sans-serif" }}>
                   {totalCashOutPurchases > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>Stok {formatIDR(totalCashOutPurchases)}</span>}
                   {totalCashOutExpenses > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>Ops {formatIDR(totalCashOutExpenses)}</span>}
                   {totalCashOutPayroll > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>Gaji {formatIDR(totalCashOutPayroll)}</span>}
-                  {totalCashOutCogs > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>COGS {formatIDR(totalCashOutCogs)}</span>}
                   {totalCashOutDelivery > 0 && <span style={{ background: '#F1F5F9', padding: '2px 5px', borderRadius: '4px', border: `1px solid ${MC.border}` }}>Kirim {formatIDR(totalCashOutDelivery)}</span>}
                 </div>
               )}

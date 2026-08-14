@@ -130,9 +130,9 @@ export function MobileBeranda({
           const currentCashTotal = cashSummary?.liquidCash ?? (cashSummary?.cashBalance ?? 0)
           const cashInHand = cashSummary?.cashInHand ?? 0
           const bankBalance = cashSummary?.bankBalance ?? 0
-          const totalMethods = cashInHand + bankBalance
-          const cashMethodPct = totalMethods > 0 ? (cashInHand / totalMethods) * 100 : 50
-          const transferMethodPct = totalMethods > 0 ? (bankBalance / totalMethods) * 100 : 50
+          const totalMethods = Math.max(0, cashInHand) + Math.max(0, bankBalance)
+          const cashMethodPct = totalMethods > 0 ? (Math.max(0, cashInHand) / totalMethods) * 100 : 0
+          const transferMethodPct = totalMethods > 0 ? (Math.max(0, bankBalance) / totalMethods) * 100 : 0
 
           const todayCashTunai = cashSummary?.todayCashMethod ?? 0
           const todayCashTransfer = cashSummary?.todayTransferMethod ?? 0
