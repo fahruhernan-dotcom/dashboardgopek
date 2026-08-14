@@ -1,7 +1,10 @@
+// @ts-nocheck
 // Supabase Edge Function: send-push-notification
-// Menerima event notifikasi, mencatat history ke tabel notifications, dan mengirim push via Google FCM v1 API
+// Menerima event notifikasi dan mengirim push via Google FCM v1 API
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8"
+
+declare const Deno: any;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,18 +92,22 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const payload = await req.json()
-    const {
-      tenant_id,
-      recipient_user_ids,
-      type = "SYSTEM_ALERT",
-      title,
-      body,
-      data = {},
-    } = payload
+    
+    // Mendukung baik pemanggilan langsung (RPC/HTTP) maupun Database Webhook Supabase
+    const isWebhook = Boolean(payload?.record || (payload?.table === "notifications" && payload?.type === "INSERT"))
+    const rec = payload?.record || {}
+
+    const tenant_id = rec.tenant_id || payload.tenant_id
+    const type = rec.type || payload.type || "SYSTEM_ALERT"
+    const title = rec.title || payload.title
+    const body = rec.body || payload.body
+    const data = rec.data || payload.data || {}
+    const singleUserId = rec.user_id
+    const recipient_user_ids = singleUserId ? [singleUserId] : payload.recipient_user_ids
 
     if (!tenant_id || !title || !body) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: tenant_id, title, body" }),
+        JSON.stringify({ error: "Missing required fields: tenant_id, title, body", payload_received: payload }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       )
     }
@@ -127,26 +134,10 @@ serve(async (req) => {
       )
     }
 
-    // 2. Simpan ke tabel notifications (In-App Notification Center) untuk setiap user
-    const notifRows = targetUserIds.map((uid) => ({
-      tenant_id,
-      user_id: uid,
-      type,
-      title,
-      body,
-      data,
-      is_read: false,
-    }))
+    // Catatan: Fungsi ini HANYA bertugas mengirim Push Notification via FCM.
+    // DILARANG melakukan INSERT ke tabel 'notifications' di sini untuk mencegah loop rekursif tak terhingga dengan Database Webhook.
 
-    const { error: notifInsertErr } = await supabase
-      .from("notifications")
-      .insert(notifRows)
-
-    if (notifInsertErr) {
-      console.error("[send-push] Gagal insert notifikasi in-app:", notifInsertErr)
-    }
-
-    // 3. Ambil Device Tokens aktif untuk target users
+    // 2. Ambil Device Tokens aktif untuk target users
     const { data: tokens, error: tokenErr } = await supabase
       .from("device_tokens")
       .select("id, device_token, user_id")
@@ -247,10 +238,10 @@ serve(async (req) => {
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error("[send-push-notification error]:", error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     )
   }
