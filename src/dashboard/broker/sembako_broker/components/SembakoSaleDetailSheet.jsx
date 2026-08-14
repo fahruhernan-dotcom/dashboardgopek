@@ -1117,13 +1117,24 @@ export function SembakoSaleDetailSheet({ isOpen, onOpenChange, sale, onEdit }) {
             tenant:      { business_name: tenant?.business_name, phone: tenant?.phone, location: tenant?.location },
             invoice:     sale,
             customer:    sale.sembako_customers,
-            items:       items.map(it => ({
-              product_name: it.product_name,
-              quantity_kg: it.quantity,
-              price_per_kg: it.price_per_unit,
-              cost_per_kg: it.cogs_per_unit,
-              subtotal: (it.quantity || 0) * (it.price_per_unit || 0)
-            })),
+            items: items.map(it => {
+              const qty = Number(it.quantity || it.quantity_kg || 0)
+              const price = Number(it.sell_price ?? it.price_per_unit ?? it.unit_price ?? it.price_per_kg ?? (qty > 0 && it.subtotal ? it.subtotal / qty : 0) ?? 0)
+              const cost = Number(it.cogs_per_unit ?? it.cost_per_kg ?? 0)
+              const subtotal = Number(it.subtotal ?? Math.round(qty * price))
+              return {
+                product_name: it.product_name,
+                quantity: qty,
+                quantity_kg: qty,
+                unit: it.unit || 'pcs',
+                price_per_unit: price,
+                sell_price: price,
+                price_per_kg: price,
+                cost_per_unit: cost,
+                cost_per_kg: cost,
+                subtotal: subtotal
+              }
+            }),
             generatedBy: profile?.full_name || '',
             showProfit:  false,
           }}

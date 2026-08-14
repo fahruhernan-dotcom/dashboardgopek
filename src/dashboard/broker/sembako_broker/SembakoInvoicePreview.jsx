@@ -54,11 +54,15 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
   const dueDate = data.dueDate || data.due_date
 
   // Calculate items subtotal
-  const itemsSubtotal = items.reduce((s, i) => {
+  const calculatedItemsSubtotal = items.reduce((s, i) => {
     const qty = Number(i.quantity || i.quantity_kg || 0)
     const price = Number(i.sell_price ?? i.price_per_unit ?? i.price_per_kg ?? i.unit_price ?? 0)
     return s + (Number(i.subtotal) || (qty * price))
-  }, 0) || totalAmount
+  }, 0)
+
+  const itemsSubtotal = calculatedItemsSubtotal > 0
+    ? calculatedItemsSubtotal
+    : (deliveryCost > 0 && totalAmount > deliveryCost ? (totalAmount - deliveryCost) : totalAmount)
 
   const customerNotes = cleanCustomerNotes(data.notes)
   const terbilangText = terbilang(isLunas ? totalAmount : remainingAmount)
@@ -185,14 +189,14 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
       <div className="mb-5 overflow-hidden rounded-xl border border-slate-200 shadow-sm">
         <table className="w-full border-collapse text-left text-xs">
           <thead>
-            <tr className="bg-slate-900 text-white font-bold">
-              <th className="py-2.5 px-3.5 text-left uppercase tracking-wider text-[11px]">Item Produk</th>
-              <th className="py-2.5 px-3 text-center uppercase tracking-wider text-[11px]">Jumlah</th>
+            <tr className="font-bold" style={{ backgroundColor: '#0F172A', color: '#FFFFFF' }}>
+              <th className="py-2.5 px-3.5 text-left uppercase tracking-wider text-[11px]" style={{ color: '#FFFFFF' }}>Item Produk</th>
+              <th className="py-2.5 px-3 text-center uppercase tracking-wider text-[11px]" style={{ color: '#FFFFFF' }}>Jumlah</th>
               {!isDelivery && (
-                <th className="py-2.5 px-3 text-right uppercase tracking-wider text-[11px]">Harga Satuan</th>
+                <th className="py-2.5 px-3 text-right uppercase tracking-wider text-[11px]" style={{ color: '#FFFFFF' }}>Harga Satuan</th>
               )}
               {!isDelivery && (
-                <th className="py-2.5 px-3.5 text-right uppercase tracking-wider text-[11px]">Subtotal</th>
+                <th className="py-2.5 px-3.5 text-right uppercase tracking-wider text-[11px]" style={{ color: '#FFFFFF' }}>Subtotal</th>
               )}
             </tr>
           </thead>
@@ -200,8 +204,8 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
             {items.length > 0 ? (
               items.map((item, idx) => {
                 const qty = Number(item.quantity || item.quantity_kg || 0)
-                const price = Number(item.sell_price ?? item.price_per_unit ?? item.price_per_kg ?? item.unit_price ?? 0)
-                const subtotal = Number(item.subtotal ?? (qty * price))
+                const price = Number(item.sell_price ?? item.price_per_unit ?? item.price_per_kg ?? item.unit_price ?? (qty > 0 && item.subtotal ? item.subtotal / qty : 0) ?? 0)
+                const subtotal = Number(item.subtotal ?? Math.round(qty * price))
                 const unit = item.unit || 'pcs'
                 return (
                   <tr key={idx} className={cn("hover:bg-slate-50/80 transition-colors", idx % 2 === 0 ? "bg-white" : "bg-slate-50/40")}>
@@ -259,28 +263,40 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
               <span className="font-black text-slate-900 text-sm">{formatIDR(totalAmount)}</span>
             </div>
             {paidAmount > 0 && (
-              <div className="flex justify-between items-center text-xs text-emerald-700">
+              <div className="flex justify-between items-center text-xs text-emerald-700 font-semibold">
                 <span>Sudah Dibayar</span>
                 <span className="font-bold">-{formatIDR(paidAmount)}</span>
               </div>
             )}
 
-            {/* High-Contrast Grand Total / Sisa Tagihan Box */}
+            {/* High-Contrast Grand Total / Sisa Tagihan Box (Crystal Clear White Text on Dark Container) */}
             <div className="mt-2 pt-2 border-t border-slate-200">
-              <div className={cn(
-                "rounded-xl p-3 flex justify-between items-center shadow-md text-white transition-all",
-                isLunas ? "bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800" : "bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950"
-              )}>
+              <div
+                className="rounded-xl p-3.5 flex justify-between items-center shadow-lg transition-all"
+                style={{
+                  backgroundColor: isLunas ? '#047857' : '#0F172A',
+                  color: '#FFFFFF',
+                }}
+              >
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                  <p
+                    className="text-[10px] font-extrabold uppercase tracking-wider"
+                    style={{ color: isLunas ? '#A7F3D0' : '#94A3B8' }}
+                  >
                     {isLunas ? 'STATUS TAGIHAN' : 'SISA PEMBAYARAN'}
                   </p>
-                  <p className="text-xs font-black">
+                  <p
+                    className="text-xs font-black"
+                    style={{ color: '#FFFFFF' }}
+                  >
                     {isLunas ? 'LUNAS SEPENUHNYA' : 'SISA TAGIHAN'}
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-base sm:text-lg font-black tracking-tight text-white">
+                  <span
+                    className="text-base sm:text-lg font-black tracking-tight font-mono"
+                    style={{ color: '#FFFFFF' }}
+                  >
                     {formatIDR(isLunas ? totalAmount : remainingAmount)}
                   </span>
                 </div>

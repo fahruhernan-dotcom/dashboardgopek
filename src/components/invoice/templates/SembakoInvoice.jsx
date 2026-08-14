@@ -380,8 +380,8 @@ export function SembakoInvoice({
               </View>
               {items.map((item, idx) => {
                 const qty = Number(item.quantity || item.quantity_kg || 0)
-                const price = Number(item.price_per_unit || item.price_per_kg || 0)
-                const cost = Number(item.cost_per_unit || item.cost_per_kg || 0)
+                const price = Number(item.sell_price ?? item.price_per_unit ?? item.price_per_kg ?? item.unit_price ?? (qty > 0 && item.subtotal ? item.subtotal / qty : 0) ?? 0)
+                const cost = Number(item.cogs_per_unit ?? item.cost_per_unit ?? item.cost_per_kg ?? item.cogs ?? 0)
                 const itemSubtotal = Number(item.subtotal ?? Math.round(qty * price))
                 const itemCost     = Math.round(qty * cost)
                 const itemMargin   = itemSubtotal - itemCost
@@ -419,7 +419,7 @@ export function SembakoInvoice({
               </View>
               {items.map((item, idx) => {
                 const qty = Number(item.quantity || item.quantity_kg || 0)
-                const price = Number(item.price_per_unit ?? item.sell_price ?? item.price_per_kg ?? item.unit_price ?? 0)
+                const price = Number(item.sell_price ?? item.price_per_unit ?? item.price_per_kg ?? item.unit_price ?? (qty > 0 && item.subtotal ? item.subtotal / qty : 0) ?? 0)
                 const itemSubtotal = Number(item.subtotal ?? Math.round(qty * price))
                 const unit         = item.unit || 'pcs'
                 return (

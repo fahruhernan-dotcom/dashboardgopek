@@ -23,13 +23,24 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
   const txnDate = inv?.transaction_date || data.transactionDate || new Date().toISOString()
   const dueDate = inv?.due_date || data.dueDate || null
 
-  const normalizedItems = rawItems.map(item => ({
-    product_name: item.product_name || 'Produk',
-    quantity: Number(item.quantity || item.quantity_kg || 0),
-    unit: item.unit || 'pcs',
-    price_per_unit: Number(item.price_per_unit || item.sell_price || item.price_per_kg || 0),
-    subtotal: Number(item.subtotal ?? (Number(item.quantity || 0) * Number(item.price_per_unit || item.sell_price || 0)))
-  }))
+  const normalizedItems = rawItems.map(item => {
+    const qty = Number(item.quantity || item.quantity_kg || item.qty || 0)
+    const price = Number(item.price_per_unit ?? item.sell_price ?? item.unit_price ?? item.price ?? item.price_per_kg ?? (qty > 0 && item.subtotal ? item.subtotal / qty : 0) ?? 0)
+    const cost = Number(item.cogs_per_unit ?? item.cost_per_unit ?? item.cost_per_kg ?? item.cogs ?? 0)
+    const subtotal = Number(item.subtotal ?? Math.round(qty * price))
+    return {
+      product_name: item.product_name || item.sembako_products?.product_name || 'Produk',
+      quantity: qty,
+      quantity_kg: qty,
+      unit: item.unit || item.sembako_products?.unit || 'pcs',
+      price_per_unit: price,
+      sell_price: price,
+      price_per_kg: price,
+      cost_per_unit: cost,
+      cost_per_kg: cost,
+      subtotal: subtotal
+    }
+  })
 
   const totalAmount = Number(inv?.total_amount || data.revenue || data.total_amount || 0)
   const paidAmount = Number(inv?.paid_amount || data.paid_amount || 0)
