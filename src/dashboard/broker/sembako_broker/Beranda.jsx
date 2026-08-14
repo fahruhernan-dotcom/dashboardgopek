@@ -156,7 +156,8 @@ export default function SembakoBeranda() {
         const cashOutCogs = isFuture ? 0 : daySales.reduce((sum, s) => sum + (Number(s.total_cogs) || 0), 0)
         const cashOutDelivery = isFuture ? 0 : daySales.reduce((sum, s) => sum + (Number(s.delivery_cost) || 0) + (Number(s.other_cost) || 0), 0)
 
-        const cashOut = cashOutPurchases + cashOutExpenses + cashOutPayroll + cashOutCogs + cashOutDelivery
+        // Arus Kas Keluar Riil: Pembelian stok supplier + Pengeluaran ops + Gaji + Ongkir internal
+        const cashOut = cashOutPurchases + cashOutExpenses + cashOutPayroll + cashOutDelivery
 
         days.push({
           name: isWeekly
@@ -223,13 +224,14 @@ export default function SembakoBeranda() {
       })
     })
 
-    // Cash Out: purchases + expenses + payroll + cogs + delivery
+    // Cash Out (Riil): Pembelian Supplier + Beban Operasional + Gaji Pegawai + Ongkir/Biaya Kirim
+    // Catatan: COGS/HPP adalah beban akuntansi persediaan dan bukan kas keluar terpisah (kas keluar terjadi saat beli ke supplier).
     const totalCashOutPurchases = suppliers.reduce((sum, s) => sum + (Number(s.total_paid_value) || 0), 0)
     const totalCashOutExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
     const totalCashOutPayroll = payroll.reduce((sum, p) => sum + (Number(p.total_pay) || 0), 0)
     const totalCashOutCogs = sales.reduce((sum, s) => sum + (Number(s.total_cogs) || 0), 0)
     const totalCashOutDelivery = sales.reduce((sum, s) => sum + (Number(s.delivery_cost) || 0) + (Number(s.other_cost) || 0), 0)
-    const totalCashOut = totalCashOutPurchases + totalCashOutExpenses + totalCashOutPayroll + totalCashOutCogs + totalCashOutDelivery
+    const totalCashOut = totalCashOutPurchases + totalCashOutExpenses + totalCashOutPayroll + totalCashOutDelivery
     const cashBalance = INITIAL_CAPITAL + totalCashIn - totalCashOut
 
     // Realistic split of liquid cash between Physical Cash and Bank
