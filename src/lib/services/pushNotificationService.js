@@ -33,18 +33,19 @@ export async function initPushNotifications({ tenantId, userId, onNavigate }) {
       return { supported: true, granted: false, reason: 'permission_denied' }
     }
 
-    // 2. Buat Notification Channels untuk Android (High Priority & Kasir)
+    // 2. Buat Notification Channels untuk Android (High Priority Heads-up & Lockscreen)
     if (Capacitor.getPlatform() === 'android') {
       try {
         await PushNotifications.createChannel({
           id: 'gopek_main_channel',
           name: 'Transaksi & Pesanan Toko Gopek',
           description: 'Notifikasi pesanan baru, pembayaran masuk, piutang, dan stok',
-          importance: 5, // High priority (heads-up notification)
-          visibility: 1,
+          importance: 5, // High priority (heads-up popup & lockscreen)
+          visibility: 1, // VISIBILITY_PUBLIC (Muncul di layar terkunci)
           vibration: true,
           lights: true,
           lightColor: '#10B981',
+          sound: 'default',
         })
       } catch (channelErr) {
         console.warn('[PushNotification] Error createChannel:', channelErr)
@@ -54,18 +55,41 @@ export async function initPushNotifications({ tenantId, userId, onNavigate }) {
     // 3. Daftarkan perangkat ke FCM
     await PushNotifications.register()
 
-    // 3. Listener: Sukses mendapatkan token FCM
+    // 4. Listener: Sukses mendapatkan token FCM
     await PushNotifications.addListener('registration', async (token) => {
       if (!token?.value || !tenantId || !userId) return
+      console.log('[PushNotification] FCM Token Berhasil Diperoleh:', token.value.slice(0, 15) + '...')
 
       try {
-        // Panggil helper function atomic upsert di Supabase
-        await supabase.rpc('register_device_token', {
+        // Coba panggil helper function atomic upsert di Supabase
+        const { error: rpcErr } = await supabase.rpc('register_device_token', {
           p_tenant_id: tenantId,
           p_device_token: token.value,
           p_platform: Capacitor.getPlatform() || 'android',
           p_device_name: navigator?.userAgent?.slice(0, 100) || 'Android Device',
         })
+
+        if (rpcErr) {
+          console.warn('[PushNotification] RPC register_device_token gagal, mencoba direct table upsert:', rpcErr.message)
+          // Fallback langsung ke tabel device_tokens
+          const { error: tableErr } = await supabase.from('device_tokens').upsert({
+            tenant_id: tenantId,
+            user_id: userId,
+            device_token: token.value,
+            platform: Capacitor.getPlatform() || 'android',
+            device_name: navigator?.userAgent?.slice(0, 100) || 'Android Device',
+            is_active: true,
+            last_seen: new Date().toISOString()
+          }, { onConflict: 'device_token' })
+
+          if (tableErr) {
+            console.error('[PushNotification] Direct upsert device_tokens gagal:', tableErr)
+          } else {
+            console.log('[PushNotification] Device token tersimpan via direct table upsert')
+          }
+        } else {
+          console.log('[PushNotification] Device token tersimpan via RPC')
+        }
       } catch (err) {
         console.error('[PushNotification] Gagal menyimpan token ke Supabase:', err)
       }
