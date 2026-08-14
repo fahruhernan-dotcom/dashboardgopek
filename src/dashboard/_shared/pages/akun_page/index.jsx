@@ -24,6 +24,7 @@ import {
   LogoutBtn,
   getEditBizPath
 } from './components/AccountCards'
+import { NotificationPreferencesCard } from './components/NotificationPreferencesCard'
 import { isDevUser } from '@/lib/auth/business-roles'
 
 import {
@@ -131,6 +132,12 @@ export default function AkunPage() {
           tenantProvince={activeTenant?.province || null}
           canEditBisnis={canEditBisnis}
           onEditBiz={canEditBisnis ? () => setEditBisnisOpen(true) : (editBizPath ? () => navigate(editBizPath) : null)}
+        />
+
+        <NotificationPreferencesCard
+          tenantId={activeTenant?.id}
+          userId={user?.id}
+          accent={accent}
         />
 
         {isDevUser(profile) && (
