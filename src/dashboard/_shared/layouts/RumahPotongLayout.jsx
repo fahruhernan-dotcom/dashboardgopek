@@ -17,12 +17,22 @@ import { SidebarProvider } from '@/components/ui/sidebar'
  * Common Layout for Rumah Potong (RPA/RPH)
  * Handles both Mobile (BottomNav + AppSidebar) and Desktop (DesktopSidebarLayout)
  */
+import { useEdgeSwipeSidebar } from '@/lib/hooks/useEdgeSwipeSidebar'
+
 export default function RumahPotongLayout() {
   const { _profile, loading, tenant, isSuperadmin } = useAuth()
   useNotificationGenerator()
   useForceDarkMode()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Global edge-swipe from left screen edge to center to open sidebar
+  useEdgeSwipeSidebar({
+    isOpen: sidebarOpen,
+    onOpen: () => setSidebarOpen(true),
+    onClose: () => setSidebarOpen(false),
+    enabled: !isDesktop
+  })
 
   // Listen to sidebar open events from BottomNav (Menu tab) and MobileHeader
   useEffect(() => {

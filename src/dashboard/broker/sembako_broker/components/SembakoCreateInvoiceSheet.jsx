@@ -238,10 +238,38 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
   const [isFifoExpanded, setIsFifoExpanded] = useState(false)
   const prod = useMemo(() => _products.find(p => p.id === item.product_id), [item.product_id, _products])
   const factor = getFactor(item.selectedUnit || item.unit || 'slop')
-  const subtotal = Math.round((item.quantity || 0) * (item.price_per_unit || 0))
-  const hpp = (item.cogs_per_unit || 0) * factor
-  const isBelowHpp = hpp > 0 && item.price_per_unit > 0 && item.price_per_unit < hpp
-  const marginPerUnit = item.price_per_unit > 0 && hpp > 0 ? item.price_per_unit - hpp : null
+  const isCigarettePackaging = (item.unit === 'slop' || prod?.unit === 'slop') && factor > 1
+  const priceMode = item.priceMode || 'per_slop'
+
+  // Input price as typed by user in current priceMode
+  const inputPrice = Number(item.price_per_unit || 0)
+
+  // Calculate equivalent price in slop and in packaging unit
+  const pricePerSlop = isCigarettePackaging
+    ? (priceMode === 'per_kemasan' ? Math.round(inputPrice / factor) : inputPrice)
+    : inputPrice
+
+  const pricePerPackaging = isCigarettePackaging
+    ? (priceMode === 'per_kemasan' ? inputPrice : inputPrice * factor)
+    : inputPrice
+
+  // Subtotal calculation
+  const subtotal = isCigarettePackaging
+    ? (priceMode === 'per_kemasan'
+        ? Math.round((Number(item.quantity) || 0) * inputPrice)
+        : Math.round((Number(item.quantity) || 0) * factor * inputPrice)
+      )
+    : Math.round((Number(item.quantity) || 0) * inputPrice)
+
+  // Base HPP per slop
+  const baseCogsPerSlop = Number(item.cogs_per_unit || 0)
+  // Display HPP matching active priceMode
+  const displayHpp = isCigarettePackaging
+    ? (priceMode === 'per_kemasan' ? baseCogsPerSlop * factor : baseCogsPerSlop)
+    : baseCogsPerSlop
+
+  const isBelowHpp = baseCogsPerSlop > 0 && pricePerSlop > 0 && pricePerSlop < baseCogsPerSlop
+  const marginPerUnit = pricePerSlop > 0 && baseCogsPerSlop > 0 ? pricePerSlop - baseCogsPerSlop : null
 
   // Calculate local FIFO breakdown for UI suggestion
   const prodBatches = useMemo(() => {
@@ -281,7 +309,7 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
     }
     
     return breakdown
-  }, [item.quantity, prodBatches, _products, item.product_id])
+  }, [item.quantity, prodBatches, _products, item.product_id, item.selectedUnit, item.unit])
 
   return (
     <div
@@ -366,7 +394,9 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
       <div className="grid grid-cols-2 gap-2 mt-2.5">
         <div>
           <div className="flex items-end h-8 mb-1.5">
-            <label className={labelCn} style={{ marginBottom: 0 }}>QTY</label>
+            <label className={labelCn} style={{ marginBottom: 0 }}>
+              QTY ({item.selectedUnit || item.unit || 'Unit'})
+            </label>
           </div>
           <input
             type="text"
@@ -391,15 +421,53 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
           )}
         </div>
         <div>
-          <div className="flex items-end h-8 mb-1.5">
-            <label className={labelCn} style={{ marginBottom: 0 }}>Harga / {item.selectedUnit || item.unit || 'Unit'}</label>
+          <div className="flex items-end h-8 mb-1.5 justify-between">
+            <label className={labelCn} style={{ marginBottom: 0 }}>
+              Harga / {isCigarettePackaging ? (priceMode === 'per_kemasan' ? item.selectedUnit : 'Slop') : (item.selectedUnit || item.unit || 'Unit')}
+            </label>
           </div>
+
+          {/* Segmented Mode Toggle for Cigarette Packaging */}
+          {isCigarettePackaging && (
+            <div className="flex bg-[#F1F5F9] rounded-lg p-0.5 gap-1 mb-1.5 border border-[#E2E8F0]">
+              <button
+                type="button"
+                onClick={() => onChangeItem(idx, 'priceMode', 'per_slop')}
+                className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-bold transition-all border-0 cursor-pointer flex items-center justify-center gap-1 ${
+                  priceMode === 'per_slop'
+                    ? 'bg-white text-slate-900 shadow-xs font-extrabold'
+                    : 'bg-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <span>🏷️ Per Slop</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeItem(idx, 'priceMode', 'per_kemasan')}
+                className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-bold transition-all border-0 cursor-pointer flex items-center justify-center gap-1 ${
+                  priceMode === 'per_kemasan'
+                    ? 'bg-white text-slate-900 shadow-xs font-extrabold'
+                    : 'bg-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <span className="capitalize">📦 Per {item.selectedUnit}</span>
+              </button>
+            </div>
+          )}
+
           <InputRupiah
             value={item.price_per_unit}
             onChange={v => onChangeItem(idx, 'price_per_unit', v)}
             className={inputCn}
           />
-          {factor > 1 && Number(item.price_per_unit) > 0 && (
+          {isCigarettePackaging && (
+            <p className="text-[10px] font-bold text-slate-500 mt-1">
+              {priceMode === 'per_slop'
+                ? (inputPrice > 0 ? `≈ ${formatIDR(pricePerPackaging)} / ${item.selectedUnit}` : `Otomatis dihitung / ${item.selectedUnit}`)
+                : (inputPrice > 0 ? `≈ ${formatIDR(pricePerSlop)} / slop` : `Otomatis dihitung / slop`)}
+            </p>
+          )}
+          {!isCigarettePackaging && factor > 1 && Number(item.price_per_unit) > 0 && (
             <p className="text-[10px] font-bold text-slate-500 mt-1">
               ≈ {formatIDR(Math.round(Number(item.price_per_unit) / factor))} / {item.unit || 'slop'}
             </p>
@@ -417,42 +485,50 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
           >
             <div className="flex justify-between items-center w-full mb-1">
               <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider mr-1 select-none flex items-center gap-1">
-                Saran Harga:
+                Saran Harga ({isCigarettePackaging ? (priceMode === 'per_kemasan' ? `Per ${item.selectedUnit}` : 'Per Slop') : 'Standar'}):
                 <ChevronDown size={10} style={{ transform: isFifoExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
               </span>
-              {hpp > 0 && !isFifoExpanded && (
+              {displayHpp > 0 && !isFifoExpanded && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    onChangeItem(idx, 'price_per_unit', hpp)
+                    onChangeItem(idx, 'price_per_unit', displayHpp)
                   }}
                   className="text-[10px] font-black text-rose-700 bg-rose-50 hover:bg-rose-100/80 border border-rose-300/30 rounded-lg px-2 py-0.5 outline-none transition-all active:scale-95 cursor-pointer flex items-center gap-1 select-none"
                   style={{ fontFamily: 'DM Sans' }}
                 >
-                  <span>HPP: {formatIDR(hpp)}</span>
+                  <span>HPP: {formatIDR(displayHpp)}</span>
                 </button>
               )}
             </div>
             
             <div className="flex flex-wrap gap-1.5 items-center w-full">
               {/* Standard Price */}
-              {prod.sell_price > 0 && (prod.sell_price * factor) !== Number(item.price_per_unit) && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onChangeItem(idx, 'price_per_unit', prod.sell_price * factor)
-                  }}
-                  className="text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 active:scale-95 transition-all cursor-pointer"
-                >
-                  Std: {formatIDR(prod.sell_price * factor)}
-                </button>
-              )}
+              {(() => {
+                const stdPrice = isCigarettePackaging
+                  ? (priceMode === 'per_kemasan' ? (prod.sell_price * factor) : prod.sell_price)
+                  : (prod.sell_price * factor)
+                if (stdPrice > 0 && stdPrice !== Number(item.price_per_unit)) {
+                  return (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onChangeItem(idx, 'price_per_unit', stdPrice)
+                      }}
+                      className="text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 active:scale-95 transition-all cursor-pointer"
+                    >
+                      Std: {formatIDR(stdPrice)}
+                    </button>
+                  )
+                }
+                return null
+              })()}
               
               {/* HPP Markups */}
-              {hpp > 0 && isFifoExpanded && [1.00, 1.10, 1.15, 1.20].map((multiplier, mIdx) => {
-                const markupPrice = Math.round(hpp * multiplier)
+              {displayHpp > 0 && isFifoExpanded && [1.00, 1.10, 1.15, 1.20].map((multiplier, mIdx) => {
+                const markupPrice = Math.round(displayHpp * multiplier)
                 const label = multiplier === 1.00 ? 'HPP (Modal)' : `+${Math.round((multiplier - 1) * 100)}%`
                 if (markupPrice === Number(item.price_per_unit)) return null
                 return (
@@ -477,14 +553,14 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
           </div>
           
           {/* HPP Summary Row */}
-          {hpp > 0 && isFifoExpanded && (
+          {displayHpp > 0 && isFifoExpanded && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-xs px-1">
                 <span className="font-bold uppercase tracking-wider text-slate-500 text-[10px]">
                   HPP Terbobot (FIFO)
                 </span>
                 <span className="font-black text-slate-800 font-mono text-xs">
-                  {formatIDR(hpp)} / {item.selectedUnit || item.unit || 'slop'}
+                  {formatIDR(displayHpp)} / {isCigarettePackaging ? (priceMode === 'per_kemasan' ? item.selectedUnit : 'slop') : (item.selectedUnit || item.unit || 'slop')}
                 </span>
               </div>
 
@@ -497,11 +573,16 @@ function ProductItemRow({ item, idx, products: _products, productOptions, total:
                   <div className="space-y-1.5">
                     {fifoBreakdown.map((b, bIdx) => {
                       const qtyInUnit = b.qty / factor
-                      const buyPriceInUnit = b.buy_price * factor
+                      const buyPriceInUnit = isCigarettePackaging && priceMode === 'per_kemasan'
+                        ? b.buy_price * factor
+                        : b.buy_price
+                      const unitLabel = isCigarettePackaging && priceMode === 'per_kemasan'
+                        ? item.selectedUnit
+                        : 'slop'
                       return (
                         <div key={bIdx} className="flex justify-between items-center text-[10px] font-mono leading-tight">
                           <span className="text-[#0F172A] font-bold truncate max-w-[220px]">
-                            {qtyInUnit} {item.selectedUnit || item.unit || 'slop'} @ {formatIDR(buyPriceInUnit)}
+                            {qtyInUnit} {item.selectedUnit || item.unit || 'slop'} @ {formatIDR(buyPriceInUnit)}/{unitLabel}
                           </span>
                           <span className="text-muted-foreground text-[9px] truncate max-w-[150px]" title={b.batch_code}>
                             ({b.batch_code.includes('Fallback') ? 'Fallback' : b.batch_code.replace('BATCH-', '')})
@@ -688,7 +769,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     lastPrefillKeyRef.current = null
     const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return format(d, 'yyyy-MM-dd') }
     setStep(0); setCustId(''); setTxnDate(format(new Date(), 'yyyy-MM-dd')); setDueDate(tomorrow())
-    setItems([{ product_id: '', product_name: '', unit: '', selectedUnit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
+    setItems([{ product_id: '', product_name: '', unit: '', selectedUnit: '', priceMode: 'per_slop', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
     setDeliveryCost(0); setOtherCost(0); setSelectedCostChips([]); setOtherCostNotes(''); setNotes('')
     setPayAmount(0); setPayMethod('cash')
     setUseDelivery(false); setDeliveryDriver(''); setDeliveryVehicle(''); setDeliveryPlate(''); setDeliveryArea(''); setFuelCost(0)
@@ -712,7 +793,14 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
   const selectedCust = customers.find(c => c.id === custId)
   const totalAmount  = items.reduce((s, i) => {
-    return s + Math.round((i.quantity || 0) * (i.price_per_unit || 0))
+    const factor = getFactor(i.selectedUnit || i.unit || 'slop')
+    const isCigarettePackaging = (i.unit === 'slop' || i.selectedUnit) && factor > 1
+    const mode = i.priceMode || 'per_slop'
+    const inputPrice = Number(i.price_per_unit || 0)
+    const sub = isCigarettePackaging
+      ? (mode === 'per_kemasan' ? (Number(i.quantity) || 0) * inputPrice : (Number(i.quantity) || 0) * factor * inputPrice)
+      : (Number(i.quantity) || 0) * inputPrice
+    return s + Math.round(sub)
   }, 0)
   const totalCogs    = items.reduce((s, i) => {
     const factor = getFactor(i.selectedUnit || i.unit || 'slop')
@@ -777,6 +865,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         let selectedUnit = it.unit
         let price = it.sell_price || it.price_per_unit || 0
         let cleanName = (it.product_name || '').replace(/\s*\[\d+[^\]]+\]/g, '').trim()
+        let priceMode = 'per_slop'
 
         if (matchPkg) {
           const inputQty = Number(matchPkg[1])
@@ -785,7 +874,8 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           if (factor > 1 && inputQty > 0) {
             qty = inputQty
             selectedUnit = inputUnit
-            price = Math.round(Number(it.sell_price || it.price_per_unit || 0) * factor)
+            price = it.sell_price || it.price_per_unit || 0
+            priceMode = 'per_slop'
           }
         }
 
@@ -794,6 +884,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           product_name: cleanName,
           unit: it.unit,
           selectedUnit: selectedUnit,
+          priceMode: priceMode,
           quantity: qty,
           price_per_unit: price,
           cogs_per_unit: it.cogs_per_unit
@@ -803,7 +894,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       setStep(1)
     } else {
       // Items kosong (data lama) — buka di step 1 juga, customer sudah prefill, tinggal isi barang
-      setItems([{ product_id: '', product_name: '', unit: '', selectedUnit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
+      setItems([{ product_id: '', product_name: '', unit: '', selectedUnit: '', priceMode: 'per_slop', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
       setStep(1)
     }
   }, [open, editSale])
@@ -850,21 +941,45 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   function handleItemChange(idx, field, val) {
     const next = [...items]
     
-    if (field === 'selectedUnit') {
+    if (field === 'priceMode') {
+      const item = next[idx]
+      const prevMode = item.priceMode || 'per_slop'
+      const newMode = val
+      const factor = getFactor(item.selectedUnit || item.unit || 'slop')
+      const currentPrice = Number(item.price_per_unit || 0)
+      
+      let newPrice = currentPrice
+      if (factor > 1) {
+        if (prevMode === 'per_slop' && newMode === 'per_kemasan') {
+          newPrice = currentPrice * factor
+        } else if (prevMode === 'per_kemasan' && newMode === 'per_slop') {
+          newPrice = Math.round(currentPrice / factor)
+        }
+      }
+      
+      next[idx] = {
+        ...item,
+        priceMode: newMode,
+        price_per_unit: newPrice
+      }
+    } else if (field === 'selectedUnit') {
       const item = next[idx]
       const prevUnit = item.selectedUnit || 'slop'
       const newUnit = val
       
       const prevFactor = getFactor(prevUnit)
       const newFactor = getFactor(newUnit)
+      const mode = item.priceMode || 'per_slop'
       
       const currentQty = Number(item.quantity || 0)
       const baseQty = currentQty * prevFactor
       const newQty = newFactor > 0 ? (baseQty / newFactor) : baseQty
       
-      const currentPrice = Number(item.price_per_unit || 0)
-      const basePrice = currentPrice / prevFactor
-      const newPrice = basePrice * newFactor
+      let newPrice = Number(item.price_per_unit || 0)
+      if (mode === 'per_kemasan') {
+        const basePrice = prevFactor > 0 ? (newPrice / prevFactor) : newPrice
+        newPrice = basePrice * newFactor
+      }
       
       next[idx] = {
         ...item,
@@ -886,6 +1001,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           next[idx].product_name = p.product_name
           next[idx].unit         = p.unit
           next[idx].selectedUnit = p.unit
+          next[idx].priceMode    = 'per_slop'
           
           let lastPrice = 0
           if (custId) {
@@ -901,7 +1017,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           next[idx].price_per_unit = lastPrice || p.sell_price || 0
         }
         
-        // Calculate dynamic FIFO HPP
+        // Calculate dynamic FIFO HPP per base unit (slop)
         const prodBatches = allBatches
           .filter(b => b.product_id === pId && !b.is_deleted && (b.qty_sisa || 0) > 0)
           .sort((a, b) => new Date(a.created_at || a.purchase_date) - new Date(b.created_at || b.purchase_date))
@@ -933,8 +1049,12 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         const factor = getFactor(i.selectedUnit || i.unit || 'slop')
         const inputQty = Number(i.quantity)
         const inputUnit = i.selectedUnit || i.unit || 'slop'
+        const isCigarettePackaging = (i.unit === 'slop' || i.selectedUnit) && factor > 1
+        const mode = i.priceMode || 'per_slop'
         const baseQty = inputQty * factor
-        const basePrice = Math.round(Number(i.price_per_unit) / factor)
+        const basePrice = (isCigarettePackaging && mode === 'per_kemasan')
+          ? Math.round(Number(i.price_per_unit) / factor)
+          : Number(i.price_per_unit)
 
         const packagingTag = factor > 1 ? `[${inputQty} ${inputUnit}]` : ''
         const cleanName = (i.product_name || '').replace(/\s*\[\d+[^\]]+\]/g, '').trim()
@@ -1502,7 +1622,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
                     {/* Add item */}
                     <button
-                      onClick={() => setItems([...items, { product_id: '', product_name: '', unit: '', selectedUnit: '', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])}
+                      onClick={() => setItems([...items, { product_id: '', product_name: '', unit: '', selectedUnit: '', priceMode: 'per_slop', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])}
                       className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all"
                       style={{ border: `1px dashed ${BORDER}`, color: MUTED, background: 'transparent' }}
                     >

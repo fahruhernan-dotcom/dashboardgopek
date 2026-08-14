@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import {
   TrendingUp, TrendingDown, DollarSign, Receipt,
   ChevronDown, ChevronUp, Calendar, Lock, BarChart3, Printer, FileText,
+  Package, ShoppingBag, ArrowUpRight, ArrowDownRight, Layers
 } from 'lucide-react'
 import FinancialReportPdfModal from '@/dashboard/broker/sembako_broker/components/FinancialReportPdfModal'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -16,20 +17,20 @@ import {
 import { useSembakoLaporan } from '@/lib/hooks/useSembakoData'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatIDR } from '@/lib/format'
-import TopBar from '@/dashboard/_shared/components/TopBar'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { C, fmtDate, CustomSelect } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import { SembakoErrorState } from '@/dashboard/broker/sembako_broker/components/SembakoUiPrimitives'
+import { cn } from '@/lib/utils'
 
-const PIE_COLORS = ['#0F172A', '#F59E0B', '#021a02', '#60A5FA', '#A78BFA', '#F472B6', '#FB923C']
+const PIE_COLORS = ['#0F172A', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#F97316']
 const CATEGORY_LABEL = {
   sewa_gudang: 'Sewa Gudang', listrik_air: 'Listrik & Air', bbm: 'BBM',
   perawatan: 'Perawatan', packaging: 'Packaging', administrasi: 'Administrasi', lainnya: 'Lainnya',
 }
 const STATUS_STYLE = {
-  lunas: { bg: 'rgba(2, 26, 2,0.12)', color: C.green, label: 'Lunas' },
-  sebagian: { bg: 'rgba(245,158,11,0.12)', color: C.amber, label: 'Sebagian' },
-  belum_lunas: { bg: 'rgba(239,68,68,0.12)', color: C.red, label: 'Belum Lunas' },
+  lunas: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', label: 'Lunas' },
+  sebagian: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', label: 'Sebagian' },
+  belum_lunas: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', label: 'Belum Lunas' },
 }
 
 // ── MAIN ────────────────────────────────────────────────────────────────────
@@ -41,8 +42,6 @@ export default function SembakoLaporan() {
   const isStarter = sub.status !== 'active' && sub.status !== 'trial'
   const isAllowed = canViewProfit(profile)
 
-  // Compute before useState so initial values are stable regardless of isStarter.
-  // Rules of Hooks: all hooks must be called unconditionally before any early return.
   const now = new Date()
 
   // Default ke bulan berjalan agar first load cepat dan relevan
@@ -80,7 +79,7 @@ export default function SembakoLaporan() {
     )
   }
 
-  // ── Upgrade wall — must come after all hooks ──────────────────────────────
+  // ── Upgrade wall ─────────────────────────────────────────────────────────
   if (isStarter) {
     return (
       <div style={{ background: C.bg, minHeight: '100vh' }}>
@@ -132,7 +131,19 @@ export default function SembakoLaporan() {
       setEndDate(end.toISOString().slice(0, 10))
     } else if (val === 'bulan_ini') {
       const start = new Date(t.getFullYear(), t.getMonth(), 1)
-      const end = new Date(t.getFullYear(), t.getMonth() + 1, 0) // Last day
+      const end = new Date(t.getFullYear(), t.getMonth() + 1, 0)
+      setStartDate(start.toISOString().slice(0, 10))
+      setEndDate(end.toISOString().slice(0, 10))
+    } else if (val === 'bulan_lalu') {
+      // 1st of previous month to last of previous month
+      const start = new Date(t.getFullYear(), t.getMonth() - 1, 1)
+      const end = new Date(t.getFullYear(), t.getMonth(), 0)
+      setStartDate(start.toISOString().slice(0, 10))
+      setEndDate(end.toISOString().slice(0, 10))
+    } else if (val === '3_bulan_terakhir') {
+      // 1st of 2 months ago to last day of this month
+      const start = new Date(t.getFullYear(), t.getMonth() - 2, 1)
+      const end = new Date(t.getFullYear(), t.getMonth() + 1, 0)
       setStartDate(start.toISOString().slice(0, 10))
       setEndDate(end.toISOString().slice(0, 10))
     } else if (val === 'keseluruhan') {
@@ -146,23 +157,25 @@ export default function SembakoLaporan() {
   const s = data?.summary || {}
 
   return (
-    <div className="bg-background min-h-screen text-foreground pb-[max(140px,calc(110px+env(safe-area-inset-bottom,24px)))] text-left">
-      {!isDesktop && <BrokerMobileHeader title="Laporan" onMenuClick={() => setSidebarOpen(true)} />}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4 sm:pt-6">
+    <div className="bg-background min-h-screen text-foreground pb-48 sm:pb-24 text-left">
+      {!isDesktop && <BrokerMobileHeader title="Laporan Bisnis" onMenuClick={() => setSidebarOpen(true)} />}
+      
+      <div className="mx-auto max-w-7xl px-3.5 sm:px-6 pt-3 sm:pt-6">
 
-        {/* Header + Date picker */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        {/* ── Top Header & Filter Controls ── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
           <div>
-            <h1 className="hidden md:block text-2xl font-bold text-foreground">
-              Laporan Keuangan & Bisnis
+            <h1 className="hidden md:block text-2xl font-bold text-foreground tracking-tight">
+              Laporan Keuangan & Hasil Bisnis
             </h1>
             <p className="hidden md:block text-xs text-muted-foreground mt-0.5">
-              Analisis performa omzet, HPP, margin & laba bersih
+              Analisis performa omzet, HPP, margin & likuiditas kas toko
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
-            <div className="w-full sm:w-36">
+            {/* Preset Selector */}
+            <div className="w-full sm:w-44">
               <CustomSelect
                 value={preset}
                 onChange={handlePresetChange}
@@ -170,37 +183,42 @@ export default function SembakoLaporan() {
                   { value: 'hari_ini', label: 'Hari Ini' },
                   { value: 'minggu_ini', label: 'Minggu Ini' },
                   { value: 'bulan_ini', label: 'Bulan Ini' },
+                  { value: 'bulan_lalu', label: 'Bulan Kemarin' },
+                  { value: '3_bulan_terakhir', label: '3 Bulan Terakhir' },
                   { value: 'keseluruhan', label: 'Keseluruhan' },
-                  { value: 'custom', label: 'Kustom' }
+                  { value: 'custom', label: 'Kustom Tanggal' }
                 ]}
                 placeholder="Pilih Rentang"
               />
             </div>
+
+            {/* Custom Date Pickers */}
             {preset === 'custom' && (
-              <div className="flex items-center gap-2">
-                <DatePicker id="start-date" value={startDate} onChange={val => setStartDate(val)} placeholder="Start" />
-                <span className="text-muted-foreground font-bold text-xs">—</span>
-                <DatePicker id="end-date" value={endDate} onChange={val => setEndDate(val)} placeholder="End" />
+              <div className="grid grid-cols-2 sm:flex items-center gap-2">
+                <DatePicker id="start-date" value={startDate} onChange={val => setStartDate(val)} placeholder="Mulai" />
+                <DatePicker id="end-date" value={endDate} onChange={val => setEndDate(val)} placeholder="Sampai" />
               </div>
             )}
-            <div className="flex items-center gap-2 shrink-0">
+
+            {/* PDF Report Export Buttons */}
+            <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setPdfModal({ open: true, type: 'business_result' })}
                 disabled={!data}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-slate-900 hover:bg-slate-800 text-white transition-all cursor-pointer shadow-lg shadow-slate-900/20 active:scale-95 disabled:opacity-50 border-0"
+                className="flex items-center justify-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-slate-900 hover:bg-slate-800 text-white transition-all cursor-pointer shadow-md shadow-slate-900/10 active:scale-95 disabled:opacity-50 border-0"
               >
-                <Printer size={14} />
-                <span>PDF Hasil Bisnis</span>
+                <Printer size={13} />
+                <span className="truncate">PDF Hasil Bisnis</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPdfModal({ open: true, type: 'cashflow' })}
                 disabled={!data}
-                className="flex items-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/60 hover:bg-muted text-foreground transition-all cursor-pointer disabled:opacity-50"
+                className="flex items-center justify-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/70 hover:bg-muted text-foreground transition-all cursor-pointer disabled:opacity-50"
               >
-                <FileText size={14} className="text-slate-600" />
-                <span>PDF Arus Kas</span>
+                <FileText size={13} className="text-slate-500" />
+                <span className="truncate">PDF Arus Kas</span>
               </button>
             </div>
           </div>
@@ -223,25 +241,34 @@ export default function SembakoLaporan() {
             )}
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
             <>
-              {/* SECTION A — KPI Summary */}
-              <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4,1fr)' : 'repeat(2,1fr)', gap: '12px', marginBottom: '24px' }}>
+              {/* SECTION A — KPI Summary Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-5 sm:mb-6">
                 <KPICard icon={DollarSign} label="Revenue (Akrual)" value={formatIDR(s.totalRevenue)} color={C.accent} />
-                <KPICard icon={s.netProfit >= 0 ? TrendingUp : TrendingDown} label="Net Profit (Akrual)"
+                <KPICard
+                  icon={s.netProfit >= 0 ? TrendingUp : TrendingDown}
+                  label="Net Profit (Akrual)"
                   value={formatIDR(s.netProfit)}
                   badge={`${s.netMarginPct}%`}
-                  color={s.netProfit >= 0 ? C.green : C.red} />
-                <KPICard icon={s.netCashFlowPeriod >= 0 ? TrendingUp : TrendingDown} label="Arus Kas Bersih"
+                  color={s.netProfit >= 0 ? C.green : C.red}
+                />
+                <KPICard
+                  icon={s.netCashFlowPeriod >= 0 ? TrendingUp : TrendingDown}
+                  label="Arus Kas Bersih"
                   value={formatIDR(s.netCashFlowPeriod)}
                   color={s.netCashFlowPeriod >= 0 ? C.green : C.red}
-                  subtitle="Kas Masuk - Kas Keluar" />
-                <KPICard icon={TrendingUp} label="Laba Terkonversi Kas (Est)"
+                  subtitle="Kas Masuk - Keluar"
+                />
+                <KPICard
+                  icon={TrendingUp}
+                  label="Laba Cair (Est)"
                   value={formatIDR(s.cashMarginEstimate)}
                   color={C.green}
-                  subtitle="Estimasi laba cair proporsional" />
+                  subtitle="Proporsi laba tertagih"
+                />
               </div>
 
               {/* SECTION B — Laba Rugi & Modal Beredar */}
-              <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1.2fr 0.8fr' : '1fr', gap: '16px', marginBottom: '24px' }}>
+              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-4 mb-5 sm:mb-6">
                 <WaterfallPL summary={s} />
                 <WorkingCapitalCard summary={s} />
               </div>
@@ -249,8 +276,8 @@ export default function SembakoLaporan() {
               {/* SECTION C — Laporan Arus Kas Rincian */}
               <CashFlowStatement summary={s} />
 
-              {/* SECTION D — 2 columns */}
-              <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '3fr 2fr' : '1fr', gap: '16px', marginTop: '24px' }}>
+              {/* SECTION D — 2 Columns (Margin Produk & Top Toko) */}
+              <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 mt-5 sm:mt-6">
                 <ProductMarginTable byProduct={data.byProduct} />
                 <TopCustomers byCustomer={data.byCustomer} />
               </div>
@@ -282,32 +309,47 @@ export default function SembakoLaporan() {
 // ═══════════════════════════════════════════════════════════════════════════
 function KPICard({ icon: Icon, label, value, badge, color, subtitle }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{
-      background: C.card, borderRadius: '14px', padding: '14px',
-      border: `1px solid ${C.border}`, borderLeft: `3px solid ${color}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-card rounded-2xl p-3 sm:p-4 border border-border flex flex-col justify-between overflow-hidden relative shadow-sm"
+      style={{ borderLeft: `3px solid ${color}` }}
+    >
+      <div className="flex items-center justify-between gap-1.5 mb-2">
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
           <Icon size={14} color={color} />
         </div>
         {badge && (
-          <span style={{
-            fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '6px',
-            background: `${color}18`, color,
-          }}>{badge}</span>
+          <span
+            className="text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-md shrink-0"
+            style={{ background: `${color}18`, color }}
+          >
+            {badge}
+          </span>
         )}
       </div>
-      <p style={{ fontSize: '10px', color: C.muted, fontWeight: 700, letterSpacing: '0.06em' }}>{label.toUpperCase()}</p>
-      <p style={{ fontSize: '18px', fontWeight: 800, color: C.text, fontFamily: 'DM Sans', lineHeight: 1.2 }}>{value}</p>
-      {subtitle && <p style={{ fontSize: '9px', color: C.muted, marginTop: '4px' }}>{subtitle}</p>}
+      <div>
+        <p className="text-[9px] sm:text-[10px] text-muted-foreground font-bold tracking-wider uppercase truncate">
+          {label}
+        </p>
+        <p className="text-[14px] sm:text-base md:text-lg font-black text-foreground font-mono tracking-tight leading-tight mt-0.5 truncate whitespace-nowrap">
+          {value}
+        </p>
+        {subtitle && (
+          <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-1 truncate">
+            {subtitle}
+          </p>
+        )}
+      </div>
     </motion.div>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Waterfall P&L
+// Waterfall P&L (Adaptive Mobile Stacking + Desktop Grid)
 // ═══════════════════════════════════════════════════════════════════════════
 function WaterfallPL({ summary: s }) {
+  const isMobile = useMediaQuery('(max-width: 639px)')
   const maxVal = Math.max(s.totalGrossRevenue || s.totalRevenue, 1)
   const rows = [
     { label: 'Penjualan Kotor (Gross)', value: s.totalGrossRevenue || s.totalRevenue, type: 'positive' },
@@ -323,36 +365,71 @@ function WaterfallPL({ summary: s }) {
   ]
 
   return (
-    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}` }}>
-      <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '16px' }}>LABA RUGI</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border shadow-sm">
+      <p className="text-[11px] font-black text-amber-500 tracking-wider uppercase mb-3 sm:mb-4">
+        LABA RUGI (WATERFALL P&L)
+      </p>
+      <div className="flex flex-col gap-2 sm:gap-1.5">
         {rows.map((row, i) => {
           const absVal = Math.abs(row.value)
           const barPct = maxVal > 0 ? Math.min((absVal / maxVal) * 100, 100) : 0
           const isNeg = row.type === 'negative'
           const isTot = row.type === 'total' || row.type === 'subtotal'
-          const barColor = isNeg ? C.red : row.value >= 0 ? C.green : C.red
+          const barColor = isNeg ? '#EF4444' : row.value >= 0 ? '#10B981' : '#EF4444'
+
+          if (isMobile) {
+            // ── Mobile Stacked Layout (Never clips bar or wraps awkwardly) ──
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "py-1.5 space-y-1",
+                  isTot ? "border-t border-border pt-2.5 font-bold" : ""
+                )}
+              >
+                <div className="flex items-center justify-between text-xs gap-2">
+                  <span className={cn("text-[11px] truncate", isTot ? "text-foreground font-black" : "text-muted-foreground font-medium")}>
+                    {isNeg ? '−' : row.type === 'positive' ? '+' : '='} {row.label}
+                  </span>
+                  <span className={cn(
+                    "text-xs font-mono font-bold shrink-0 whitespace-nowrap",
+                    isNeg ? "text-red-500" : row.value >= 0 ? (isTot ? "text-emerald-500 font-black text-sm" : "text-emerald-500") : "text-red-500"
+                  )}>
+                    {isNeg ? `- ${formatIDR(absVal)}` : formatIDR(absVal)}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden w-full">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${barPct}%`, backgroundColor: barColor, opacity: isTot ? 1 : 0.8 }}
+                  />
+                </div>
+              </div>
+            )
+          }
+
+          // ── Desktop Inline Grid Layout ──
           return (
-            <div key={i} style={{
-              display: 'grid', gridTemplateColumns: '120px 1fr 110px', alignItems: 'center', gap: '10px',
-              padding: isTot ? '8px 0' : '4px 0',
-              borderTop: isTot ? `1px solid ${C.border}` : 'none',
-            }}>
-              <span style={{ fontSize: '11px', color: isTot ? C.text : C.muted, fontWeight: isTot ? 800 : 600 }}>
+            <div
+              key={i}
+              className={cn(
+                "grid grid-cols-[140px_1fr_120px] items-center gap-3 py-1",
+                isTot ? "border-t border-border pt-2 font-bold" : ""
+              )}
+            >
+              <span className={cn("text-xs truncate", isTot ? "text-foreground font-black" : "text-muted-foreground font-medium")}>
                 {isNeg ? '−' : row.type === 'positive' ? '+' : '='} {row.label}
               </span>
-              <div style={{ height: '10px', background: C.input, borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{
-                  width: `${barPct}%`, height: '100%', borderRadius: '5px',
-                  background: barColor, opacity: isTot ? 1 : 0.7,
-                  transition: 'width 0.6s ease',
-                }} />
+              <div className="h-2 bg-muted/40 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${barPct}%`, backgroundColor: barColor, opacity: isTot ? 1 : 0.8 }}
+                />
               </div>
-              <span style={{
-                fontSize: isTot ? '14px' : '12px', fontWeight: isTot ? 900 : 600,
-                color: isNeg ? C.red : row.value >= 0 ? (isTot ? C.text : C.green) : C.red,
-                textAlign: 'right', fontFamily: isTot ? 'DM Sans' : 'inherit',
-              }}>
+              <span className={cn(
+                "text-xs font-mono font-bold text-right shrink-0 whitespace-nowrap",
+                isNeg ? "text-red-500" : row.value >= 0 ? (isTot ? "text-emerald-500 font-black text-sm" : "text-emerald-500") : "text-red-500"
+              )}>
                 {isNeg ? `- ${formatIDR(absVal)}` : formatIDR(absVal)}
               </span>
             </div>
@@ -364,9 +441,11 @@ function WaterfallPL({ summary: s }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Product Margin Table
+// Product Margin Table (Law of UX: Mobile Card List + Desktop Table)
 // ═══════════════════════════════════════════════════════════════════════════
 function ProductMarginTable({ byProduct }) {
+  const isMobile = useMediaQuery('(max-width: 639px)')
+
   const products = useMemo(() => {
     return Object.entries(byProduct).map(([name, d]) => {
       const profit = d.revenue - d.cogs
@@ -380,60 +459,184 @@ function ProductMarginTable({ byProduct }) {
   }), { revenue: 0, cogs: 0, profit: 0, qty: 0 }), [products])
   const totalMargin = totals.revenue > 0 ? (totals.profit / totals.revenue * 100) : 0
 
-  function marginColor(m) { return m >= 20 ? C.green : m >= 10 ? C.amber : C.red }
+  function getMarginBadgeClass(m) {
+    if (m >= 20) return "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+    if (m >= 10) return "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+    return "bg-red-50 text-red-700 border-red-200/80 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+  }
 
   return (
-    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}` }}>
-      <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '14px' }}>MARGIN PER PRODUK</p>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {['Produk', 'Qty', 'Revenue', 'HPP', 'Profit', 'Margin'].map(h => (
-                <th key={h} style={{ textAlign: h === 'Produk' ? 'left' : 'right', padding: '6px 4px', color: C.muted, fontWeight: 700, fontSize: '9px', letterSpacing: '0.06em' }}>{h}</th>
+    <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border shadow-sm">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <p className="text-[11px] font-black text-amber-500 tracking-wider uppercase">
+          MARGIN PER PRODUK
+        </p>
+        <span className="text-[10px] text-muted-foreground font-semibold">
+          {products.length} Item
+        </span>
+      </div>
+
+      {isMobile ? (
+        // ── Mobile View: Law of UX Chunked Product Cards (No horizontal split numbers) ──
+        <div className="space-y-2.5">
+          {products.map((p, i) => {
+            const rawName = p.name || 'Produk'
+            const matchPkg = rawName.match(/\[(\d+(?:\.\d+)?\s*[^\]]+)\]/)
+            const pkgTag = matchPkg ? matchPkg[1] : null
+            const cleanName = rawName.replace(/\s*\[\d+[^\]]+\]/g, '').trim()
+
+            return (
+              <div
+                key={i}
+                className="bg-muted/30 hover:bg-muted/50 rounded-xl p-3 border border-border/80 space-y-2 transition-colors"
+              >
+                {/* Header: Name + Qty + Margin Pill */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-bold text-foreground leading-snug">
+                        {cleanName}
+                      </span>
+                      {pkgTag && (
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/60 uppercase">
+                          {pkgTag}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Jumlah: <strong className="text-foreground">{p.qty}</strong> {p.unit}
+                    </p>
+                  </div>
+                  <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-md border shrink-0 font-mono", getMarginBadgeClass(p.margin))}>
+                    {p.margin.toFixed(1)}%
+                  </span>
+                </div>
+
+                {/* 3-Column Financial Grid (Never breaks 'Rp' and numbers) */}
+                <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-border/60 text-center">
+                  <div className="bg-background/80 rounded-lg p-1.5 border border-border/40">
+                    <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-wider">Omzet</p>
+                    <p className="text-[11px] font-bold text-foreground font-mono truncate whitespace-nowrap mt-0.5">
+                      {formatIDR(p.revenue)}
+                    </p>
+                  </div>
+                  <div className="bg-background/80 rounded-lg p-1.5 border border-border/40">
+                    <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-wider">Modal (HPP)</p>
+                    <p className="text-[11px] font-medium text-slate-500 font-mono truncate whitespace-nowrap mt-0.5">
+                      {formatIDR(p.cogs)}
+                    </p>
+                  </div>
+                  <div className="bg-background/80 rounded-lg p-1.5 border border-border/40">
+                    <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-wider">Laba</p>
+                    <p className={cn(
+                      "text-[11px] font-black font-mono truncate whitespace-nowrap mt-0.5",
+                      p.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
+                    )}>
+                      {formatIDR(p.profit)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Mobile Total Summary Card (Theme Adaptive & High Contrast) */}
+          {products.length > 0 && (
+            <div className="bg-slate-100 dark:bg-slate-800/90 rounded-xl p-3.5 border border-slate-300/80 dark:border-slate-700 shadow-sm space-y-2 mt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  TOTAL KESELURUHAN ({totals.qty} Item)
+                </span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 font-mono">
+                  {totalMargin.toFixed(1)}% Rata-rata
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 pt-1 text-center">
+                <div className="bg-white dark:bg-slate-900/80 rounded-lg p-1.5 border border-slate-200 dark:border-slate-700/80 shadow-xs">
+                  <p className="text-[8px] text-slate-500 dark:text-slate-400 font-bold uppercase">Total Omzet</p>
+                  <p className="text-[11px] font-black text-slate-900 dark:text-white font-mono truncate whitespace-nowrap mt-0.5">
+                    {formatIDR(totals.revenue)}
+                  </p>
+                </div>
+                <div className="bg-white dark:bg-slate-900/80 rounded-lg p-1.5 border border-slate-200 dark:border-slate-700/80 shadow-xs">
+                  <p className="text-[8px] text-slate-500 dark:text-slate-400 font-bold uppercase">Total HPP</p>
+                  <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 font-mono truncate whitespace-nowrap mt-0.5">
+                    {formatIDR(totals.cogs)}
+                  </p>
+                </div>
+                <div className="bg-white dark:bg-slate-900/80 rounded-lg p-1.5 border border-slate-200 dark:border-slate-700/80 shadow-xs">
+                  <p className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Total Laba</p>
+                  <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 font-mono truncate whitespace-nowrap mt-0.5">
+                    {formatIDR(totals.profit)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {products.length === 0 && (
+            <p className="text-muted-foreground text-xs text-center py-6">Tidak ada data produk</p>
+          )}
+        </div>
+      ) : (
+        // ── Desktop Table View (Spacious) ──
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-border text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
+                <th className="text-left py-2 px-2">Produk</th>
+                <th className="text-center py-2 px-2">Qty</th>
+                <th className="text-right py-2 px-2">Revenue</th>
+                <th className="text-right py-2 px-2">HPP</th>
+                <th className="text-right py-2 px-2">Profit</th>
+                <th className="text-right py-2 px-2">Margin</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {products.map((p, i) => (
+                <tr key={i} className="hover:bg-muted/30 transition-colors">
+                  <td className="py-2.5 px-2 font-semibold text-foreground">{p.name}</td>
+                  <td className="py-2.5 px-2 text-center text-muted-foreground whitespace-nowrap">{p.qty} {p.unit}</td>
+                  <td className="py-2.5 px-2 text-right text-foreground font-mono font-medium whitespace-nowrap">{formatIDR(p.revenue)}</td>
+                  <td className="py-2.5 px-2 text-right text-muted-foreground font-mono whitespace-nowrap">{formatIDR(p.cogs)}</td>
+                  <td className={cn("py-2.5 px-2 text-right font-mono font-bold whitespace-nowrap", p.profit >= 0 ? "text-emerald-500" : "text-red-500")}>
+                    {formatIDR(p.profit)}
+                  </td>
+                  <td className="py-2.5 px-2 text-right">
+                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md border font-mono", getMarginBadgeClass(p.margin))}>
+                      {p.margin.toFixed(1)}%
+                    </span>
+                  </td>
+                </tr>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p, i) => (
-              <tr key={i} style={{ borderBottom: `1px solid rgba(15,23,42,0.05)` }}>
-                <td style={{ padding: '7px 4px', color: C.text, fontWeight: 600 }}>{p.name}</td>
-                <td style={{ padding: '7px 4px', color: C.muted, textAlign: 'right' }}>{p.qty} {p.unit}</td>
-                <td style={{ padding: '7px 4px', color: C.text, textAlign: 'right' }}>{formatIDR(p.revenue)}</td>
-                <td style={{ padding: '7px 4px', color: C.muted, textAlign: 'right' }}>{formatIDR(p.cogs)}</td>
-                <td style={{ padding: '7px 4px', color: p.profit >= 0 ? C.green : C.red, textAlign: 'right', fontWeight: 600 }}>{formatIDR(p.profit)}</td>
-                <td style={{ padding: '7px 4px', textAlign: 'right' }}>
-                  <span style={{
-                    fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '5px',
-                    background: `${marginColor(p.margin)}18`, color: marginColor(p.margin),
-                  }}>{p.margin.toFixed(1)}%</span>
+              {/* Footer Total */}
+              <tr className="border-t-2 border-border font-bold bg-muted/20">
+                <td className="py-3 px-2 text-foreground font-black">TOTAL</td>
+                <td className="py-3 px-2 text-center text-foreground">{totals.qty}</td>
+                <td className="py-3 px-2 text-right text-foreground font-mono font-black">{formatIDR(totals.revenue)}</td>
+                <td className="py-3 px-2 text-right text-muted-foreground font-mono">{formatIDR(totals.cogs)}</td>
+                <td className={cn("py-3 px-2 text-right font-mono font-black", totals.profit >= 0 ? "text-emerald-500" : "text-red-500")}>
+                  {formatIDR(totals.profit)}
+                </td>
+                <td className="py-3 px-2 text-right">
+                  <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-md border font-mono", getMarginBadgeClass(totalMargin))}>
+                    {totalMargin.toFixed(1)}%
+                  </span>
                 </td>
               </tr>
-            ))}
-            {/* Footer total */}
-            <tr style={{ borderTop: `2px solid ${C.border}` }}>
-              <td style={{ padding: '8px 4px', color: C.text, fontWeight: 800 }}>TOTAL</td>
-              <td style={{ padding: '8px 4px', color: C.muted, textAlign: 'right', fontWeight: 700 }}>{totals.qty}</td>
-              <td style={{ padding: '8px 4px', color: C.text, textAlign: 'right', fontWeight: 800 }}>{formatIDR(totals.revenue)}</td>
-              <td style={{ padding: '8px 4px', color: C.muted, textAlign: 'right', fontWeight: 700 }}>{formatIDR(totals.cogs)}</td>
-              <td style={{ padding: '8px 4px', color: totals.profit >= 0 ? C.green : C.red, textAlign: 'right', fontWeight: 800 }}>{formatIDR(totals.profit)}</td>
-              <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                <span style={{
-                  fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '5px',
-                  background: `${marginColor(totalMargin)}18`, color: marginColor(totalMargin),
-                }}>{totalMargin.toFixed(1)}%</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        {products.length === 0 && <p style={{ color: C.muted, fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>Tidak ada data produk</p>}
-      </div>
+            </tbody>
+          </table>
+          {products.length === 0 && (
+            <p className="text-muted-foreground text-xs text-center py-6">Tidak ada data produk</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Top Customers
+// Top Customers Ranking
 // ═══════════════════════════════════════════════════════════════════════════
 function TopCustomers({ byCustomer }) {
   const customers = useMemo(() =>
@@ -442,32 +645,48 @@ function TopCustomers({ byCustomer }) {
     , [byCustomer])
 
   return (
-    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}` }}>
-      <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '14px' }}>TOP TOKO</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border shadow-sm">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <p className="text-[11px] font-black text-amber-500 tracking-wider uppercase">
+          TOP TOKO / PELANGGAN
+        </p>
+        <span className="text-[10px] text-muted-foreground font-semibold">
+          10 Terbesar
+        </span>
+      </div>
+      <div className="flex flex-col gap-2">
         {customers.map((c, i) => (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '8px 10px', background: C.input, borderRadius: '10px',
-          }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  width: '20px', height: '20px', borderRadius: '6px',
-                  background: i < 3 ? 'rgba(15,23,42,0.12)' : 'transparent',
-                  color: i < 3 ? C.accent : C.muted,
-                  fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{i + 1}</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-              </div>
+          <div
+            key={i}
+            className="flex items-center justify-between p-2.5 bg-muted/40 rounded-xl border border-border/50 gap-2"
+          >
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <span className={cn(
+                "w-6 h-6 rounded-lg text-[10px] font-black flex items-center justify-center shrink-0",
+                i === 0 ? "bg-amber-500/20 text-amber-600 border border-amber-500/30" :
+                i === 1 ? "bg-slate-300/30 text-slate-700 dark:text-slate-200 border border-slate-300/40" :
+                i === 2 ? "bg-amber-700/15 text-amber-800 dark:text-amber-400 border border-amber-700/25" :
+                "bg-muted text-muted-foreground"
+              )}>
+                {i + 1}
+              </span>
+              <span className="text-xs font-bold text-foreground truncate">
+                {c.name}
+              </span>
             </div>
-            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(c.revenue)}</p>
-              <p style={{ fontSize: '9px', color: C.muted }}>{c.count} invoice</p>
+            <div className="text-right shrink-0">
+              <p className="text-xs font-bold text-foreground font-mono whitespace-nowrap">
+                {formatIDR(c.revenue)}
+              </p>
+              <p className="text-[9px] text-muted-foreground">
+                {c.count} invoice
+              </p>
             </div>
           </div>
         ))}
-        {customers.length === 0 && <p style={{ color: C.muted, fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>Tidak ada data</p>}
+        {customers.length === 0 && (
+          <p className="text-muted-foreground text-xs text-center py-6">Tidak ada data transaksi</p>
+        )}
       </div>
     </div>
   )
@@ -492,33 +711,45 @@ function ExpensePie({ expenseByCategory, summary: s, isDesktop }) {
   if (pieData.length === 0) return null
 
   return (
-    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}`, marginTop: '24px' }}>
-      <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '14px' }}>BREAKDOWN PENGELUARAN</p>
-      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr', gap: '20px', alignItems: 'center' }}>
-        <div style={{ height: '240px', width: '100%', overflow: 'hidden' }}>
+    <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border shadow-sm mt-5 sm:mt-6">
+      <p className="text-[11px] font-black text-amber-500 tracking-wider uppercase mb-3 sm:mb-4">
+        BREAKDOWN PENGELUARAN BISNIS
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-center">
+        <div className="h-[200px] sm:h-[230px] w-full overflow-hidden flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={45} paddingAngle={2} strokeWidth={0}>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={isDesktop ? 85 : 75}
+                innerRadius={isDesktop ? 45 : 38}
+                paddingAngle={2}
+                strokeWidth={0}
+              >
                 {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
               <Tooltip
-                contentStyle={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '10px', fontSize: '12px', color: C.text }}
-                itemStyle={{ color: C.text }}
+                contentStyle={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: '11px', color: '#FFFFFF' }}
+                itemStyle={{ color: '#FFFFFF' }}
                 formatter={(val) => [formatIDR(val), 'Jumlah']}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="flex flex-col gap-2">
           {pieData.map((d, i) => {
             const total = pieData.reduce((s, x) => s + x.value, 0)
             const pct = total > 0 ? (d.value / total * 100).toFixed(1) : 0
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
-                <span style={{ fontSize: '11px', color: C.muted, flex: 1 }}>{d.name}</span>
-                <span style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>{formatIDR(d.value)}</span>
-                <span style={{ fontSize: '10px', color: C.muted, fontWeight: 600, width: '36px', textAlign: 'right' }}>{pct}%</span>
+              <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-border/30 last:border-0">
+                <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                <span className="text-muted-foreground flex-1 truncate text-[11px]">{d.name}</span>
+                <span className="text-foreground font-bold font-mono text-[11px] shrink-0 whitespace-nowrap">{formatIDR(d.value)}</span>
+                <span className="text-muted-foreground font-semibold text-[10px] w-10 text-right shrink-0 font-mono">{pct}%</span>
               </div>
             )
           })}
@@ -534,23 +765,24 @@ function ExpensePie({ expenseByCategory, summary: s, isDesktop }) {
 function InvoiceCollapsible({ sales }) {
   const [open, setOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
+  const isMobile = useMediaQuery('(max-width: 639px)')
   const filtered = filterStatus ? sales.filter(s => s.payment_status === filterStatus) : sales
 
   return (
-    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}`, marginTop: '24px' }}>
-      <button onClick={() => setOpen(v => !v)} style={{
-        background: 'transparent', border: 'none', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
-      }}>
-        <span style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em' }}>
+    <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border shadow-sm mt-5 sm:mt-6">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center justify-between w-full bg-transparent border-0 cursor-pointer p-0 select-none text-left"
+      >
+        <span className="text-[11px] font-black text-amber-500 tracking-wider uppercase">
           SEMUA INVOICE PERIODE INI ({sales.length})
         </span>
-        {open ? <ChevronUp size={16} color={C.muted} /> : <ChevronDown size={16} color={C.muted} />}
+        {open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
       </button>
 
       {open && (
-        <div style={{ marginTop: '14px' }}>
-          <div style={{ marginBottom: '10px' }}>
+        <div className="mt-3.5 space-y-3">
+          <div className="w-full sm:w-44">
             <CustomSelect
               value={filterStatus}
               onChange={setFilterStatus}
@@ -561,39 +793,80 @@ function InvoiceCollapsible({ sales }) {
                 { value: 'belum_lunas', label: 'Belum Lunas' },
               ]}
               placeholder="Semua Status"
-              style={{ width: 'auto', minWidth: '150px' }}
             />
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                  {['No Invoice', 'Toko', 'Tanggal', 'Total', 'HPP', 'Profit', 'Status'].map(h => (
-                    <th key={h} style={{ textAlign: h === 'No Invoice' || h === 'Toko' ? 'left' : 'right', padding: '6px 4px', color: C.muted, fontWeight: 700, fontSize: '9px', letterSpacing: '0.06em' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(s => {
-                  const st = STATUS_STYLE[s.payment_status] || STATUS_STYLE.belum_lunas
-                  return (
-                    <tr key={s.id} style={{ borderBottom: `1px solid rgba(15,23,42,0.05)` }}>
-                      <td style={{ padding: '7px 4px', color: C.text, fontWeight: 600 }}>{s.invoice_number}</td>
-                      <td style={{ padding: '7px 4px', color: C.muted }}>{s.customer_name || '-'}</td>
-                      <td style={{ padding: '7px 4px', color: C.muted, textAlign: 'right' }}>{fmtDate(s.transaction_date)}</td>
-                      <td style={{ padding: '7px 4px', color: C.text, textAlign: 'right', fontWeight: 600 }}>{formatIDR(s.total_amount)}</td>
-                      <td style={{ padding: '7px 4px', color: C.muted, textAlign: 'right' }}>{formatIDR(s.total_cogs)}</td>
-                      <td style={{ padding: '7px 4px', color: s.net_profit >= 0 ? C.green : C.red, textAlign: 'right', fontWeight: 600 }}>{formatIDR(s.net_profit)}</td>
-                      <td style={{ padding: '7px 4px', textAlign: 'right' }}>
-                        <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '5px', background: st.bg, color: st.color }}>{st.label}</span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-            {filtered.length === 0 && <p style={{ color: C.muted, fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>Tidak ada invoice</p>}
-          </div>
+
+          {isMobile ? (
+            // ── Mobile Card List for Invoices ──
+            <div className="space-y-2">
+              {filtered.map(s => {
+                const st = STATUS_STYLE[s.payment_status] || STATUS_STYLE.belum_lunas
+                return (
+                  <div key={s.id} className="bg-muted/40 rounded-xl p-3 border border-border/60 space-y-1.5">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <p className="text-xs font-bold text-foreground font-mono">{s.invoice_number}</p>
+                        <p className="text-[11px] text-muted-foreground">{s.customer_name || 'Pelanggan'}</p>
+                      </div>
+                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md shrink-0" style={{ background: st.bg, color: st.color }}>
+                        {st.label}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs pt-1 border-t border-border/40 font-mono">
+                      <span className="text-[10px] text-muted-foreground">{fmtDate(s.transaction_date)}</span>
+                      <div className="text-right">
+                        <span className="text-xs font-bold text-foreground">{formatIDR(s.total_amount)}</span>
+                        <span className={cn("text-[10px] ml-1.5 font-bold", s.net_profit >= 0 ? "text-emerald-500" : "text-red-500")}>
+                          (Laba: {formatIDR(s.net_profit)})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              {filtered.length === 0 && <p className="text-muted-foreground text-xs text-center py-4">Tidak ada invoice</p>}
+            </div>
+          ) : (
+            // ── Desktop Table for Invoices ──
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-border text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <th className="text-left py-2 px-2">No Invoice</th>
+                    <th className="text-left py-2 px-2">Toko</th>
+                    <th className="text-center py-2 px-2">Tanggal</th>
+                    <th className="text-right py-2 px-2">Total</th>
+                    <th className="text-right py-2 px-2">HPP</th>
+                    <th className="text-right py-2 px-2">Profit</th>
+                    <th className="text-right py-2 px-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {filtered.map(s => {
+                    const st = STATUS_STYLE[s.payment_status] || STATUS_STYLE.belum_lunas
+                    return (
+                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-2.5 px-2 font-mono font-bold text-foreground">{s.invoice_number}</td>
+                        <td className="py-2.5 px-2 text-muted-foreground">{s.customer_name || '-'}</td>
+                        <td className="py-2.5 px-2 text-center text-muted-foreground whitespace-nowrap">{fmtDate(s.transaction_date)}</td>
+                        <td className="py-2.5 px-2 text-right font-mono font-bold text-foreground whitespace-nowrap">{formatIDR(s.total_amount)}</td>
+                        <td className="py-2.5 px-2 text-right font-mono text-muted-foreground whitespace-nowrap">{formatIDR(s.total_cogs)}</td>
+                        <td className={cn("py-2.5 px-2 text-right font-mono font-bold whitespace-nowrap", s.net_profit >= 0 ? "text-emerald-500" : "text-red-500")}>
+                          {formatIDR(s.net_profit)}
+                        </td>
+                        <td className="py-2.5 px-2 text-right">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-md" style={{ background: st.bg, color: st.color }}>
+                            {st.label}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              {filtered.length === 0 && <p className="text-muted-foreground text-xs text-center py-4">Tidak ada invoice</p>}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -603,11 +876,11 @@ function InvoiceCollapsible({ sales }) {
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
-    <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px', marginBottom: '20px' }}>
-        {[1, 2, 3, 4].map(i => <div key={i} style={{ background: C.card, borderRadius: '14px', height: '100px', border: `1px solid ${C.border}`, opacity: 0.5 }} />)}
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map(i => <div key={i} className="bg-card rounded-2xl h-24 border border-border animate-pulse" />)}
       </div>
-      <div style={{ background: C.card, borderRadius: '16px', height: '250px', border: `1px solid ${C.border}`, opacity: 0.4 }} />
+      <div className="bg-card rounded-2xl h-64 border border-border animate-pulse" />
     </div>
   )
 }
@@ -625,78 +898,89 @@ function WorkingCapitalCard({ summary: s }) {
   const netWorkingCapital = totalAssets - payables
 
   return (
-    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '16px' }}>LIKUIDITAS & MODAL BEREDAR</p>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '16px' }}>💵</span>
-            <div>
-              <p style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>Cash On Hand</p>
-              <p style={{ fontSize: '9px', color: C.muted }}>Uang tunai di kasir/tangan</p>
+    <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border shadow-sm flex flex-col justify-between h-full">
+      <div>
+        <p className="text-[11px] font-black text-amber-500 tracking-wider uppercase mb-3 sm:mb-4">
+          LIKUIDITAS & MODAL BEREDAR
+        </p>
+        
+        <div className="flex flex-col gap-2.5 text-xs">
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm">💵</span>
+              <div className="truncate">
+                <p className="text-foreground font-bold truncate">Cash On Hand</p>
+                <p className="text-[9px] text-muted-foreground truncate">Uang kasir/tangan</p>
+              </div>
             </div>
+            <span className="font-mono font-bold text-foreground shrink-0 whitespace-nowrap">{formatIDR(cashOnHand)}</span>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(cashOnHand)}</span>
-        </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '16px' }}>🏦</span>
-            <div>
-              <p style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>Bank Balance (System)</p>
-              <p style={{ fontSize: '9px', color: C.muted }}>Uang di rekening bank tercatat</p>
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm">🏦</span>
+              <div className="truncate">
+                <p className="text-foreground font-bold truncate">Bank Balance</p>
+                <p className="text-[9px] text-muted-foreground truncate">Rekening bank tercatat</p>
+              </div>
             </div>
+            <span className="font-mono font-bold text-foreground shrink-0 whitespace-nowrap">{formatIDR(bankBalance)}</span>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(bankBalance)}</span>
-        </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '16px' }}>📦</span>
-            <div>
-              <p style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>Persediaan (Stok Gudang)</p>
-              <p style={{ fontSize: '9px', color: C.muted }}>Nilai modal barang di gudang</p>
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm">📦</span>
+              <div className="truncate">
+                <p className="text-foreground font-bold truncate">Persediaan Gudang</p>
+                <p className="text-[9px] text-muted-foreground truncate">Modal barang fisik</p>
+              </div>
             </div>
+            <span className="font-mono font-bold text-foreground shrink-0 whitespace-nowrap">{formatIDR(stockValue)}</span>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(stockValue)}</span>
-        </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '16px' }}>🧾</span>
-            <div>
-              <p style={{ fontSize: '11px', color: C.text, fontWeight: 700 }}>Piutang Dagang (Toko)</p>
-              <p style={{ fontSize: '9px', color: C.muted }}>Tagihan belum dilunasi toko</p>
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm">🧾</span>
+              <div className="truncate">
+                <p className="text-foreground font-bold truncate">Piutang Dagang</p>
+                <p className="text-[9px] text-muted-foreground truncate">Tagihan belum lunas toko</p>
+              </div>
             </div>
+            <span className="font-mono font-bold text-foreground shrink-0 whitespace-nowrap">{formatIDR(receivables)}</span>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(receivables)}</span>
-        </div>
 
-        <div style={{ height: '1px', background: C.border, margin: '4px 0' }} />
+          <div className="h-px bg-border my-1" />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: C.text }}>TOTAL ASET LANCAR</span>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: C.text }}>{formatIDR(totalAssets)}</span>
-        </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-black text-foreground">TOTAL ASET LANCAR</span>
+            <span className="font-mono font-black text-foreground shrink-0 whitespace-nowrap">{formatIDR(totalAssets)}</span>
+          </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '16px' }}>🤝</span>
-            <div>
-              <p style={{ fontSize: '11px', color: C.red, fontWeight: 700 }}>Hutang Dagang (Supplier)</p>
-              <p style={{ fontSize: '9px', color: C.muted }}>Kewajiban belum dibayar ke supplier</p>
+          <div className="flex justify-between items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm">🤝</span>
+              <div className="truncate">
+                <p className="text-red-500 font-bold truncate">Hutang Dagang</p>
+                <p className="text-[9px] text-muted-foreground truncate">Kewajiban supplier</p>
+              </div>
             </div>
+            <span className="font-mono font-bold text-red-500 shrink-0 whitespace-nowrap">{formatIDR(payables)}</span>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: C.red }}>{formatIDR(payables)}</span>
         </div>
       </div>
 
-      <div style={{ height: '1.5px', background: C.accent, opacity: 0.3, margin: '14px 0' }} />
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '11px', fontWeight: 800, color: C.text }}>MODAL KERJA BERSIH (NET)</span>
-        <span style={{ fontSize: '15px', fontWeight: 900, color: C.green }}>{formatIDR(netWorkingCapital)}</span>
+      <div className="mt-4 pt-3 border-t border-border/80">
+        <div className="bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 rounded-xl p-3 flex justify-between items-center">
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              MODAL KERJA BERSIH (NET)
+            </p>
+            <p className="text-[10px] text-muted-foreground font-medium">Aset Lancar − Hutang</p>
+          </div>
+          <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 font-mono shrink-0 whitespace-nowrap">
+            {formatIDR(netWorkingCapital)}
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -719,103 +1003,101 @@ function CashFlowStatement({ summary: s }) {
   const endingCash = s.endingCashOnHand + s.endingBankBalance
 
   return (
-    <div style={{ background: C.card, borderRadius: '16px', padding: '20px', border: `1px solid ${C.border}`, marginTop: '24px' }}>
-      <p style={{ fontSize: '11px', fontWeight: 800, color: C.accent, letterSpacing: '0.1em', marginBottom: '16px' }}>LAPORAN ARUS KAS (CASH FLOW)</p>
+    <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border shadow-sm mt-5 sm:mt-6">
+      <p className="text-[11px] font-black text-amber-500 tracking-wider uppercase mb-3 sm:mb-4">
+        LAPORAN ARUS KAS (CASH FLOW STATEMENT)
+      </p>
 
-      {/* Warning Known Limitation */}
-      <div style={{ 
-        background: 'rgba(15,23,42,0.05)', 
-        border: '1px solid rgba(15,23,42,0.12)', 
-        borderRadius: '8px', 
-        padding: '10px 12px', 
-        marginBottom: '16px',
-        fontSize: '10px',
-        color: '#475569',
-        lineHeight: '1.4'
-      }}>
-        <strong>💡 Batasan Sistem:</strong> Saldo Kas Awal dihitung berdasarkan riwayat transaksi yang tercatat di sistem aplikasi dan belum memperhitungkan saldo kas awal fisik atau penyesuaian manual luar sistem.
+      {/* Warning Limitation */}
+      <div className="bg-muted/40 border border-border/80 rounded-xl p-2.5 mb-3.5 text-[10px] text-muted-foreground leading-relaxed">
+        <strong>💡 Catatan Sistem:</strong> Saldo Kas Awal dihitung berdasarkan catatan riwayat transaksi sistem aplikasi.
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="flex flex-col gap-2 text-xs">
         {/* Opening Balance */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px dashed ${C.border}` }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: C.text }}>SALDO KAS AWAL</span>
-          <span style={{ fontSize: '12px', fontWeight: 800, color: C.text }}>{formatIDR(openingCash)}</span>
+        <div className="flex justify-between items-center py-1.5 border-b border-dashed border-border">
+          <span className="font-bold text-foreground text-xs">SALDO KAS AWAL</span>
+          <span className="font-mono font-black text-foreground text-xs shrink-0 whitespace-nowrap">{formatIDR(openingCash)}</span>
         </div>
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '12px', fontSize: '9px', color: C.muted, marginTop: '-4px' }}>
-          <span>Tunai: {formatIDR(s.openingCashOnHand)}</span>
-          <span>Bank: {formatIDR(s.openingBankBalance)}</span>
+        <div className="flex gap-3 pl-2.5 text-[10px] text-muted-foreground -mt-1 mb-1">
+          <span>Tunai: <strong className="text-foreground">{formatIDR(s.openingCashOnHand)}</strong></span>
+          <span>Bank: <strong className="text-foreground">{formatIDR(s.openingBankBalance)}</strong></span>
         </div>
 
         {/* Cash In */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', marginTop: '4px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: C.green }}>+ Penerimaan Pembayaran (Cash In)</span>
-          <span style={{ fontSize: '12px', fontWeight: 800, color: C.green }}>{formatIDR(cashIn)}</span>
+        <div className="flex justify-between items-center py-1 text-emerald-600 dark:text-emerald-400">
+          <span className="font-bold text-xs">+ Penerimaan Pembayaran (Cash In)</span>
+          <span className="font-mono font-black text-xs shrink-0 whitespace-nowrap">{formatIDR(cashIn)}</span>
         </div>
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '12px', fontSize: '9px', color: C.muted, marginTop: '-6px', marginBottom: '4px' }}>
-          <span>Tunai: {formatIDR(s.cashInPeriodTunai)}</span>
-          <span>Bank: {formatIDR(s.cashInPeriodTransfer)}</span>
+        <div className="flex gap-3 pl-2.5 text-[10px] text-muted-foreground -mt-1 mb-1.5">
+          <span>Tunai: <strong className="text-foreground">{formatIDR(s.cashInPeriodTunai)}</strong></span>
+          <span>Bank: <strong className="text-foreground">{formatIDR(s.cashInPeriodTransfer)}</strong></span>
         </div>
 
-        {/* Cash Out Flow (Penjualan, Supplier, Gaji, Ops, Prive, Delivery) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '12px', borderLeft: `2px solid ${C.border}` }}>
+        {/* Cash Out Flow */}
+        <div className="flex flex-col gap-1.5 pl-2.5 border-l-2 border-border my-1">
           {/* Supplier */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text }}>
-            <span style={{ color: C.muted }}>− Pembelian Stok & Bayar Supplier</span>
-            <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(supplierOut)}</span>
+          <div className="flex justify-between items-center text-xs gap-2">
+            <span className="text-muted-foreground truncate">− Pembelian Stok & Bayar Supplier</span>
+            <span className="font-mono font-bold text-red-500 shrink-0 whitespace-nowrap">{formatIDR(supplierOut)}</span>
           </div>
-          <div style={{ display: 'flex', gap: '12px', paddingLeft: '10px', fontSize: '9px', color: C.muted, marginTop: '-4px', marginBottom: '2px' }}>
+          <div className="flex gap-3 pl-2 text-[9px] text-muted-foreground -mt-0.5 mb-1">
             <span>Tunai: {formatIDR(s.supplierOutPeriodTunai)}</span>
             <span>Bank: {formatIDR(s.supplierOutPeriodTransfer)}</span>
           </div>
 
           {/* Gaji */}
           {payrollOut > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
-              <span style={{ color: C.muted }}>− Gaji Pegawai Terbayar (Asumsi Tunai)</span>
-              <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(payrollOut)}</span>
+            <div className="flex justify-between items-center text-xs gap-2">
+              <span className="text-muted-foreground truncate">− Gaji Pegawai Terbayar (Tunai)</span>
+              <span className="font-mono font-bold text-red-500 shrink-0 whitespace-nowrap">{formatIDR(payrollOut)}</span>
             </div>
           )}
 
-          {/* Biaya Kirim / Pengiriman */}
+          {/* Biaya Kirim */}
           {deliveryOut > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
-              <span style={{ color: C.muted }}>− Biaya Pengiriman & Armada (Asumsi Tunai)</span>
-              <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(deliveryOut)}</span>
+            <div className="flex justify-between items-center text-xs gap-2">
+              <span className="text-muted-foreground truncate">− Biaya Pengiriman & Armada (Tunai)</span>
+              <span className="font-mono font-bold text-red-500 shrink-0 whitespace-nowrap">{formatIDR(deliveryOut)}</span>
             </div>
           )}
 
           {/* Operasional */}
           {opsOut > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
-              <span style={{ color: C.muted }}>− Biaya Operasional Toko (Asumsi Tunai)</span>
-              <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(opsOut)}</span>
+            <div className="flex justify-between items-center text-xs gap-2">
+              <span className="text-muted-foreground truncate">− Biaya Operasional Toko (Tunai)</span>
+              <span className="font-mono font-bold text-red-500 shrink-0 whitespace-nowrap">{formatIDR(opsOut)}</span>
             </div>
           )}
 
           {/* Prive */}
           {priveOut > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.text, marginBottom: '4px' }}>
-              <span style={{ color: C.muted }}>− Penarikan Pemilik (Prive)</span>
-              <span style={{ fontWeight: 600, color: C.red }}>{formatIDR(priveOut)}</span>
+            <div className="flex justify-between items-center text-xs gap-2">
+              <span className="text-muted-foreground truncate">− Penarikan Pemilik (Prive)</span>
+              <span className="font-mono font-bold text-red-500 shrink-0 whitespace-nowrap">{formatIDR(priveOut)}</span>
             </div>
           )}
         </div>
 
         {/* Total Cash Out Summary */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', marginTop: '4px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: C.red }}>= Total Pengeluaran Kas (Cash Out)</span>
-          <span style={{ fontSize: '12px', fontWeight: 800, color: C.red }}>− {formatIDR(totalOut)}</span>
+        <div className="flex justify-between items-center py-1.5 border-t border-border mt-1 text-red-500">
+          <span className="font-bold text-xs">= Total Pengeluaran Kas (Cash Out)</span>
+          <span className="font-mono font-black text-xs shrink-0 whitespace-nowrap">− {formatIDR(totalOut)}</span>
         </div>
 
-        {/* Ending Balance */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: `2px solid ${C.border}`, marginTop: '8px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 900, color: C.text }}>SALDO KAS AKHIR</span>
-          <span style={{ fontSize: '14px', fontWeight: 900, color: C.accent }}>{formatIDR(endingCash)}</span>
-        </div>
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '12px', fontSize: '9px', color: C.muted, marginTop: '-6px' }}>
-          <span>Tunai (Cash On Hand): {formatIDR(s.endingCashOnHand)}</span>
-          <span>Bank (System Balance): {formatIDR(s.endingBankBalance)}</span>
+        {/* Ending Balance Box */}
+        <div className="mt-2 pt-2 border-t-2 border-border">
+          <div className="flex justify-between items-center bg-muted/40 rounded-xl p-3 border border-border">
+            <div>
+              <p className="text-[10px] font-black uppercase text-foreground tracking-wider">SALDO KAS AKHIR</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">
+                Tunai: {formatIDR(s.endingCashOnHand)} • Bank: {formatIDR(s.endingBankBalance)}
+              </p>
+            </div>
+            <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 font-mono shrink-0 whitespace-nowrap">
+              {formatIDR(endingCash)}
+            </span>
+          </div>
         </div>
       </div>
     </div>

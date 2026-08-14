@@ -80,10 +80,20 @@ export function toWaLink(phone, encodedText) {
   return encodedText ? `${base}&text=${encodedText}` : base
 }
 
-export function fmtDate(d) {
-  if (!d) return '-'
-  try { return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }
-  catch { return '-' }
+export function fmtDate(d, createdAt) {
+  if (!d && !createdAt) return '-'
+  try {
+    const mainDate = new Date(d || createdAt)
+    const dateStr = mainDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    const timeSource = createdAt ? new Date(createdAt) : (String(d).includes('T') || String(d).includes(':') ? mainDate : null)
+    if (timeSource && !isNaN(timeSource.getTime())) {
+      const timeStr = timeSource.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':')
+      return `${dateStr} · ${timeStr}`
+    }
+    return dateStr
+  } catch {
+    return '-'
+  }
 }
 
 export function generateWAMessage(sale, tenant) {

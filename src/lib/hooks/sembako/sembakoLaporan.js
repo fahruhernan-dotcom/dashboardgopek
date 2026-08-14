@@ -143,6 +143,11 @@ export const useSembakoLaporan = (startDate, endDate) => {
     staleTime: STALE_5M,
     queryFn: async () => {
       try {
+        const startDay = startDate?.slice(0, 10)
+        const endDay = endDate?.slice(0, 10)
+        const startFilter = `${startDay}T00:00:00.000Z`
+        const endFilter = `${endDay}T23:59:59.999Z`
+
         const [
           salesRes,
           expensesRes,
@@ -162,18 +167,18 @@ export const useSembakoLaporan = (startDate, endDate) => {
             .select('*, sembako_sale_items(*), sembako_payments(*), sembako_customers(customer_name, customer_type)')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false)
-            .gte('transaction_date', startDate)
-            .lte('transaction_date', endDate),
+            .gte('transaction_date', startDay)
+            .lte('transaction_date', endFilter),
           // Period Expenses
           supabase.from('sembako_expenses')
             .select('*').eq('tenant_id', tenant.id).eq('is_deleted', false)
-            .gte('expense_date', startDate).lte('expense_date', endDate),
+            .gte('expense_date', startDay).lte('expense_date', endFilter),
           // Period Payroll
           supabase.from('sembako_payroll')
             .select('*, sembako_employees(full_name, role)')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false)
-            .gte('period_date', startDate).lte('period_date', endDate),
+            .gte('period_date', startDay).lte('period_date', endFilter),
           // All Stock Batches (active & historical)
           supabase.from('sembako_stock_batches')
             .select('*, sembako_suppliers(supplier_name)')
@@ -184,8 +189,8 @@ export const useSembakoLaporan = (startDate, endDate) => {
             .select('*, sembako_suppliers(supplier_name)')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false)
-            .gte('payment_date', startDate)
-            .lte('payment_date', endDate),
+            .gte('payment_date', startDay)
+            .lte('payment_date', endFilter),
           // All Returns
           supabase.from('sembako_returns')
             .select('*')
@@ -193,27 +198,27 @@ export const useSembakoLaporan = (startDate, endDate) => {
             .eq('is_deleted', false),
           // All Payments (historical + period)
           supabase.from('sembako_payments')
-            .select('amount, payment_method, payment_date, created_at')
+            .select('amount, payment_method, payment_date, sale_id, created_at')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false),
           // All Supplier Payments (historical + period)
           supabase.from('sembako_supplier_payments')
-            .select('amount, payment_method, payment_date, supplier_id')
+            .select('amount, payment_method, payment_date, supplier_id, created_at')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false),
           // All Expenses (historical + period)
           supabase.from('sembako_expenses')
-            .select('amount, category, expense_date')
+            .select('amount, category, expense_date, created_at')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false),
           // All Payroll (historical + period)
           supabase.from('sembako_payroll')
-            .select('total_pay, payment_status, period_date')
+            .select('total_pay, payment_status, period_date, created_at')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false),
-          // All Sales (for accounts receivable)
+          // All Sales (for accounts receivable & historical cash)
           supabase.from('sembako_sales')
-            .select('remaining_amount')
+            .select('id, total_amount, paid_amount, payment_method, payment_status, transaction_date, remaining_amount, is_deleted, created_at')
             .eq('tenant_id', tenant.id)
             .eq('is_deleted', false),
           // All Suppliers for ID to Name mapping
@@ -256,8 +261,8 @@ export const useSembakoLaporan = (startDate, endDate) => {
         const allPayroll = allPayrollRes.data || []
         const allSales = allSalesRes.data || []
 
-        const pl = reportUtils.calculatePL(sales, expenses, payroll, batches, supplierPayments, startDate, endDate)
-        const cf = reportUtils.calculateCashFlow(sales, allPayments, allSupplierPayments, allExpenses, allPayroll, startDate, endDate)
+        const pl = reportUtils.calculatePL(sales, expenses, payroll, batches, supplierPayments, startDay, endDay)
+        const cf = reportUtils.calculateCashFlow(sales, allPayments, allSupplierPayments, allExpenses, allPayroll, startDay, endDay, allSales)
         const wc = reportUtils.calculateWorkingCapital(allSales, batches, allSupplierPayments)
         const rp = reportUtils.calculateRealizedProfit(sales, pl.totalExpenses, pl.totalPayroll)
 

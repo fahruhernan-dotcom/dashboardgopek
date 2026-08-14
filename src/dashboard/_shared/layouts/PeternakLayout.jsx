@@ -12,6 +12,8 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import TopBar from '../components/TopBar'
 import InstallAppPrompt from '@/components/InstallAppPrompt'
 
+import { useEdgeSwipeSidebar } from '@/lib/hooks/useEdgeSwipeSidebar'
+
 export default function PeternakLayout() {
   const { _profile, loading, tenant, isSuperadmin } = useAuth()
   const location = useLocation()
@@ -20,6 +22,14 @@ export default function PeternakLayout() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [_rightAction, setRightAction] = useState(null)
+
+  // Global edge-swipe from left screen edge to center to open sidebar
+  useEdgeSwipeSidebar({
+    isOpen: sidebarOpen,
+    onOpen: () => setSidebarOpen(true),
+    onClose: () => setSidebarOpen(false),
+    enabled: !isDesktop
+  })
 
   // Reset rightAction on every navigation
   useEffect(() => {
@@ -38,23 +48,6 @@ export default function PeternakLayout() {
     }
   }, [])
 
-  // Swipe-right-from-left-edge to open sidebar
-  const swipeStartX = useRef(null)
-  const handleTouchStart = (e) => {
-    swipeStartX.current = e.touches[0].clientX
-  }
-  const handleTouchEnd = (e) => {
-    if (swipeStartX.current === null) return
-    const dx = e.changedTouches[0].clientX - swipeStartX.current
-    
-    if (!sidebarOpen && swipeStartX.current < 40 && dx > 60) {
-      setSidebarOpen(true)
-    } else if (sidebarOpen && dx < -50) {
-      setSidebarOpen(false)
-    }
-    swipeStartX.current = null
-  }
-
   // Visible loading state — must not return null while AppContentLayout's
   // overlay is between transitions, otherwise root renders only <Toaster />.
   if (loading) {
@@ -69,8 +62,6 @@ export default function PeternakLayout() {
     if (!isDesktop) {
       return (
         <div 
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
           className="bg-[#FAFAFA] dark:bg-[#06090F]"
           style={{
           minHeight: '100vh',

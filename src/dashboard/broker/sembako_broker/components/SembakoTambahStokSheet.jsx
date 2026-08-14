@@ -82,6 +82,7 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
     product_id:    preselectedProductId || '',
     supplier_id:   '',
     selectedUnit:  '',
+    priceMode:     'per_slop',
     qty_masuk:     '',
     buy_price:     '',
     sell_price:    '',
@@ -162,7 +163,76 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
     } catch { /* handled by hook */ }
   }
 
-  const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
+  const set = (key, val) => {
+    if (key === 'priceMode') {
+      const prevMode = form.priceMode || 'per_slop'
+      const newMode = val
+      const factor = currentFactor
+      const curBuy = Number(String(form.buy_price || '').replace(/\D/g, ''))
+      const curSell = Number(String(form.sell_price || '').replace(/\D/g, ''))
+
+      let newBuy = form.buy_price
+      let newSell = form.sell_price
+
+      if (factor > 1) {
+        if (prevMode === 'per_slop' && newMode === 'per_kemasan') {
+          if (curBuy > 0) newBuy = String(curBuy * factor)
+          if (curSell > 0) newSell = String(curSell * factor)
+        } else if (prevMode === 'per_kemasan' && newMode === 'per_slop') {
+          if (curBuy > 0) newBuy = String(Math.round(curBuy / factor))
+          if (curSell > 0) newSell = String(Math.round(curSell / factor))
+        }
+      }
+
+      setForm(f => ({ ...f, priceMode: newMode, buy_price: newBuy, sell_price: newSell }))
+      return
+    }
+
+    if (key === 'selectedUnit') {
+      const prevUnit = form.selectedUnit || 'slop'
+      const newUnit = val
+      const prevFactor = getFactor(prevUnit)
+      const newFactor = getFactor(newUnit)
+      const mode = form.priceMode || 'per_slop'
+
+      const curQty = Number(form.qty_masuk || 0)
+      const baseQty = curQty * prevFactor
+      const newQty = newFactor > 0 ? (baseQty / newFactor) : baseQty
+
+      let newBuy = form.buy_price
+      let newSell = form.sell_price
+      if (mode === 'per_kemasan') {
+        const curBuy = Number(String(form.buy_price || '').replace(/\D/g, ''))
+        const curSell = Number(String(form.sell_price || '').replace(/\D/g, ''))
+        if (curBuy > 0) newBuy = String(prevFactor > 0 ? Math.round((curBuy / prevFactor) * newFactor) : curBuy * newFactor)
+        if (curSell > 0) newSell = String(prevFactor > 0 ? Math.round((curSell / prevFactor) * newFactor) : curSell * newFactor)
+      } // if mode === 'per_slop', newBuy and newSell stay as price per slop (e.g. 108.000)!
+
+      setForm(f => ({
+        ...f,
+        selectedUnit: newUnit,
+        qty_masuk: curQty > 0 ? String(newQty) : f.qty_masuk,
+        buy_price: newBuy,
+        sell_price: newSell
+      }))
+      return
+    }
+
+    if (key === 'product_id') {
+      const p = products.find(x => x.id === val)
+      setForm(f => ({
+        ...f,
+        product_id: val,
+        selectedUnit: p?.unit || 'slop',
+        priceMode: 'per_slop',
+        buy_price: p?.avg_buy_price ? String(p.avg_buy_price) : '',
+        sell_price: p?.sell_price ? String(p.sell_price) : '',
+      }))
+      return
+    }
+
+    setForm(f => ({ ...f, [key]: val }))
+  }
 
   const handleAddSupplier = async () => {
     if (!newSupplier.trim()) return
@@ -426,7 +496,10 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                         set('supplier_id', val)
                         const ctx = getSupplierHistoryContext(form.product_id, val, allBatches)
                         if (ctx?.lastPrice) {
-                          set('buy_price', ctx.lastPrice)
+                          const fillPrice = (form.priceMode === 'per_kemasan' && currentFactor > 1)
+                            ? ctx.lastPrice * currentFactor
+                            : ctx.lastPrice
+                          set('buy_price', String(fillPrice))
                         }
                       }}
                       options={suppliers.map(s => ({ value: s.id, label: s.supplier_name }))}
@@ -450,7 +523,10 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
                         onClick={() => {
                           set('supplier_id', recommendation.supplierId)
                           if (recommendation.lastPrice) {
-                            set('buy_price', recommendation.lastPrice)
+                            const fillPrice = (form.priceMode === 'per_kemasan' && currentFactor > 1)
+                              ? recommendation.lastPrice * currentFactor
+                              : recommendation.lastPrice
+                            set('buy_price', String(fillPrice))
                           }
                         }}
                         style={{

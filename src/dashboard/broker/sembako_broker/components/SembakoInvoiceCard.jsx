@@ -29,10 +29,17 @@ function getDeliveryBadge(deliveries) {
   return { label: 'Siap Kirim', color: '#93C5FD', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.15)', icon: '📦' }
 }
 
-function fmtDateLocal(value) {
-  if (!value) return '-'
+function fmtDateLocal(value, createdAt) {
+  if (!value && !createdAt) return '-'
   try {
-    return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    const mainDate = new Date(value || createdAt)
+    const dateStr = mainDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    const timeSource = createdAt ? new Date(createdAt) : (String(value).includes('T') || String(value).includes(':') ? mainDate : null)
+    if (timeSource && !isNaN(timeSource.getTime())) {
+      const timeStr = timeSource.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':')
+      return `${dateStr} · ${timeStr}`
+    }
+    return dateStr
   } catch {
     return '-'
   }
@@ -436,7 +443,7 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
             {customerName}
           </h3>
           <p className="text-xs font-medium text-[#94A3B8] mt-1.5 tabular-nums truncate">
-            {sale.invoice_number || '-'} · {fmtDateLocal(sale.transaction_date)}
+            {sale.invoice_number || '-'} · {fmtDateLocal(sale.transaction_date, sale.created_at)}
             {sale.due_date ? ` · Tempo: ${fmtDateLocal(sale.due_date)}` : ''}
           </p>
         </div>
@@ -491,7 +498,7 @@ export function SembakoInvoiceCard({ sale, onOpenDetail, onEdit, onManageDeliver
       {/* Row 2: invoice info + delivery badge */}
       <div className="flex items-center justify-between pl-11">
         <p className="text-[11px] font-semibold text-muted-foreground tracking-wide tabular-nums truncate">
-          {fmtDateLocal(sale.transaction_date)}
+          {fmtDateLocal(sale.transaction_date, sale.created_at)}
         </p>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 900, padding: '2px 8px', borderRadius: '99px', background: deliveryBadge.bg, border: `1px solid ${deliveryBadge.border}`, color: deliveryBadge.color, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
           {deliveryBadge.icon && <span style={{ opacity: 0.7 }}>{deliveryBadge.icon}</span>}

@@ -113,6 +113,7 @@ export const useSembakoSales = () => {
           .eq('tenant_id', tenant.id)
           .eq('is_deleted', false)
           .order('transaction_date', { ascending: false })
+          .order('created_at', { ascending: false })
         if (error) { console.warn('[useSembakoSales]', error.message); return [] }
 
         const saleIds = (data || []).map(s => s.id)
@@ -164,7 +165,13 @@ export const useSembakoSales = () => {
           }
         })
 
-        return (data || []).map(sale => processSaleRow(sale, returnsData, itemsBySaleId))
+        const sortedSales = [...(data || [])].sort((a, b) => {
+          const timeA = new Date(a.created_at || (a.transaction_date ? `${a.transaction_date}T00:00:00.000Z` : 0)).getTime()
+          const timeB = new Date(b.created_at || (b.transaction_date ? `${b.transaction_date}T00:00:00.000Z` : 0)).getTime()
+          return timeB - timeA
+        })
+
+        return sortedSales.map(sale => processSaleRow(sale, returnsData, itemsBySaleId))
       } catch (e) { console.warn('[useSembakoSales]', e); return [] }
     }
   })

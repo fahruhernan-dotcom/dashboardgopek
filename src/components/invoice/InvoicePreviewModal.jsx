@@ -1,17 +1,23 @@
-import React from 'react'
-import { PDFDownloadLink } from '@/lib/pdfFallback.jsx'
+import React, { useState } from 'react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Download, Printer, Loader2 } from 'lucide-react'
+import { Download, Printer, Loader2, Phone, Copy, Check, FileText, Receipt, Share2 } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { generateInvoiceNumber } from '@/lib/invoice/invoiceUtils'
 import { SembakoInvoice } from './templates/SembakoInvoice'
-import { SembakoInvoicePaper } from '@/dashboard/broker/sembako_broker/SembakoInvoicePreview'
+import { SembakoInvoicePaper, SembakoThermalReceipt } from '@/dashboard/broker/sembako_broker/SembakoInvoicePreview'
+import { exportInvoicePDF, shareInvoiceViaWhatsApp, copyInvoiceToClipboard } from '@/lib/invoice/pdfExportHelper'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpen, onClose }) {
   const { tenant } = useAuth()
+  const [viewFormat, setViewFormat] = useState('a4') // 'a4' | 'thermal'
+  const [isExporting, setIsExporting] = useState(false)
+  const [copied, setCopied] = useState(false)
+
   if (!isOpen || !data) return null
 
   // Normalize data for both paper preview & PDF generation
@@ -102,6 +108,52 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
 
   const fileName = `Invoice_${invNo}.pdf`
 
+  const handleDownloadPDF = async () => {
+    if (isExporting) return
+    setIsExporting(true)
+    const toastId = toast.loading('Membuat dokumen PDF invoice...')
+    try {
+      const res = await exportInvoicePDF(pdfDoc, fileName, {
+        invoiceNumber: invNo,
+        customerName: paperData.customer_name,
+      })
+
+      if (res.method === 'native_share') {
+        toast.success('Faktur PDF siap dibuka / disimpan!', { id: toastId })
+      } else if (res.method === 'web_download') {
+        toast.success('Invoice PDF berhasil diunduh!', { id: toastId })
+      } else {
+        toast.success('Invoice siap dibagikan!', { id: toastId })
+      }
+    } catch (err) {
+      console.error('[InvoicePreviewModal] Download PDF failed:', err)
+      toast.error('Gagal mengunduh PDF. Silakan coba cetak atau bagikan teks.', { id: toastId })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleShareWhatsApp = () => {
+    try {
+      shareInvoiceViaWhatsApp(paperData)
+      toast.success('Membuka WhatsApp...')
+    } catch (err) {
+      console.error('[InvoicePreviewModal] WhatsApp share failed:', err)
+      toast.error('Gagal membuka WhatsApp')
+    }
+  }
+
+  const handleCopyText = async () => {
+    const ok = await copyInvoiceToClipboard(paperData)
+    if (ok) {
+      setCopied(true)
+      toast.success('Rincian faktur disalin ke clipboard!')
+      setTimeout(() => setCopied(false), 2500)
+    } else {
+      toast.error('Gagal menyalin teks')
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent
@@ -117,43 +169,97 @@ export default function InvoicePreviewModal({ type = 'sembako_sale', data, isOpe
               {invNo}
             </DialogDescription>
           </div>
+
+          {/* View Format Selector Tabs */}
+          <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/10 text-xs font-bold mr-6 sm:mr-8">
+            <button
+              onClick={() => setViewFormat('a4')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px]",
+                viewFormat === 'a4'
+                  ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              )}
+            >
+              <FileText size={13} />
+              <span className="hidden sm:inline">Faktur</span> A4
+            </button>
+            <button
+              onClick={() => setViewFormat('thermal')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px]",
+                viewFormat === 'thermal'
+                  ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              )}
+            >
+              <Receipt size={13} />
+              <span className="hidden sm:inline">Struk</span> 58/80mm
+            </button>
+          </div>
         </DialogHeader>
 
         {/* Paper Preview Container (100% Reliable HTML Rendering) */}
         <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-950/80 flex justify-center items-start print:bg-white print:p-0">
-          <div className="w-full max-w-[800px] shadow-2xl rounded-lg overflow-hidden bg-white">
-            <SembakoInvoicePaper data={paperData} mode="invoice" />
+          <div className="w-full max-w-[800px] shadow-2xl rounded-lg overflow-hidden flex justify-center">
+            {viewFormat === 'thermal' ? (
+              <SembakoThermalReceipt data={paperData} />
+            ) : (
+              <SembakoInvoicePaper data={paperData} mode="invoice" />
+            )}
           </div>
         </div>
 
-        {/* Action Bar */}
-        <div className="shrink-0 p-4 sm:px-6 sm:py-4 border-t border-white/[0.08] flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
+        {/* Action Bar (Mobile-friendly & Ergonomic) */}
+        <div className="shrink-0 p-3 sm:px-6 sm:py-4 border-t border-white/[0.08] bg-[#0A0F14] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3">
+          
+          {/* Secondary Actions: Print & Copy */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              className="flex-1 sm:flex-none h-10 sm:h-11 border-white/10 bg-white/[0.03] text-[#94A3B8] font-bold text-[10px] sm:text-xs uppercase tracking-wider rounded-xl hover:bg-white/[0.06] hover:text-white active:scale-95 transition-all"
+            >
+              <Printer size={14} className="mr-1.5" />
+              Print
+            </Button>
 
-          <Button
-            variant="outline"
-            onClick={() => window.print()}
-            className="flex-1 sm:flex-none h-11 border-white/10 bg-white/[0.03] text-[#94A3B8] font-semibold text-[10px] sm:text-xs uppercase tracking-widest rounded-xl hover:bg-white/[0.06]"
-          >
-            <Printer size={14} className="mr-1 sm:mr-2" />
-            Print
-          </Button>
+            <Button
+              variant="outline"
+              onClick={handleCopyText}
+              className="flex-1 sm:flex-none h-10 sm:h-11 border-white/10 bg-white/[0.03] text-[#94A3B8] font-bold text-[10px] sm:text-xs uppercase tracking-wider rounded-xl hover:bg-white/[0.06] hover:text-white active:scale-95 transition-all"
+              title="Salin Rincian Faktur"
+            >
+              {copied ? <Check size={14} className="mr-1.5 text-emerald-400" /> : <Copy size={14} className="mr-1.5" />}
+              {copied ? 'Tersalin' : 'Salin Teks'}
+            </Button>
+          </div>
 
-          {/* Download PDF */}
-          <PDFDownloadLink document={pdfDoc} fileName={fileName} className="w-full sm:w-auto sm:ml-auto">
-            {({ loading }) => (
-              <Button
-                disabled={loading}
-                className="w-full h-11 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] sm:text-xs uppercase tracking-widest rounded-xl shadow-[0_4px_16px_rgba(245,158,11,0.25)] active:scale-95 transition-transform disabled:opacity-60"
-              >
-                {loading ? (
-                  <Loader2 size={14} className="animate-spin mr-1 sm:mr-2" />
-                ) : (
-                  <Download size={14} className="mr-1 sm:mr-2" />
-                )}
-                {loading ? 'Memproses...' : 'Download PDF'}
-              </Button>
-            )}
-          </PDFDownloadLink>
+          {/* Primary Actions: WhatsApp & Download PDF */}
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <Button
+              onClick={handleShareWhatsApp}
+              className="flex-1 sm:flex-none h-10 sm:h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] sm:text-xs uppercase tracking-wider rounded-xl shadow-[0_4px_16px_rgba(16,185,129,0.2)] active:scale-95 transition-all"
+            >
+              <Phone size={14} className="mr-1.5" />
+              WhatsApp
+            </Button>
+
+            {/* Universal PDF Download / Native Share */}
+            <Button
+              onClick={handleDownloadPDF}
+              disabled={isExporting}
+              className="flex-1 sm:flex-none h-10 sm:h-11 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[10px] sm:text-xs uppercase tracking-wider rounded-xl shadow-[0_4px_16px_rgba(245,158,11,0.25)] active:scale-95 transition-all disabled:opacity-60"
+            >
+              {isExporting ? (
+                <Loader2 size={14} className="animate-spin mr-1.5" />
+              ) : (
+                <Download size={14} className="mr-1.5" />
+              )}
+              {isExporting ? 'Memproses...' : 'Download PDF'}
+            </Button>
+          </div>
+
         </div>
       </DialogContent>
     </Dialog>

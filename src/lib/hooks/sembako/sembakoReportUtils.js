@@ -61,78 +61,127 @@ export function calculateCashFlow(
   allExpenses,
   allPayroll,
   startDate,
-  endDate
+  endDate,
+  allSales = []
 ) {
+  const startDay = startDate?.slice(0, 10)
+  const endDay = endDate?.slice(0, 10)
+
+  // Track payment IDs or sale IDs that have payments in sembako_payments
+  const paymentSaleIds = new Set()
+  ;(allPayments || []).forEach(p => {
+    if (p.sale_id) paymentSaleIds.add(String(p.sale_id))
+  })
+
   // --- 1. HISTORICAL AGGREGATES (Sebelum startDate) ---
-  const paymentsBefore = allPayments.filter(p => {
+  let cashInBeforeTunai = 0
+  let cashInBeforeTransfer = 0
+
+  // 1a. From payments before start date
+  ;(allPayments || []).forEach(p => {
+    if (p.is_deleted) return
     const payDate = (p.payment_date || p.created_at)?.slice(0, 10)
-    return payDate < startDate
-  })
-  const supplierPaymentsBefore = allSupplierPayments.filter(sp => {
-    const payDate = sp.payment_date?.slice(0, 10)
-    return payDate < startDate
-  })
-  const expensesBefore = allExpenses.filter(e => {
-    const date = e.expense_date?.slice(0, 10)
-    return date < startDate
-  })
-  const payrollBefore = allPayroll.filter(p => {
-    const date = p.period_date?.slice(0, 10)
-    return date < startDate && p.payment_status === 'paid'
+    if (payDate && payDate < startDay) {
+      const amt = Number(p.amount) || 0
+      if (p.payment_method === 'transfer') {
+        cashInBeforeTransfer += amt
+      } else {
+        cashInBeforeTunai += amt
+      }
+    }
   })
 
-  // Cash In Tunai vs Transfer (Historis)
-  const cashInBeforeTunai = paymentsBefore
-    .filter(p => (p.payment_method || 'cash') === 'cash')
-    .reduce((s, p) => s + (Number(p.amount) || 0), 0)
+  // 1b. From historical sales without separate payment records
+  ;(allSales || []).forEach(s => {
+    if (s.is_deleted) return
+    const sDate = (s.transaction_date || s.created_at)?.slice(0, 10)
+    if (sDate && sDate < startDay && !paymentSaleIds.has(String(s.id))) {
+      const paid = Number(s.paid_amount || s.raw_paid_amount || 0)
+      if (paid > 0) {
+        if (s.payment_method === 'transfer') {
+          cashInBeforeTransfer += paid
+        } else {
+          cashInBeforeTunai += paid
+        }
+      }
+    }
+  })
 
-  const cashInBeforeTransfer = paymentsBefore
-    .filter(p => p.payment_method === 'transfer')
-    .reduce((s, p) => s + (Number(p.amount) || 0), 0)
+  // 1c. Supplier payments before start date
+  let supplierOutBeforeTunai = 0
+  let supplierOutBeforeTransfer = 0
+  ;(allSupplierPayments || []).forEach(sp => {
+    if (sp.is_deleted) return
+    const payDate = (sp.payment_date || sp.created_at)?.slice(0, 10)
+    if (payDate && payDate < startDay) {
+      const amt = Number(sp.amount) || 0
+      if (sp.payment_method === 'transfer') {
+        supplierOutBeforeTransfer += amt
+      } else {
+        supplierOutBeforeTunai += amt
+      }
+    }
+  })
 
-  // Cash Out Tunai vs Transfer (Historis)
-  // Supplier Payments
-  const supplierOutBeforeTunai = supplierPaymentsBefore
-    .filter(sp => (sp.payment_method || 'cash') === 'cash')
-    .reduce((s, sp) => s + (Number(sp.amount) || 0), 0)
+  // 1d. Expenses & Payroll before start date (Tunai)
+  const expensesBefore = (allExpenses || []).filter(e => {
+    if (e.is_deleted) return false
+    const date = (e.expense_date || e.created_at)?.slice(0, 10)
+    return date && date < startDay
+  })
+  const payrollBefore = (allPayroll || []).filter(p => {
+    if (p.is_deleted) return false
+    const date = (p.period_date || p.created_at)?.slice(0, 10)
+    return date && date < startDay && p.payment_status === 'paid'
+  })
 
-  const supplierOutBeforeTransfer = supplierPaymentsBefore
-    .filter(sp => sp.payment_method === 'transfer')
-    .reduce((s, sp) => s + (Number(sp.amount) || 0), 0)
-
-  // Expenses & Payroll (Semua diasumsikan Tunai)
   const expensesOutBeforeTunai = expensesBefore.reduce((s, e) => s + (Number(e.amount) || 0), 0)
   const payrollOutBeforeTunai = payrollBefore.reduce((s, p) => s + (Number(p.total_pay) || 0), 0)
 
   // Total Opening Cash & Bank
-  const openingCashOnHand = cashInBeforeTunai - supplierOutBeforeTunai - expensesOutBeforeTunai - payrollOutBeforeTunai
-  const openingBankBalance = cashInBeforeTransfer - supplierOutBeforeTransfer
+  const openingCashOnHand = Math.max(0, cashInBeforeTunai - supplierOutBeforeTunai - expensesOutBeforeTunai - payrollOutBeforeTunai)
+  const openingBankBalance = Math.max(0, cashInBeforeTransfer - supplierOutBeforeTransfer)
 
   // --- 2. PERIOD AGGREGATES (Antara startDate dan endDate) ---
-  // Pemasukan (Cash In) Periode Berjalan
   let cashInPeriodTunai = 0
   let cashInPeriodTransfer = 0
+  const periodPaymentSaleIds = new Set()
 
-  sales.forEach(sale => {
-    (sale.sembako_payments || []).forEach(p => {
-      if (p.is_deleted) return
-      const payDate = (p.payment_date || p.created_at)?.slice(0, 10)
-      if (payDate >= startDate && payDate <= endDate) {
-        const amt = Number(p.amount) || 0
-        if (p.payment_method === 'transfer') {
-          cashInPeriodTransfer += amt
+  // 2a. Dari tabel sembako_payments
+  ;(allPayments || []).forEach(p => {
+    if (p.is_deleted) return
+    const payDate = (p.payment_date || p.created_at)?.slice(0, 10)
+    if (payDate && payDate >= startDay && payDate <= endDay) {
+      const amt = Number(p.amount) || 0
+      if (p.sale_id) periodPaymentSaleIds.add(String(p.sale_id))
+      if (p.payment_method === 'transfer') {
+        cashInPeriodTransfer += amt
+      } else {
+        cashInPeriodTunai += amt
+      }
+    }
+  })
+
+  // 2b. Dari transaksi penjualan periode ini yang belum tercatat di sembako_payments (direct sale POS)
+  ;(sales || []).forEach(sale => {
+    if (!periodPaymentSaleIds.has(String(sale.id))) {
+      const paid = Number(sale.paid_amount || sale.raw_paid_amount || 0)
+      if (paid > 0) {
+        if (sale.payment_method === 'transfer') {
+          cashInPeriodTransfer += paid
         } else {
-          cashInPeriodTunai += amt
+          cashInPeriodTunai += paid
         }
       }
-    })
+    }
   })
 
   // Pengeluaran (Cash Out) Periode Berjalan
   // Filter supplier payments in period
-  const supplierPaymentsPeriod = allSupplierPayments.filter(sp => {
-    const payDate = sp.payment_date?.slice(0, 10)
-    return payDate >= startDate && payDate <= endDate
+  const supplierPaymentsPeriod = (allSupplierPayments || []).filter(sp => {
+    if (sp.is_deleted) return false
+    const payDate = (sp.payment_date || sp.created_at)?.slice(0, 10)
+    return payDate && payDate >= startDay && payDate <= endDay
   })
 
   const supplierOutPeriodTunai = supplierPaymentsPeriod
@@ -144,17 +193,19 @@ export function calculateCashFlow(
     .reduce((s, sp) => s + (Number(sp.amount) || 0), 0)
 
   // Gaji Karyawan (Dibayar)
-  const payrollPeriod = allPayroll.filter(p => {
-    const date = p.period_date?.slice(0, 10)
-    return date >= startDate && date <= endDate
+  const payrollPeriod = (allPayroll || []).filter(p => {
+    if (p.is_deleted) return false
+    const date = (p.period_date || p.created_at)?.slice(0, 10)
+    return date && date >= startDay && date <= endDay
   })
   const payrollPaidPeriod = payrollPeriod.filter(p => p.payment_status === 'paid')
   const payrollOutPeriodTunai = payrollPaidPeriod.reduce((s, p) => s + (Number(p.total_pay) || 0), 0)
 
   // Prive (Owner Draw) vs Operasional Biasa
-  const expensesPeriod = allExpenses.filter(e => {
-    const date = e.expense_date?.slice(0, 10)
-    return date >= startDate && date <= endDate
+  const expensesPeriod = (allExpenses || []).filter(e => {
+    if (e.is_deleted) return false
+    const date = (e.expense_date || e.created_at)?.slice(0, 10)
+    return date && date >= startDay && date <= endDay
   })
   const priveExpenses = expensesPeriod.filter(e => e.category === 'prive' || e.category === 'tarikan_pemilik')
   const regularExpenses = expensesPeriod.filter(e => e.category !== 'prive' && e.category !== 'tarikan_pemilik')
@@ -163,7 +214,7 @@ export function calculateCashFlow(
   const regularExpensesOutPeriodTunai = regularExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0)
 
   // Biaya Kirim / Pengiriman Armada dari transaksi penjualan (diasumsikan Tunai)
-  const deliveryOutPeriodTunai = sales.reduce((s, i) => s + (Number(i.delivery_cost) || 0), 0)
+  const deliveryOutPeriodTunai = (sales || []).reduce((s, i) => s + (Number(i.delivery_cost) || 0), 0)
 
   // Net Cash Flow Period
   const cashInTotal = cashInPeriodTunai + cashInPeriodTransfer
@@ -178,23 +229,40 @@ export function calculateCashFlow(
   const netCashFlowPeriod = cashInTotal - cashOutTotal
 
   // Ending Cash Balances
-  const endingCashOnHand = openingCashOnHand + (cashInPeriodTunai - supplierOutPeriodTunai - payrollOutPeriodTunai - priveOutPeriodTunai - regularExpensesOutPeriodTunai - deliveryOutPeriodTunai)
-  const endingBankBalance = openingBankBalance + (cashInPeriodTransfer - supplierOutPeriodTransfer)
+  const endingCashOnHand = Math.max(0, openingCashOnHand + (cashInPeriodTunai - supplierOutPeriodTunai - payrollOutPeriodTunai - priveOutPeriodTunai - regularExpensesOutPeriodTunai - deliveryOutPeriodTunai))
+  const endingBankBalance = Math.max(0, openingBankBalance + (cashInPeriodTransfer - supplierOutPeriodTransfer))
 
   return {
     openingCashOnHand,
     openingBankBalance,
+    startingCashOnHand: openingCashOnHand,
+    startingBankBalance: openingBankBalance,
+    cashTunaiAwal: openingCashOnHand,
+    cashBankAwal: openingBankBalance,
+
     cashInPeriodTunai,
     cashInPeriodTransfer,
+    cashInPeriod: cashInTotal,
+
     supplierOutPeriodTunai,
     supplierOutPeriodTransfer,
+    cashOutPurchases: supplierOutPeriodTunai + supplierOutPeriodTransfer,
+
     payrollOutPeriodTunai,
+    cashOutPayroll: payrollOutPeriodTunai,
+
     priveOutPeriodTunai,
     regularExpensesOutPeriodTunai,
     deliveryOutPeriodTunai,
+
+    cashOutOpex: regularExpensesOutPeriodTunai,
+    cashOutPeriod: cashOutTotal,
     netCashFlowPeriod,
+
     endingCashOnHand,
     endingBankBalance,
+    cashTunaiAkhir: endingCashOnHand,
+    cashBankAkhir: endingBankBalance,
   }
 }
 

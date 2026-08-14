@@ -129,7 +129,7 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
-    return sales.filter(s => {
+    const list = sales.filter(s => {
       const matchesSearch =
         (s.invoice_number || '').toLowerCase().includes(q) ||
         (s.customer_name || '').toLowerCase().includes(q) ||
@@ -144,6 +144,12 @@ function TabInvoice({ isDesktop, openWizard, setOpenWizard }) {
         return s.payment_status !== 'lunas' && s.due_date && new Date(s.due_date) < new Date()
       }
       return true
+    })
+
+    return list.sort((a, b) => {
+      const timeA = new Date(a.created_at || (a.transaction_date ? `${a.transaction_date}T00:00:00.000Z` : 0)).getTime()
+      const timeB = new Date(b.created_at || (b.transaction_date ? `${b.transaction_date}T00:00:00.000Z` : 0)).getTime()
+      return timeB - timeA
     })
   }, [sales, search, invoiceFilter])
 

@@ -38,6 +38,19 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
   const printDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
   const isBusinessResult = reportType === 'business_result'
 
+  // Derived Cash Flow figures for robust display
+  const openingCash = (summary.openingCashOnHand || summary.startingCashOnHand || 0) + (summary.openingBankBalance || summary.startingBankBalance || 0)
+  const cashIn = summary.cashInPeriod || ((summary.cashInPeriodTunai || 0) + (summary.cashInPeriodTransfer || 0))
+  const cashOut = summary.cashOutPeriod || (
+    (summary.supplierOutPeriodTunai || 0) +
+    (summary.supplierOutPeriodTransfer || 0) +
+    (summary.payrollOutPeriodTunai || 0) +
+    (summary.priveOutPeriodTunai || 0) +
+    (summary.regularExpensesOutPeriodTunai || 0) +
+    (summary.deliveryOutPeriodTunai || summary.totalDeliveryCost || 0)
+  )
+  const endingCash = (summary.endingCashOnHand || 0) + (summary.endingBankBalance || 0)
+
   // Safe percentage helper to avoid NaN%
   const calcPct = (amount, total) => {
     const base = total !== undefined ? Number(total) : Number(summary.totalRevenue || summary.grossRevenue || 0)
@@ -63,57 +76,64 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+        className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-1.5 sm:p-4 overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
+          initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-[#0C1319] border border-white/10 rounded-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden shadow-2xl my-auto"
+          exit={{ scale: 0.96, opacity: 0 }}
+          className="bg-[#0C1319] border border-white/15 rounded-2xl w-full max-w-5xl max-h-[96vh] sm:max-h-[92vh] flex flex-col overflow-hidden shadow-2xl my-auto"
           onClick={e => e.stopPropagation()}
         >
-          {/* Top Bar Controls */}
-          <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-[#121B22] print:hidden">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0F172A]/15 border border-[#0F172A]/30 flex items-center justify-center text-[#0F172A]">
-                <FileText size={18} />
+          {/* ── Top Bar Controls (Clean, High Contrast & Responsive) ── */}
+          <div className="flex items-center justify-between px-3.5 py-3 sm:px-6 sm:py-3.5 border-b border-slate-800 bg-[#0B1118] print:hidden shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+              <div
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#60A5FA' }}
+              >
+                <FileText size={16} />
               </div>
-              <div>
-                <h3 className="font-display font-black text-sm text-white m-0 uppercase tracking-wide">
-                  {isBusinessResult ? 'Template PDF Audit — Laporan Hasil Bisnis & Laba Rugi' : 'Template PDF Audit — Laporan Arus Kas (Cash Flow Statement)'}
+              <div className="min-w-0">
+                <h3 className="font-display font-black text-xs sm:text-sm m-0 uppercase tracking-wide truncate" style={{ color: '#FFFFFF' }}>
+                  {isBusinessResult ? 'PDF Laporan Hasil Bisnis (P&L)' : 'PDF Laporan Arus Kas (Cash Flow)'}
                 </h3>
-                <p className="text-[11px] text-[#94A3B8] m-0">
-                  Pratinjau Resmi A4 Siap Cetak / Save PDF · Periode: {formatDateOnly(startDate)} s/d {formatDateOnly(endDate)}
+                <p className="text-[10px] sm:text-[11px] m-0 truncate" style={{ color: '#94A3B8' }}>
+                  Periode: {formatDateOnly(startDate)} s.d. {formatDateOnly(endDate)}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
+                type="button"
                 onClick={() => window.print()}
-                className="flex items-center gap-2 px-4 h-9 rounded-xl font-bold text-xs bg-[#0F172A] hover:bg-slate-900 text-white transition-all cursor-pointer shadow-lg shadow-slate-950/10 active:scale-95 border-0"
+                className="flex items-center gap-1.5 px-3 sm:px-4 h-8 sm:h-9 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer shadow-md active:scale-95 border-0 shrink-0"
+                style={{ backgroundColor: '#059669', color: '#FFFFFF' }}
               >
-                <Printer size={15} />
-                <span>Cetak / Save PDF</span>
+                <Printer size={14} />
+                <span className="hidden xs:inline">Cetak / Save PDF</span>
+                <span className="xs:hidden">Cetak</span>
               </button>
               <button
+                type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors border-0 cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors border-0 cursor-pointer shrink-0"
               >
                 <X size={16} />
               </button>
             </div>
           </div>
 
-          {/* Document Preview Box */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#18222B] flex justify-center items-start">
+          {/* ── Document Preview Box ── */}
+          <div className="flex-1 overflow-y-auto overflow-x-auto p-2 sm:p-6 md:p-8 bg-[#18222B] flex justify-center items-start">
             {/* Printable A4 Container */}
             <div
               ref={printRef}
               id="printable-financial-report"
-              className="w-full max-w-[210mm] bg-white text-slate-900 p-8 sm:p-10 shadow-2xl rounded-sm text-left font-sans text-xs leading-normal font-normal min-h-[297mm] h-auto my-auto sm:my-0 mb-8"
-              style={{ colorScheme: 'light' }}
+              className="w-full max-w-[210mm] bg-white text-slate-900 p-4 sm:p-8 md:p-10 shadow-2xl rounded-sm text-left font-sans text-xs leading-normal font-normal min-h-[297mm] h-auto my-auto sm:my-0 mb-8 overflow-hidden"
+              style={{ colorScheme: 'light', backgroundColor: '#FFFFFF', color: '#0F172A' }}
             >
               {/* CSS Rule for Multi-Page Native Print */}
               <style>{`
@@ -164,27 +184,33 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
                 }
               `}</style>
 
-              {/* ── Kop Dokumen ───────────────────────────────────────────── */}
-              <div className="flex items-start justify-between border-b-2 border-slate-900 pb-4 mb-6">
+              {/* ── Kop Dokumen (Clean & High Contrast) ──────────────────── */}
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b-2 border-slate-900 pb-3 sm:pb-4 mb-4 sm:mb-6">
                 <div>
-                  <h1 className="font-serif text-xl font-bold text-slate-900 uppercase tracking-wide m-0">
+                  <h1 className="font-serif text-base sm:text-xl font-bold uppercase tracking-wide m-0" style={{ color: '#0F172A' }}>
                     {businessName}
                   </h1>
-                  <p className="text-slate-600 text-[11px] m-0 mt-1">
+                  <p className="text-[10px] sm:text-[11px] m-0 mt-0.5 sm:mt-1" style={{ color: '#475569' }}>
                     {businessAddress}
                   </p>
-                  <p className="text-slate-500 text-[10px] m-0 mt-0.5 flex items-center gap-1">
-                    <ShieldCheck size={12} className="text-emerald-600 inline" /> Dokumen Audit Keuangan Keagenan Resmi
+                  <p className="text-[9px] sm:text-[10px] m-0 mt-0.5 flex items-center gap-1" style={{ color: '#64748B' }}>
+                    <ShieldCheck size={12} className="text-emerald-600 inline shrink-0" /> Dokumen Audit Keuangan Keagenan Resmi
                   </p>
                 </div>
-                <div className="text-right">
-                  <div className="inline-block bg-[#0F172A] text-white font-bold text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-sm mb-1.5">
-                    {isBusinessResult ? 'LAPORAN HASIL BISNIS (P&L)' : 'LAPORAN ARUS KAS (CASH FLOW)'}
+                <div className="text-left sm:text-right shrink-0">
+                  <div
+                    className="inline-flex items-center gap-1.5 font-black text-[10px] sm:text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-md border mb-1.5"
+                    style={{ backgroundColor: '#F8FAFC', color: '#0F172A', borderColor: '#CBD5E1' }}
+                  >
+                    <FileText size={12} style={{ color: '#2563EB' }} />
+                    <span style={{ color: '#0F172A', fontWeight: 800 }}>
+                      {isBusinessResult ? 'LAPORAN HASIL BISNIS (P&L)' : 'LAPORAN ARUS KAS (CASH FLOW)'}
+                    </span>
                   </div>
-                  <p className="text-slate-700 text-[11px] font-semibold m-0">
-                    Periode: <span className="font-bold text-slate-900">{formatDateOnly(startDate)} s.d. {formatDateOnly(endDate)}</span>
+                  <p className="text-[10px] sm:text-[11px] font-semibold m-0" style={{ color: '#334155' }}>
+                    Periode: <span className="font-bold" style={{ color: '#0F172A' }}>{formatDateOnly(startDate)} s.d. {formatDateOnly(endDate)}</span>
                   </p>
-                  <p className="text-slate-400 text-[10px] m-0 mt-0.5">
+                  <p className="text-[9px] sm:text-[10px] m-0 mt-0.5" style={{ color: '#64748B' }}>
                     Tanggal Cetak: {printDate}
                   </p>
                 </div>
@@ -192,614 +218,287 @@ export default function FinancialReportPdfModal({ open, onClose, reportType = 'b
 
               {/* ── REPORT CONTENT TYPE 1: BUSINESS RESULT (P&L) ──────────── */}
               {isBusinessResult ? (
-                <div className="space-y-6">
+                <div className="space-y-5 sm:space-y-6">
                   {/* Summary Ringkasan Kunci (4 KPI Cards) */}
-                  <div className="grid grid-cols-4 gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 m-0">Revenue (Akrual)</p>
-                      <p className="text-sm font-bold text-amber-700 m-0">{formatIDR(summary.totalRevenue || 0)}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 p-2.5 sm:p-4 rounded-lg border" style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}>
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider m-0" style={{ color: '#64748B' }}>Revenue (Akrual)</p>
+                      <p className="text-xs sm:text-sm font-bold m-0 font-mono truncate" style={{ color: '#B45309' }}>{formatIDR(summary.totalRevenue || 0)}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 m-0">Net Profit ({summary.netMarginPct || calcPct(summary.netProfit)}%)</p>
-                      <p className="text-sm font-bold text-emerald-700 m-0">{formatIDR(summary.netProfit || 0)}</p>
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider m-0" style={{ color: '#64748B' }}>Net Profit ({summary.netMarginPct || calcPct(summary.netProfit)}%)</p>
+                      <p className="text-xs sm:text-sm font-bold m-0 font-mono truncate" style={{ color: '#047857' }}>{formatIDR(summary.netProfit || 0)}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 m-0">Arus Kas Bersih</p>
-                      <p className={`text-sm font-bold m-0 ${summary.netCashFlowPeriod >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider m-0" style={{ color: '#64748B' }}>Arus Kas Bersih</p>
+                      <p className="text-xs sm:text-sm font-bold m-0 font-mono truncate" style={{ color: summary.netCashFlowPeriod >= 0 ? '#047857' : '#BE123C' }}>
                         {formatIDR(summary.netCashFlowPeriod || 0)}
                       </p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 m-0">Laba Terkonversi Kas</p>
-                      <p className="text-sm font-bold text-emerald-700 m-0">{formatIDR(summary.cashMarginEstimate || summary.realizedNetProfit || 0)}</p>
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider m-0" style={{ color: '#64748B' }}>Laba Terkonversi Kas</p>
+                      <p className="text-xs sm:text-sm font-bold m-0 font-mono truncate" style={{ color: '#047857' }}>{formatIDR(summary.cashMarginEstimate || summary.realizedNetProfit || 0)}</p>
                     </div>
                   </div>
 
                   {/* 1. Waterfall P&L Table */}
                   <div>
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
+                    <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wider mb-2 border-b border-slate-300 pb-1" style={{ color: '#0F172A' }}>
                       1. Perhitungan Laba Rugi Laporan Bisnis (Profit & Loss Statement)
                     </h3>
-                    <table className="w-full text-left border-collapse">
-                      <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                        <tr>
-                          <th className="p-2">Komponen Pos Keuangan</th>
-                          <th className="p-2 text-right">Nilai Nominal (Rp)</th>
-                          <th className="p-2 text-right">% dari Omzet</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        <tr>
-                          <td className="p-2 font-bold text-slate-900">+ Penjualan Kotor (Gross)</td>
-                          <td className="p-2 text-right font-bold">{formatIDR(summary.totalGrossRevenue || summary.grossRevenue || summary.totalRevenue || 0)}</td>
-                          <td className="p-2 text-right font-semibold">100.0%</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 pl-4 text-slate-700">− Retur Penjualan (Returns)</td>
-                          <td className="p-2 text-right text-rose-700">({formatIDR(summary.totalReturns || summary.totalReturnsAmount || 0)})</td>
-                          <td className="p-2 text-right">{calcPct(summary.totalReturns || summary.totalReturnsAmount || 0)}</td>
-                        </tr>
-                        <tr className="bg-slate-50 font-bold">
-                          <td className="p-2">= Revenue Bersih (Net Revenue)</td>
-                          <td className="p-2 text-right">{formatIDR(summary.totalRevenue || 0)}</td>
-                          <td className="p-2 text-right">100.0%</td>
-                        </tr>
-                        <tr className="text-slate-700">
-                          <td className="p-2 pl-4">− HPP (COGS FIFO)</td>
-                          <td className="p-2 text-right">({formatIDR(summary.totalCOGS || summary.cogs || 0)})</td>
-                          <td className="p-2 text-right">{calcPct(summary.totalCOGS || summary.cogs || 0)}</td>
-                        </tr>
-                        <tr className="bg-slate-100 font-bold text-slate-900 border-t border-b border-slate-300">
-                          <td className="p-2">= Gross Profit (Laba Kotor)</td>
-                          <td className="p-2 text-right">{formatIDR(summary.grossProfit || 0)}</td>
-                          <td className="p-2 text-right">{summary.grossMarginPct || calcPct(summary.grossProfit)}%</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 pl-4 text-slate-700">− Biaya Kirim / Pengiriman</td>
-                          <td className="p-2 text-right text-rose-700">({formatIDR(summary.totalDeliveryCost || summary.deliveryCost || 0)})</td>
-                          <td className="p-2 text-right">{calcPct(summary.totalDeliveryCost || summary.deliveryCost || 0)}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 pl-4 text-slate-700">− Biaya Lain</td>
-                          <td className="p-2 text-right text-rose-700">({formatIDR(summary.totalOtherCost || summary.otherCost || 0)})</td>
-                          <td className="p-2 text-right">{calcPct(summary.totalOtherCost || summary.otherCost || 0)}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 pl-4 text-slate-700">− Biaya Operasional (OPEX)</td>
-                          <td className="p-2 text-right text-rose-700">({formatIDR(displayTotalOpex)})</td>
-                          <td className="p-2 text-right">{calcPct(displayTotalOpex)}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 pl-4 text-slate-700">− Gaji Pegawai & Tim Management</td>
-                          <td className="p-2 text-right text-rose-700">({formatIDR(summary.totalPayroll || 0)})</td>
-                          <td className="p-2 text-right">{calcPct(summary.totalPayroll || 0)}</td>
-                        </tr>
-                        <tr className="bg-emerald-50 text-emerald-900 font-extrabold text-sm border-2 border-emerald-500">
-                          <td className="p-2.5">= NET PROFIT (LABA BERSIH)</td>
-                          <td className="p-2.5 text-right">{formatIDR(summary.netProfit || 0)}</td>
-                          <td className="p-2.5 text-right">{summary.netMarginPct || calcPct(summary.netProfit)}%</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* 2. Likuiditas & Modal Beredar (Working Capital & Balance Sheet Summary) */}
-                  <div>
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
-                      2. Likuiditas & Modal Beredar (Working Capital & Asset Summary)
-                    </h3>
-                    <table className="w-full text-left border-collapse">
-                      <tbody className="divide-y divide-slate-200">
-                        <tr>
-                          <td className="p-2 text-slate-700">💵 Cash On Hand (Kas Tunai di Tangan/Kasir)</td>
-                          <td className="p-2 text-right font-semibold">{formatIDR(summary.endingCashOnHand || summary.cashTunaiAkhir || 0)}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 text-slate-700">🏦 Bank Balance (Saldo Rekening Bank Sistem)</td>
-                          <td className="p-2 text-right font-semibold">{formatIDR(summary.endingBankBalance || summary.cashBankAkhir || 0)}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 text-slate-700">📦 Persediaan (Stok Barang di Gudang)</td>
-                          <td className="p-2 text-right font-semibold">{formatIDR(summary.inventoryValue || summary.nilaiStok || 0)}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 text-slate-700">🧾 Piutang Dagang (Tagihan Toko Belum Lunas)</td>
-                          <td className="p-2 text-right font-semibold">{formatIDR(summary.totalAr || summary.totalOutstanding || 0)}</td>
-                        </tr>
-                        <tr className="bg-slate-100 font-bold border-t border-b border-slate-300">
-                          <td className="p-2 text-slate-900">= TOTAL ASET LANCAR</td>
-                          <td className="p-2 text-right text-emerald-800">{formatIDR(summary.totalCurrentAssets || ((summary.endingCashOnHand || 0) + (summary.endingBankBalance || 0) + (summary.inventoryValue || 0) + (summary.totalAr || 0)))}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2 text-slate-700">🤝 Hutang Dagang (Kewajiban ke Supplier)</td>
-                          <td className="p-2 text-right text-rose-700">({formatIDR(summary.totalAp || summary.unpaidSupplierPeriod || 0)})</td>
-                        </tr>
-                        <tr className="bg-amber-50 font-extrabold text-amber-950 border-2 border-amber-400">
-                          <td className="p-2 font-bold">= MODAL KERJA BERSIH (NET WORKING CAPITAL)</td>
-                          <td className="p-2 text-right text-amber-900">{formatIDR(summary.netWorkingCapital || (summary.totalCurrentAssets - summary.totalAp))}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* 3. Laporan Arus Kas (Cash Flow Statement Box) */}
-                  <div className="bg-slate-50 border border-slate-300 p-3.5 rounded-lg space-y-2">
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-amber-800 border-b border-slate-300 pb-1 m-0">
-                      3. Laporan Arus Kas (Cash Flow Statement)
-                    </h3>
-                    <div className="text-[10px] text-amber-700 bg-amber-50/80 p-2 rounded border border-amber-200">
-                      <strong>💡 Batasan Sistem:</strong> Saldo Kas Awal dihitung berdasarkan riwayat transaksi yang tercatat di sistem aplikasi dan belum memperhitungkan saldo kas awal fisik atau penyesuaian manual luar sistem.
-                    </div>
-                    <div className="space-y-1.5 pt-1">
-                      {/* Opening Cash */}
-                      <div className="flex justify-between items-center font-bold text-slate-900 border-b border-dashed border-slate-300 pb-1">
-                        <span>SALDO KAS AWAL</span>
-                        <span>{formatIDR((summary.openingCashOnHand || 0) + (summary.openingBankBalance || 0))}</span>
-                      </div>
-                      <div className="flex gap-4 text-[10px] text-slate-500 pl-3">
-                        <span>Tunai: {formatIDR(summary.openingCashOnHand || 0)}</span>
-                        <span>Bank: {formatIDR(summary.openingBankBalance || 0)}</span>
-                      </div>
-
-                      {/* Cash In */}
-                      <div className="flex justify-between items-center font-bold text-emerald-700 pt-1">
-                        <span>+ Penerimaan Pembayaran (Cash In)</span>
-                        <span>{formatIDR((summary.cashInPeriodTunai || 0) + (summary.cashInPeriodTransfer || 0))}</span>
-                      </div>
-                      <div className="flex gap-4 text-[10px] text-slate-500 pl-3">
-                        <span>Tunai: {formatIDR(summary.cashInPeriodTunai || 0)}</span>
-                        <span>Bank: {formatIDR(summary.cashInPeriodTransfer || 0)}</span>
-                      </div>
-
-                      {/* Cash Out Breakdown */}
-                      <div className="pl-3 border-l-2 border-slate-300 space-y-1 pt-1">
-                        <div className="flex justify-between text-slate-700">
-                          <span>− Pembelian Stok & Bayar Supplier</span>
-                          <span className="font-semibold text-rose-700">({formatIDR((summary.supplierOutPeriodTunai || 0) + (summary.supplierOutPeriodTransfer || 0))})</span>
-                        </div>
-                        <div className="flex gap-4 text-[10px] text-slate-500 pl-2">
-                          <span>Tunai: {formatIDR(summary.supplierOutPeriodTunai || 0)}</span>
-                          <span>Bank: {formatIDR(summary.supplierOutPeriodTransfer || 0)}</span>
-                        </div>
-
-                        {Number(summary.payrollOutPeriodTunai) > 0 && (
-                          <div className="flex justify-between text-slate-700">
-                            <span>− Gaji Pegawai Terbayar (Asumsi Tunai)</span>
-                            <span className="font-semibold text-rose-700">({formatIDR(summary.payrollOutPeriodTunai)})</span>
-                          </div>
-                        )}
-
-                        {Number(summary.deliveryOutPeriodTunai || summary.deliveryCost) > 0 && (
-                          <div className="flex justify-between text-slate-700">
-                            <span>− Biaya Pengiriman & Armada (Asumsi Tunai)</span>
-                            <span className="font-semibold text-rose-700">({formatIDR(summary.deliveryOutPeriodTunai || summary.deliveryCost || 0)})</span>
-                          </div>
-                        )}
-
-                        {Number(summary.regularExpensesOutPeriodTunai || displayTotalOpex) > 0 && (
-                          <div className="flex justify-between text-slate-700">
-                            <span>− Biaya Operasional Toko & Gudang</span>
-                            <span className="font-semibold text-rose-700">({formatIDR(summary.regularExpensesOutPeriodTunai || displayTotalOpex || 0)})</span>
-                          </div>
-                        )}
-
-                        {Number(summary.priveOutPeriodTunai) > 0 && (
-                          <div className="flex justify-between text-slate-700">
-                            <span>− Pengambilan Pemilik / Prive (Draw)</span>
-                            <span className="font-semibold text-rose-700">({formatIDR(summary.priveOutPeriodTunai)})</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Total Cash Out */}
-                      <div className="flex justify-between items-center font-bold text-rose-700 pt-1 border-t border-slate-200">
-                        <span>= Total Pengeluaran Kas (Cash Out)</span>
-                        <span>− {formatIDR((summary.supplierOutPeriodTunai || 0) + (summary.supplierOutPeriodTransfer || 0) + (summary.payrollOutPeriodTunai || 0) + (summary.regularExpensesOutPeriodTunai || displayTotalOpex || 0) + (summary.priveOutPeriodTunai || 0) + (summary.deliveryOutPeriodTunai || summary.deliveryCost || 0))}</span>
-                      </div>
-
-                      {/* Ending Cash */}
-                      <div className="flex justify-between items-center font-extrabold text-slate-900 border-t-2 border-slate-800 pt-1.5 text-xs">
-                        <span>SALDO KAS AKHIR</span>
-                        <span className="text-amber-800">{formatIDR((summary.endingCashOnHand || 0) + (summary.endingBankBalance || 0))}</span>
-                      </div>
-                      <div className="flex gap-4 text-[10px] text-slate-600 font-semibold pl-3">
-                        <span>Tunai (Cash On Hand): {formatIDR(summary.endingCashOnHand || summary.cashTunaiAkhir || 0)}</span>
-                        <span>Bank (System Balance): {formatIDR(summary.endingBankBalance || summary.cashBankAkhir || 0)}</span>
-                      </div>
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-collapse text-[10px] sm:text-xs">
+                        <thead className="border-b border-slate-300 font-bold" style={{ backgroundColor: '#F1F5F9', color: '#334155' }}>
+                          <tr>
+                            <th className="p-2">Komponen Pos Keuangan</th>
+                            <th className="p-2 text-right">Nilai Nominal (Rp)</th>
+                            <th className="p-2 text-right">% dari Omzet</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 font-mono">
+                          <tr>
+                            <td className="p-2 font-bold font-sans" style={{ color: '#0F172A' }}>+ Penjualan Kotor (Gross)</td>
+                            <td className="p-2 text-right font-bold whitespace-nowrap" style={{ color: '#0F172A' }}>{formatIDR(summary.totalGrossRevenue || summary.grossRevenue || summary.totalRevenue || 0)}</td>
+                            <td className="p-2 text-right font-semibold" style={{ color: '#334155' }}>100.0%</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 pl-4 font-sans" style={{ color: '#475569' }}>− Retur Penjualan (Returns)</td>
+                            <td className="p-2 text-right whitespace-nowrap" style={{ color: '#BE123C' }}>({formatIDR(summary.totalReturns || summary.totalReturnsAmount || 0)})</td>
+                            <td className="p-2 text-right" style={{ color: '#475569' }}>{calcPct(summary.totalReturns || summary.totalReturnsAmount || 0)}</td>
+                          </tr>
+                          <tr style={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>
+                            <td className="p-2 font-sans" style={{ color: '#0F172A' }}>= Revenue Bersih (Net Revenue)</td>
+                            <td className="p-2 text-right whitespace-nowrap" style={{ color: '#0F172A' }}>{formatIDR(summary.totalRevenue || 0)}</td>
+                            <td className="p-2 text-right" style={{ color: '#334155' }}>100.0%</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 pl-4 font-sans" style={{ color: '#475569' }}>− HPP (COGS FIFO)</td>
+                            <td className="p-2 text-right whitespace-nowrap" style={{ color: '#475569' }}>({formatIDR(summary.totalCOGS || summary.cogs || 0)})</td>
+                            <td className="p-2 text-right" style={{ color: '#475569' }}>{calcPct(summary.totalCOGS || summary.cogs || 0)}</td>
+                          </tr>
+                          <tr style={{ backgroundColor: '#ECFDF5', fontWeight: 700, color: '#064E3B' }}>
+                            <td className="p-2 font-sans">= GROSS PROFIT (LABA KOTOR)</td>
+                            <td className="p-2 text-right whitespace-nowrap">{formatIDR(summary.grossProfit || 0)}</td>
+                            <td className="p-2 text-right">{summary.grossMarginPct || calcPct(summary.grossProfit)}%</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 pl-4 font-sans" style={{ color: '#475569' }}>− Biaya Pengiriman & Armada (Asumsi Tunai)</td>
+                            <td className="p-2 text-right whitespace-nowrap" style={{ color: '#475569' }}>({formatIDR(summary.totalDeliveryCost || summary.deliveryCost || 0)})</td>
+                            <td className="p-2 text-right" style={{ color: '#475569' }}>{calcPct(summary.totalDeliveryCost || summary.deliveryCost || 0)}</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 pl-4 font-sans" style={{ color: '#475569' }}>− Biaya Lain-lain</td>
+                            <td className="p-2 text-right whitespace-nowrap" style={{ color: '#475569' }}>({formatIDR(summary.totalOtherCost || 0)})</td>
+                            <td className="p-2 text-right" style={{ color: '#475569' }}>{calcPct(summary.totalOtherCost || 0)}</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 pl-4 font-sans" style={{ color: '#475569' }}>− Biaya Operasional Toko & Gudang</td>
+                            <td className="p-2 text-right whitespace-nowrap" style={{ color: '#475569' }}>({formatIDR(displayTotalOpex)})</td>
+                            <td className="p-2 text-right" style={{ color: '#475569' }}>{calcPct(displayTotalOpex)}</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2 pl-4 font-sans" style={{ color: '#475569' }}>− Beban Gaji Karyawan</td>
+                            <td className="p-2 text-right whitespace-nowrap" style={{ color: '#475569' }}>({formatIDR(summary.totalPayroll || 0)})</td>
+                            <td className="p-2 text-right" style={{ color: '#475569' }}>{calcPct(summary.totalPayroll || 0)}</td>
+                          </tr>
+                          <tr style={{ backgroundColor: '#FEF3C7', fontWeight: 900, color: '#78350F', borderTop: '2px solid #0F172A', borderBottom: '2px solid #0F172A' }}>
+                            <td className="p-2.5 font-sans">= NET PROFIT AKRUAL (LABA BERSIH)</td>
+                            <td className="p-2.5 text-right whitespace-nowrap">{formatIDR(summary.netProfit || 0)}</td>
+                            <td className="p-2.5 text-right">{summary.netMarginPct || calcPct(summary.netProfit)}%</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
 
-                  {/* 4. Margin Per Produk */}
+                  {/* 2. Margin Per Produk */}
                   {Object.keys(byProduct).length > 0 && (
                     <div>
-                      <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
-                        3. Breakdown Performa & Margin Per Produk
+                      <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wider mb-2 border-b border-slate-300 pb-1" style={{ color: '#0F172A' }}>
+                        2. Breakdown Performa & Margin Per Produk
                       </h3>
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                          <tr>
-                            <th className="p-2">Nama Produk / Item</th>
-                            <th className="p-2 text-center">Qty Terjual</th>
-                            <th className="p-2 text-right">Revenue (Omzet)</th>
-                            <th className="p-2 text-right">HPP (COGS)</th>
-                            <th className="p-2 text-right">Profit</th>
-                            <th className="p-2 text-right">Margin %</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {Object.entries(byProduct).map(([pName, pData]) => {
-                            const profit = pData.revenue - pData.cogs
-                            const marginPct = pData.revenue > 0 ? ((profit / pData.revenue) * 100).toFixed(1) : '0.0'
-                            return (
-                              <tr key={pName}>
-                                <td className="p-2 font-semibold text-slate-900">{pName}</td>
-                                <td className="p-2 text-center">{pData.qty} {pData.unit || 'slop'}</td>
-                                <td className="p-2 text-right font-semibold">{formatIDR(pData.revenue)}</td>
-                                <td className="p-2 text-right text-slate-600">{formatIDR(pData.cogs)}</td>
-                                <td className="p-2 text-right font-bold text-emerald-700">{formatIDR(profit)}</td>
-                                <td className="p-2 text-right font-bold text-slate-800">{marginPct}%</td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                        <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-400">
-                          <tr>
-                            <td className="p-2">TOTAL</td>
-                            <td className="p-2 text-center">
-                              {Object.values(byProduct).reduce((s, p) => s + (p.qty || 0), 0)}
-                            </td>
-                            <td className="p-2 text-right text-amber-700">
-                              {formatIDR(Object.values(byProduct).reduce((s, p) => s + (p.revenue || 0), 0))}
-                            </td>
-                            <td className="p-2 text-right text-slate-600">
-                              {formatIDR(Object.values(byProduct).reduce((s, p) => s + (p.cogs || 0), 0))}
-                            </td>
-                            <td className="p-2 text-right text-emerald-700">
-                              {formatIDR(Object.values(byProduct).reduce((s, p) => s + (p.revenue - p.cogs), 0))}
-                            </td>
-                            <td className="p-2 text-right">
-                              {summary.grossMarginPct || calcPct(summary.grossProfit)}%
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
+                      <div className="overflow-x-auto w-full">
+                        <table className="w-full text-left border-collapse text-[10px] sm:text-xs">
+                          <thead className="border-b border-slate-300 font-bold" style={{ backgroundColor: '#F1F5F9', color: '#334155' }}>
+                            <tr>
+                              <th className="p-2">Nama Produk / Item</th>
+                              <th className="p-2 text-center">Qty</th>
+                              <th className="p-2 text-right">Revenue</th>
+                              <th className="p-2 text-right">HPP</th>
+                              <th className="p-2 text-right">Profit</th>
+                              <th className="p-2 text-right">Margin %</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 font-mono">
+                            {Object.entries(byProduct).map(([pName, pData]) => {
+                              const profit = pData.revenue - pData.cogs
+                              const marginPct = pData.revenue > 0 ? ((profit / pData.revenue) * 100).toFixed(1) : '0.0'
+                              return (
+                                <tr key={pName}>
+                                  <td className="p-2 font-semibold font-sans" style={{ color: '#0F172A' }}>{pName}</td>
+                                  <td className="p-2 text-center whitespace-nowrap" style={{ color: '#475569' }}>{pData.qty} {pData.unit || 'slop'}</td>
+                                  <td className="p-2 text-right font-semibold whitespace-nowrap" style={{ color: '#0F172A' }}>{formatIDR(pData.revenue)}</td>
+                                  <td className="p-2 text-right whitespace-nowrap" style={{ color: '#64748B' }}>{formatIDR(pData.cogs)}</td>
+                                  <td className="p-2 text-right font-bold whitespace-nowrap" style={{ color: '#047857' }}>{formatIDR(profit)}</td>
+                                  <td className="p-2 text-right font-bold whitespace-nowrap" style={{ color: '#334155' }}>{marginPct}%</td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
 
-                  {/* 4. Top Toko / Pelanggan */}
+                  {/* 3. Top Toko / Pelanggan */}
                   {Object.keys(byCustomer).length > 0 && (
                     <div>
-                      <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
-                        4. Top Toko / Pelanggan Terbaik Periode Ini
+                      <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wider mb-2 border-b border-slate-300 pb-1" style={{ color: '#0F172A' }}>
+                        3. Top Toko / Pelanggan Terbaik Periode Ini
                       </h3>
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                          <tr>
-                            <th className="p-2">Nama Toko / Pelanggan</th>
-                            <th className="p-2 text-center">Jumlah Invoice</th>
-                            <th className="p-2 text-right">Total Omzet (Rp)</th>
-                            <th className="p-2 text-right">Total Profit (Rp)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {Object.entries(byCustomer).map(([cName, cData]) => (
-                            <tr key={cName}>
-                              <td className="p-2 font-bold text-slate-900">{cName}</td>
-                              <td className="p-2 text-center font-medium">{cData.count} invoice</td>
-                              <td className="p-2 text-right font-semibold text-amber-700">{formatIDR(cData.revenue)}</td>
-                              <td className="p-2 text-right font-bold text-emerald-700">{formatIDR(cData.profit)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* 5. Breakdown Pengeluaran */}
-                  {Object.keys(opexCategories).length > 0 && (
-                    <div>
-                      <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
-                        5. Breakdown Pengeluaran & Beban Operasional
-                      </h3>
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                          <tr>
-                            <th className="p-2">Pos Pengeluaran</th>
-                            <th className="p-2 text-right">Nominal (Rp)</th>
-                            <th className="p-2 text-right">Persentase</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          <tr>
-                            <td className="p-2 font-semibold">HPP (COGS)</td>
-                            <td className="p-2 text-right">{formatIDR(summary.totalCOGS || summary.cogs || 0)}</td>
-                            <td className="p-2 text-right">{calcPct(summary.totalCOGS || summary.cogs || 0)}</td>
-                          </tr>
-                          {Number(summary.deliveryCost) > 0 && (
+                      <div className="overflow-x-auto w-full">
+                        <table className="w-full text-left border-collapse text-[10px] sm:text-xs">
+                          <thead className="border-b border-slate-300 font-bold" style={{ backgroundColor: '#F1F5F9', color: '#334155' }}>
                             <tr>
-                              <td className="p-2 font-semibold">Biaya Kirim & Armada</td>
-                              <td className="p-2 text-right">{formatIDR(summary.deliveryCost)}</td>
-                              <td className="p-2 text-right">{calcPct(summary.deliveryCost)}</td>
+                              <th className="p-2">Nama Toko / Pelanggan</th>
+                              <th className="p-2 text-center">Jumlah Invoice</th>
+                              <th className="p-2 text-right">Total Omzet (Rp)</th>
+                              <th className="p-2 text-right">Total Profit (Rp)</th>
                             </tr>
-                          )}
-                          {Object.entries(opexCategories).map(([cat, amount]) => (
-                            <tr key={cat}>
-                              <td className="p-2 capitalize">{cat.replace(/_/g, ' ')}</td>
-                              <td className="p-2 text-right font-semibold">{formatIDR(amount)}</td>
-                              <td className="p-2 text-right">{calcPct(amount)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* 6. Ringkasan Transaksi Invoice Terakhir */}
-                  {sales.length > 0 && (
-                    <div>
-                      <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
-                        6. Ringkasan Transaksi Invoice Terakhir (5 Teratas dari Total {sales.length} Nota)
-                      </h3>
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                          <tr>
-                            <th className="p-2">No. Invoice</th>
-                            <th className="p-2">Tanggal</th>
-                            <th className="p-2">Nama Toko / Pelanggan</th>
-                            <th className="p-2 text-right">Total Nota</th>
-                            <th className="p-2 text-right">Terbayar</th>
-                            <th className="p-2 text-right">Sisa Piutang</th>
-                            <th className="p-2 text-center">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {sales.slice(0, 5).map(sale => (
-                            <tr key={sale.id}>
-                              <td className="p-2 font-mono font-bold text-slate-900">{sale.invoice_number}</td>
-                              <td className="p-2 text-slate-600">{formatDateOnly(sale.transaction_date)}</td>
-                              <td className="p-2 font-medium">{sale.customer_name || 'Pelanggan General'}</td>
-                              <td className="p-2 text-right font-semibold">{formatIDR(sale.total_amount || 0)}</td>
-                              <td className="p-2 text-right text-emerald-700">{formatIDR(sale.paid_amount || 0)}</td>
-                              <td className="p-2 text-right text-rose-700">{formatIDR(sale.remaining_amount || 0)}</td>
-                              <td className="p-2 text-center font-bold text-[10px]">
-                                <span className={`px-1.5 py-0.5 rounded ${sale.payment_status === 'lunas' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                                  {formatStatus(sale.payment_status)}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {sales.length > 5 && (
-                        <p className="text-[10px] text-slate-500 font-italic mt-1 text-right">* Ringkasan 5 nota terbaru. Total keseluruhan periode ini: {sales.length} nota.</p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 7. Rincian Pelunasan & Pembayaran ke Supplier */}
-                  {supplierPayments.length > 0 && (
-                    <div>
-                      <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
-                        7. Rincian Pelunasan & Pembayaran ke Supplier ({supplierPayments.length})
-                      </h3>
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                          <tr>
-                            <th className="p-2">Tanggal</th>
-                            <th className="p-2">Nama Supplier</th>
-                            <th className="p-2 text-center">Metode Bayar</th>
-                            <th className="p-2 text-right">Nominal Dibayar (Rp)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {supplierPayments.map((sp, idx) => (
-                            <tr key={sp.id || idx}>
-                              <td className="p-2 text-slate-600">{formatDateOnly(sp.payment_date || sp.created_at)}</td>
-                              <td className="p-2 font-bold text-slate-900">{sp.supplier_name || 'Supplier'}</td>
-                              <td className="p-2 text-center uppercase font-semibold text-[10px]">
-                                <span className={`px-1.5 py-0.5 rounded ${sp.payment_method === 'transfer' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                                  {sp.payment_method || 'cash'}
-                                </span>
-                              </td>
-                              <td className="p-2 text-right font-bold text-rose-700">{formatIDR(sp.amount || 0)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-400">
-                          <tr>
-                            <td colSpan={3} className="p-2">TOTAL PELUNASAN SUPPLIER</td>
-                            <td className="p-2 text-right text-rose-700">
-                              {formatIDR(supplierPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0))}
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 font-mono">
+                            {Object.entries(byCustomer).map(([cName, cData]) => (
+                              <tr key={cName}>
+                                <td className="p-2 font-bold font-sans" style={{ color: '#0F172A' }}>{cName}</td>
+                                <td className="p-2 text-center font-medium font-sans" style={{ color: '#475569' }}>{cData.count} invoice</td>
+                                <td className="p-2 text-right font-semibold whitespace-nowrap" style={{ color: '#B45309' }}>{formatIDR(cData.revenue)}</td>
+                                <td className="p-2 text-right font-bold whitespace-nowrap" style={{ color: '#047857' }}>{formatIDR(cData.profit)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </div>
               ) : (
                 /* ── REPORT CONTENT TYPE 2: CASH FLOW STATEMENT ───────────── */
-                <div className="space-y-6">
-                  {/* Cash Summary Banner */}
-                  <div className="grid grid-cols-3 gap-3 bg-amber-50/60 p-4 rounded-lg border border-amber-200">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 m-0">Saldo Kas Awal</p>
-                      <p className="text-sm font-bold text-slate-800 m-0">{formatIDR(summary.startingCashOnHand || 0)}</p>
+                <div className="space-y-5 sm:space-y-6">
+                  {/* Cash Summary Banner (Responsive 3 Columns) */}
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 p-2.5 sm:p-4 rounded-lg border" style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }}>
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-wider m-0" style={{ color: '#78350F' }}>Saldo Kas Awal</p>
+                      <p className="text-xs sm:text-sm font-bold m-0 font-mono truncate" style={{ color: '#0F172A' }}>{formatIDR(openingCash)}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 m-0">Net Arus Kas Periode</p>
-                      <p className={`text-sm font-bold m-0 ${summary.netCashFlowPeriod >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                        {formatIDR(summary.netCashFlowPeriod || 0)}
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-wider m-0" style={{ color: '#78350F' }}>Net Arus Kas</p>
+                      <p className="text-xs sm:text-sm font-bold m-0 font-mono truncate" style={{ color: (summary.netCashFlowPeriod ?? (cashIn - cashOut)) >= 0 ? '#047857' : '#BE123C' }}>
+                        {formatIDR(summary.netCashFlowPeriod ?? (cashIn - cashOut))}
                       </p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 m-0">Saldo Kas Akhir</p>
-                      <p className="text-sm font-extrabold text-amber-800 m-0">{formatIDR(summary.endingCashOnHand || 0)}</p>
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-wider m-0" style={{ color: '#78350F' }}>Saldo Kas Akhir</p>
+                      <p className="text-xs sm:text-sm font-black m-0 font-mono truncate" style={{ color: '#92400E' }}>{formatIDR(endingCash)}</p>
                     </div>
                   </div>
 
-                  {/* Cash Flow Detailed Table */}
+                  {/* 1. Cash Flow Detailed Table */}
                   <div>
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
+                    <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wider mb-2 border-b border-slate-300 pb-1" style={{ color: '#0F172A' }}>
                       1. Rincian Arus Kas Lengkap (Cash Flow Statement)
                     </h3>
-                    <table className="w-full text-left border-collapse">
-                      <tbody className="divide-y divide-slate-200">
-                        {/* Section A: Starting Cash */}
-                        <tr className="bg-slate-100 font-bold text-slate-900">
-                          <td className="p-2.5">SALDO KAS AWAL PERIODE</td>
-                          <td className="p-2.5 text-right font-extrabold">{formatIDR(summary.startingCashOnHand || 0)}</td>
-                        </tr>
-                        <tr className="text-slate-600">
-                          <td className="p-2 pl-6">· Saldo Kas Tunai Awal</td>
-                          <td className="p-2 text-right">{formatIDR(summary.cashTunaiAwal || 0)}</td>
-                        </tr>
-                        <tr className="text-slate-600">
-                          <td className="p-2 pl-6">· Saldo Bank Awal</td>
-                          <td className="p-2 text-right">{formatIDR(summary.cashBankAwal || 0)}</td>
-                        </tr>
-
-                        {/* Section B: Cash In */}
-                        <tr className="bg-emerald-50 text-emerald-950 font-bold border-t-2 border-emerald-300">
-                          <td className="p-2.5">+ PENERIMAAN KAS (CASH IN)</td>
-                          <td className="p-2.5 text-right font-extrabold">{formatIDR(summary.cashInPeriod || 0)}</td>
-                        </tr>
-                        <tr className="text-slate-700">
-                          <td className="p-2 pl-6">· Penerimaan Pembayaran Tunai (Cash)</td>
-                          <td className="p-2 text-right">{formatIDR(summary.cashInPeriodTunai || 0)}</td>
-                        </tr>
-                        <tr className="text-slate-700">
-                          <td className="p-2 pl-6">· Penerimaan Pelunasan Transfer Bank</td>
-                          <td className="p-2 text-right">{formatIDR(summary.cashInPeriodTransfer || 0)}</td>
-                        </tr>
-
-                        {/* Section C: Cash Out */}
-                        <tr className="bg-rose-50 text-rose-950 font-bold border-t-2 border-rose-300">
-                          <td className="p-2.5">− PENGELUARAN KAS (CASH OUT)</td>
-                          <td className="p-2.5 text-right font-extrabold">({formatIDR(summary.cashOutPeriod || 0)})</td>
-                        </tr>
-                        <tr className="text-slate-700">
-                          <td className="p-2 pl-6">· Pembelian Stok Supplier (Tunai & Transfer)</td>
-                          <td className="p-2 text-right">({formatIDR(summary.cashOutPurchases || 0)})</td>
-                        </tr>
-                        <tr className="text-slate-700">
-                          <td className="p-2 pl-6">· Biaya Pengiriman & Armada (Asumsi Tunai)</td>
-                          <td className="p-2 text-right">({formatIDR(summary.deliveryOutPeriodTunai || summary.deliveryCost || 0)})</td>
-                        </tr>
-                        <tr className="text-slate-700">
-                          <td className="p-2 pl-6">· Biaya Operasional Toko & Gudang</td>
-                          <td className="p-2 text-right">({formatIDR(summary.cashOutOpex || displayTotalOpex)})</td>
-                        </tr>
-                        {Number(summary.cashOutPayroll) > 0 && (
-                          <tr className="text-slate-700">
-                            <td className="p-2 pl-6">· Gaji Pegawai & Tim Management</td>
-                            <td className="p-2 text-right">({formatIDR(summary.cashOutPayroll)})</td>
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-collapse text-[10px] sm:text-xs font-mono">
+                        <tbody className="divide-y divide-slate-200">
+                          {/* Section A: Starting Cash */}
+                          <tr style={{ backgroundColor: '#F1F5F9', fontWeight: 800, color: '#0F172A' }}>
+                            <td className="p-2 font-sans">SALDO KAS AWAL PERIODE</td>
+                            <td className="p-2 text-right whitespace-nowrap">{formatIDR(openingCash)}</td>
                           </tr>
-                        )}
+                          <tr style={{ color: '#475569' }}>
+                            <td className="p-1.5 pl-4 font-sans">· Saldo Kas Tunai Awal</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">{formatIDR(summary.openingCashOnHand || summary.cashTunaiAwal || 0)}</td>
+                          </tr>
+                          <tr style={{ color: '#475569' }}>
+                            <td className="p-1.5 pl-4 font-sans">· Saldo Bank Awal</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">{formatIDR(summary.openingBankBalance || summary.cashBankAwal || 0)}</td>
+                          </tr>
 
-                        {/* Section D: Ending Cash */}
-                        <tr className="bg-amber-100 text-slate-900 font-extrabold text-sm border-t-2 border-b-2 border-[#0F172A]">
-                          <td className="p-3">= SALDO KAS AKHIR PERIODE</td>
-                          <td className="p-3 text-right">{formatIDR(summary.endingCashOnHand || 0)}</td>
-                        </tr>
-                        <tr className="text-slate-700 font-semibold bg-slate-50">
-                          <td className="p-2 pl-6">· Saldo Kas Tunai Akhir (Cash on Hand)</td>
-                          <td className="p-2 text-right">{formatIDR(summary.cashTunaiAkhir || summary.endingCashOnHand || 0)}</td>
-                        </tr>
-                        <tr className="text-slate-700 font-semibold bg-slate-50">
-                          <td className="p-2 pl-6">· Saldo Bank Akhir</td>
-                          <td className="p-2 text-right">{formatIDR(summary.cashBankAkhir || summary.endingBankBalance || 0)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          {/* Section B: Cash In */}
+                          <tr style={{ backgroundColor: '#ECFDF5', fontWeight: 800, color: '#064E3B', borderTop: '2px solid #6EE7B7' }}>
+                            <td className="p-2 font-sans">+ PENERIMAAN KAS (CASH IN)</td>
+                            <td className="p-2 text-right whitespace-nowrap">{formatIDR(cashIn)}</td>
+                          </tr>
+                          <tr style={{ color: '#334155' }}>
+                            <td className="p-1.5 pl-4 font-sans">· Penerimaan Pembayaran Tunai (Cash)</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">{formatIDR(summary.cashInPeriodTunai || 0)}</td>
+                          </tr>
+                          <tr style={{ color: '#334155' }}>
+                            <td className="p-1.5 pl-4 font-sans">· Penerimaan Pelunasan Transfer Bank</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">{formatIDR(summary.cashInPeriodTransfer || 0)}</td>
+                          </tr>
+
+                          {/* Section C: Cash Out */}
+                          <tr style={{ backgroundColor: '#FFF1F2', fontWeight: 800, color: '#881337', borderTop: '2px solid #FDA4AF' }}>
+                            <td className="p-2 font-sans">− PENGELUARAN KAS (CASH OUT)</td>
+                            <td className="p-2 text-right whitespace-nowrap">({formatIDR(cashOut)})</td>
+                          </tr>
+                          <tr style={{ color: '#334155' }}>
+                            <td className="p-1.5 pl-4 font-sans">· Pembelian Stok Supplier (Tunai & Transfer)</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">({formatIDR((summary.supplierOutPeriodTunai || 0) + (summary.supplierOutPeriodTransfer || 0))})</td>
+                          </tr>
+                          <tr style={{ color: '#334155' }}>
+                            <td className="p-1.5 pl-4 font-sans">· Biaya Pengiriman & Armada (Asumsi Tunai)</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">({formatIDR(summary.deliveryOutPeriodTunai || summary.totalDeliveryCost || 0)})</td>
+                          </tr>
+                          <tr style={{ color: '#334155' }}>
+                            <td className="p-1.5 pl-4 font-sans">· Biaya Operasional Toko & Gudang</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">({formatIDR(summary.regularExpensesOutPeriodTunai || summary.cashOutOpex || displayTotalOpex)})</td>
+                          </tr>
+                          {(Number(summary.payrollOutPeriodTunai) > 0 || Number(summary.cashOutPayroll) > 0) && (
+                            <tr style={{ color: '#334155' }}>
+                              <td className="p-1.5 pl-4 font-sans">· Gaji Pegawai & Tim Management</td>
+                              <td className="p-1.5 text-right whitespace-nowrap">({formatIDR(summary.payrollOutPeriodTunai || summary.cashOutPayroll)})</td>
+                            </tr>
+                          )}
+                          {Number(summary.priveOutPeriodTunai) > 0 && (
+                            <tr style={{ color: '#334155' }}>
+                              <td className="p-1.5 pl-4 font-sans">· Penarikan Pemilik (Prive)</td>
+                              <td className="p-1.5 text-right whitespace-nowrap">({formatIDR(summary.priveOutPeriodTunai)})</td>
+                            </tr>
+                          )}
+
+                          {/* Section D: Ending Cash */}
+                          <tr style={{ backgroundColor: '#FEF3C7', fontWeight: 900, color: '#78350F', borderTop: '2px solid #0F172A', borderBottom: '2px solid #0F172A' }}>
+                            <td className="p-2.5 font-sans">= SALDO KAS AKHIR PERIODE</td>
+                            <td className="p-2.5 text-right whitespace-nowrap">{formatIDR(endingCash)}</td>
+                          </tr>
+                          <tr style={{ backgroundColor: '#F8FAFC', color: '#334155', fontWeight: 600 }}>
+                            <td className="p-1.5 pl-4 font-sans">· Saldo Kas Tunai Akhir (Cash on Hand)</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">{formatIDR(summary.endingCashOnHand || summary.cashTunaiAkhir || 0)}</td>
+                          </tr>
+                          <tr style={{ backgroundColor: '#F8FAFC', color: '#334155', fontWeight: 600 }}>
+                            <td className="p-1.5 pl-4 font-sans">· Saldo Bank Akhir</td>
+                            <td className="p-1.5 text-right whitespace-nowrap">{formatIDR(summary.endingBankBalance || summary.cashBankAkhir || 0)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-
-                  {/* 2. Daftar Toko dengan Sisa Piutang Aktif */}
-                  {sales.filter(s => (s.remaining_amount || 0) > 0).length > 0 && (
-                    <div>
-                      <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
-                        2. Ringkasan Piutang Toko Aktif (Accounts Receivable)
-                      </h3>
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                          <tr>
-                            <th className="p-2">Nama Toko / Pelanggan</th>
-                            <th className="p-2">No. Invoice</th>
-                            <th className="p-2 text-right">Total Nota</th>
-                            <th className="p-2 text-right">Sisa Piutang (Rp)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {sales.filter(s => (s.remaining_amount || 0) > 0).map(s => (
-                            <tr key={s.id}>
-                              <td className="p-2 font-bold text-slate-900">{s.customer_name || 'Pelanggan'}</td>
-                              <td className="p-2 font-mono text-slate-600">{s.invoice_number}</td>
-                              <td className="p-2 text-right">{formatIDR(s.total_amount || 0)}</td>
-                              <td className="p-2 text-right font-bold text-rose-700">{formatIDR(s.remaining_amount || 0)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* 3. Rincian Riwayat Pembayaran ke Supplier Periode Ini */}
-                  {supplierPayments.length > 0 && (
-                    <div>
-                      <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
-                        3. Rincian Riwayat Pembayaran ke Supplier Periode Ini ({supplierPayments.length})
-                      </h3>
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
-                          <tr>
-                            <th className="p-2">Tanggal</th>
-                            <th className="p-2">Nama Supplier</th>
-                            <th className="p-2 text-center">Metode Bayar</th>
-                            <th className="p-2 text-right">Nominal Dibayar (Rp)</th>
-                            <th className="p-2">Catatan / Keterangan</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {supplierPayments.map((sp, idx) => (
-                            <tr key={sp.id || idx}>
-                              <td className="p-2 text-slate-600">{formatDateOnly(sp.payment_date || sp.created_at)}</td>
-                              <td className="p-2 font-bold text-slate-900">{sp.supplier_name || sp.sembako_suppliers?.supplier_name || 'Supplier'}</td>
-                              <td className="p-2 text-center uppercase font-semibold text-[10px]">
-                                <span className={`px-1.5 py-0.5 rounded ${sp.payment_method === 'transfer' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                                  {sp.payment_method || 'cash'}
-                                </span>
-                              </td>
-                              <td className="p-2 text-right font-bold text-rose-700">{formatIDR(sp.amount || 0)}</td>
-                              <td className="p-2 text-slate-500 italic text-[11px]">{sp.notes || '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-400">
-                          <tr>
-                            <td colSpan={3} className="p-2">TOTAL PEMBAYARAN SUPPLIER</td>
-                            <td className="p-2 text-right text-rose-700">
-                              {formatIDR(supplierPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0))}
-                            </td>
-                            <td></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  )}
                 </div>
               )}
 
               {/* ── Document Signatures ────────────────────────────────────── */}
-              <div className="mt-12 pt-8 border-t border-slate-300 grid grid-cols-2 gap-8 text-center">
+              <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-slate-300 grid grid-cols-2 gap-4 sm:gap-8 text-center">
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-500 m-0 mb-12">Dibuat Oleh (Finance / Kasir)</p>
-                  <p className="font-bold text-slate-900 underline m-0">{profile?.full_name || 'Staff Keuangan'}</p>
-                  <p className="text-[10px] text-slate-500 m-0">Tanda Tangan & Nama Terang</p>
+                  <p className="text-[9px] sm:text-[10px] uppercase font-bold m-0 mb-8 sm:mb-12" style={{ color: '#64748B' }}>Dibuat Oleh (Finance / Kasir)</p>
+                  <p className="font-bold underline m-0 text-[10px] sm:text-xs" style={{ color: '#0F172A' }}>{profile?.full_name || 'Staff Keuangan'}</p>
+                  <p className="text-[9px] sm:text-[10px] m-0" style={{ color: '#64748B' }}>Tanda Tangan & Nama</p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-500 m-0 mb-12">Disetujui Oleh (Owner / Manager)</p>
-                  <p className="font-bold text-slate-900 underline m-0">Pemilik Bisnis</p>
-                  <p className="text-[10px] text-slate-500 m-0">Tanda Tangan & Cap Usaha</p>
+                  <p className="text-[9px] sm:text-[10px] uppercase font-bold m-0 mb-8 sm:mb-12" style={{ color: '#64748B' }}>Disetujui Oleh (Owner / Manager)</p>
+                  <p className="font-bold underline m-0 text-[10px] sm:text-xs" style={{ color: '#0F172A' }}>Pemilik Bisnis</p>
+                  <p className="text-[9px] sm:text-[10px] m-0" style={{ color: '#64748B' }}>Tanda Tangan & Cap</p>
                 </div>
               </div>
             </div>

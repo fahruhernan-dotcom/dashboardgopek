@@ -2,7 +2,8 @@ import React from 'react'
 import {
   Printer, X, Store, User, Calendar, CreditCard,
   CheckCircle2, Clock, AlertCircle, Phone, MapPin,
-  Building2, Receipt, Truck, ArrowDownRight, ShieldCheck
+  Building2, Receipt, Truck, ArrowDownRight, ShieldCheck,
+  Loader2
 } from 'lucide-react'
 import { formatIDR, formatDate } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -415,60 +416,356 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
 }
 
 /**
+ * SembakoThermalReceipt
+ * Ultra-crisp 58mm / 80mm POS Thermal Receipt Component
+ * Designed for Bluetooth Thermal Printers & Quick Mobile Receipts
+ */
+export function SembakoThermalReceipt({ data }) {
+  if (!data) return null
+
+  const companyName = data.tenant?.business_name || 'Gudang Sembako GPK'
+  const companyPhone = data.tenant?.phone || '-'
+  const companyAddress = data.tenant?.location || ''
+  const customerName = data.customerName || data.customer_name || 'Pelanggan Umum'
+  const customerPhone = data.customerPhone || data.customer_phone || '-'
+
+  const deliveryCost = Number(data.delivery_cost || data.deliveryCost || 0)
+  const otherCost = Number(data.other_cost || data.otherCost || 0)
+  const totalAmount = Number(data.total_amount || data.revenue || 0)
+  const paidAmount = Number(data.paid_amount || data.payAmount || 0)
+  const remainingAmount = Number(data.remaining_amount ?? Math.max(0, totalAmount - paidAmount))
+
+  const paymentStatus = data.payment_status || (remainingAmount === 0 ? 'lunas' : paidAmount > 0 ? 'sebagian' : 'belum_lunas')
+  const isLunas = paymentStatus === 'lunas'
+
+  const rawItems = data.items || data.sembako_sale_items || []
+  const items = Array.isArray(rawItems) ? rawItems : []
+
+  const invoiceNo = data.invoiceNumber || data.invoice_number || 'SMB-POS'
+  const txnDate = data.transactionDate || data.transaction_date || new Date().toISOString()
+  const customerNotes = cleanCustomerNotes(data.notes)
+
+  return (
+    <div className={cn(
+      "bg-white text-slate-900 w-full max-w-[360px] mx-auto p-4 sm:p-5 flex flex-col font-mono text-left rounded-xl border border-slate-300 shadow-xl relative",
+      "print:shadow-none print:max-w-full print:p-0 print:border-none print:rounded-none"
+    )} style={{ pageBreakInside: 'avoid', fontSize: '11px', lineHeight: '1.4' }}>
+      
+      {/* ── Header ── */}
+      <div className="text-center pb-3 border-b border-dashed border-slate-400">
+        <h2 className="text-sm font-black tracking-tight uppercase text-slate-900">{companyName}</h2>
+        {companyAddress && <p className="text-[10px] text-slate-600 mt-0.5">{companyAddress}</p>}
+        {companyPhone && companyPhone !== '-' && <p className="text-[10px] text-slate-600">Telp: {companyPhone}</p>}
+      </div>
+
+      {/* ── Metadata ── */}
+      <div className="py-2.5 border-b border-dashed border-slate-400 text-[10px] space-y-1">
+        <div className="flex justify-between">
+          <span className="text-slate-500">No. Struk:</span>
+          <span className="font-bold text-slate-900">{invoiceNo}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Tanggal:</span>
+          <span className="text-slate-900">{formatDate(txnDate, true)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Pelanggan:</span>
+          <span className="font-bold text-slate-900">{customerName}</span>
+        </div>
+        {customerPhone && customerPhone !== '-' && (
+          <div className="flex justify-between">
+            <span className="text-slate-500">Kontak:</span>
+            <span className="text-slate-900">{customerPhone}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Items ── */}
+      <div className="py-2.5 border-b border-dashed border-slate-400 space-y-2">
+        {items.map((item, idx) => {
+          const qty = Number(item.quantity || item.quantity_kg || 0)
+          const price = Number(item.sell_price ?? item.price_per_unit ?? item.price_per_kg ?? item.unit_price ?? (qty > 0 && item.subtotal ? item.subtotal / qty : 0) ?? 0)
+          const subtotal = Number(item.subtotal ?? Math.round(qty * price))
+          const unit = item.unit || 'pcs'
+          const rawName = item.product_name || 'Item'
+          const cleanName = rawName.replace(/\s*\[\d+[^\]]+\]/g, '').trim()
+
+          return (
+            <div key={idx} className="space-y-0.5">
+              <div className="font-bold text-slate-900 truncate">{cleanName}</div>
+              <div className="flex justify-between text-slate-600 text-[10px]">
+                <span>{qty} {unit} x {formatIDR(price)}</span>
+                <span className="font-bold text-slate-900">{formatIDR(subtotal)}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Total Breakdown ── */}
+      <div className="py-2.5 border-b border-dashed border-slate-400 space-y-1 text-[11px]">
+        {deliveryCost > 0 && (
+          <div className="flex justify-between text-slate-600">
+            <span>Ongkos Kirim:</span>
+            <span>+{formatIDR(deliveryCost)}</span>
+          </div>
+        )}
+        {otherCost > 0 && (
+          <div className="flex justify-between text-slate-600">
+            <span>Biaya Lain:</span>
+            <span>+{formatIDR(otherCost)}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-black text-xs pt-1 text-slate-900">
+          <span>TOTAL:</span>
+          <span>{formatIDR(totalAmount)}</span>
+        </div>
+        <div className="flex justify-between text-slate-700">
+          <span>Bayar:</span>
+          <span>{formatIDR(paidAmount)}</span>
+        </div>
+        <div className="flex justify-between font-bold text-slate-900 pt-0.5">
+          <span>{isLunas ? 'KEMBALI / SISA:' : 'SISA TAGIHAN:'}</span>
+          <span>{formatIDR(remainingAmount)}</span>
+        </div>
+      </div>
+
+      {/* ── Status Badge ── */}
+      <div className="py-2.5 text-center border-b border-dashed border-slate-400">
+        <div className={cn(
+          "inline-block px-3 py-1 rounded font-black text-[11px] tracking-wider uppercase",
+          isLunas ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-900"
+        )}>
+          STATUS: {isLunas ? 'LUNAS (PAID)' : 'BELUM LUNAS / TEMPO'}
+        </div>
+      </div>
+
+      {/* ── Notes ── */}
+      {customerNotes && (
+        <div className="py-2 text-[10px] text-slate-600 border-b border-dashed border-slate-400">
+          <span className="font-bold">Ket: </span>{customerNotes}
+        </div>
+      )}
+
+      {/* ── Footer ── */}
+      <div className="pt-3 text-center text-[9px] text-slate-500 space-y-0.5">
+        <p className="font-bold text-slate-700">TERIMA KASIH ATAS KUNJUNGAN ANDA</p>
+        <p>Barang yang sudah dibeli tidak dapat ditukar kecuali perjanjian</p>
+        <p className="text-[8px] text-slate-400 pt-1">Dicetak melalui TernakOS GPK</p>
+      </div>
+
+    </div>
+  )
+}
+
+/**
  * SembakoInvoicePreview
- * Printable Modal Wrapper with High Z-Index and Non-Overlapping Controls
+ * Printable Modal Wrapper with High Z-Index, Format Switcher (A4 vs Thermal POS),
+ * Universal PDF Download & Direct WhatsApp Share
  */
 export default function SembakoInvoicePreview({ data, mode = 'invoice', onClose }) {
+  const [viewFormat, setViewFormat] = React.useState('a4') // 'a4' | 'thermal'
+  const [isExporting, setIsExporting] = React.useState(false)
+
   if (!data) return null
+
+  const isDelivery = mode === 'delivery'
+  const invNo = data.invoiceNumber || data.invoice_number || 'Faktur'
 
   const handlePrint = () => {
     window.print()
   }
 
-  const isDelivery = mode === 'delivery'
+  const handleShareWA = () => {
+    try {
+      import('@/lib/invoice/pdfExportHelper').then(({ shareInvoiceViaWhatsApp }) => {
+        shareInvoiceViaWhatsApp(data)
+      })
+    } catch (e) {
+      console.error('Error sharing WA:', e)
+    }
+  }
+
+  const handleDownloadPDF = async () => {
+    try {
+      setIsExporting(true)
+      const { exportInvoicePDF } = await import('@/lib/invoice/pdfExportHelper')
+      const { SembakoInvoice } = await import('@/components/invoice/templates/SembakoInvoice')
+      const { toast } = await import('sonner')
+
+      const rawItems = data.items || data.sembako_sale_items || []
+      const normalizedItems = rawItems.map(item => {
+        const qty = Number(item.quantity || item.quantity_kg || item.qty || 0)
+        const price = Number(item.price_per_unit ?? item.sell_price ?? item.unit_price ?? item.price ?? item.price_per_kg ?? (qty > 0 && item.subtotal ? item.subtotal / qty : 0) ?? 0)
+        const cost = Number(item.cogs_per_unit ?? item.cost_per_unit ?? item.cost_per_kg ?? item.cogs ?? 0)
+        const subtotal = Number(item.subtotal ?? Math.round(qty * price))
+        return {
+          product_name: item.product_name || item.sembako_products?.product_name || 'Produk',
+          quantity: qty,
+          quantity_kg: qty,
+          unit: item.unit || item.sembako_products?.unit || 'pcs',
+          price_per_unit: price,
+          sell_price: price,
+          price_per_kg: price,
+          cost_per_unit: cost,
+          cost_per_kg: cost,
+          subtotal: subtotal
+        }
+      })
+
+      const totalAmount = Number(data.total_amount || data.revenue || 0)
+      const paidAmount = Number(data.paid_amount || data.payAmount || 0)
+      const remainingAmount = Number(data.remaining_amount ?? Math.max(0, totalAmount - paidAmount))
+      const paymentStatus = data.payment_status || (remainingAmount === 0 ? 'lunas' : paidAmount > 0 ? 'sebagian' : 'belum_lunas')
+      const payments = Array.isArray(data.sembako_payments) ? data.sembako_payments : (Array.isArray(data.payments) ? data.payments : [])
+
+      const doc = (
+        <SembakoInvoice
+          tenant={data.tenant || { business_name: 'GPK', phone: '-' }}
+          invoice={{
+            invoice_number: invNo,
+            transaction_date: data.transactionDate || data.transaction_date || new Date().toISOString(),
+            due_date: data.dueDate || data.due_date,
+            total_amount: totalAmount,
+            paid_amount: paidAmount,
+            remaining_amount: remainingAmount,
+            delivery_cost: Number(data.delivery_cost || data.deliveryCost || 0),
+            other_cost: Number(data.other_cost || data.otherCost || 0),
+            payment_status: paymentStatus,
+            notes: data.notes || '',
+            sembako_payments: payments,
+          }}
+          customer={{
+            customer_name: data.customerName || data.customer_name || 'Customer',
+            customer_type: data.customerType || data.customer_type || 'warung',
+            phone: data.customerPhone || data.customer_phone || '-',
+            address: data.customerAddress || data.customer_address || '',
+          }}
+          items={normalizedItems}
+          payments={payments}
+          invoiceNumber={invNo}
+          generatedBy={data.generatedBy || 'Admin GPK'}
+          showProfit={data.showProfit ?? false}
+        />
+      )
+
+      toast.info('Menyiapkan file PDF...')
+      const res = await exportInvoicePDF(doc, `Invoice_${invNo}.pdf`, { invoiceNumber: invNo })
+      if (res.success) {
+        toast.success('Faktur berhasil disiapkan!')
+      }
+    } catch (err) {
+      console.error('Download PDF error:', err)
+      const { toast } = await import('sonner')
+      toast.error('Gagal membuat PDF. Silakan coba lagi.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-start p-0 sm:p-4 md:p-6 overflow-y-auto print:p-0 print:bg-white print:relative print:z-0">
+    <div className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-start p-0 sm:p-4 md:p-6 overflow-y-auto print:p-0 print:bg-white print:relative print:z-0">
       
       {/* ── Top Floating Action Bar ── */}
-      <div className="sticky top-0 z-50 w-full max-w-[800px] bg-slate-900/95 backdrop-blur-xl border-b sm:border border-white/10 sm:rounded-2xl px-4 py-3 mb-3 flex items-center justify-between shadow-2xl shrink-0 print:hidden">
+      <div
+        className="sticky top-0 z-50 w-full max-w-[800px] border-b sm:border sm:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 mb-3 flex flex-wrap items-center justify-between gap-2 shadow-2xl shrink-0 print:hidden"
+        style={{ background: '#0F172A', borderColor: '#1E293B', color: '#FFFFFF' }}
+      >
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0">
             <Receipt size={18} />
           </div>
           <div>
-            <h3 className="text-xs sm:text-sm font-black text-white leading-tight">
-              Preview {isDelivery ? 'Surat Jalan' : 'Faktur Penjualan'}
+            <h3 className="text-xs sm:text-sm font-black leading-tight" style={{ color: '#FFFFFF' }}>
+              Preview {isDelivery ? 'Surat Jalan' : (viewFormat === 'thermal' ? 'Struk Kasir 58/80mm' : 'Faktur Penjualan')}
             </h3>
-            <p className="text-[10px] text-slate-400 font-mono">
-              {data.invoiceNumber || data.invoice_number || 'Faktur'}
+            <p className="text-[10px] font-mono font-bold" style={{ color: '#94A3B8' }}>
+              {invNo}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Format Selector Toggle */}
+        {!isDelivery && (
+          <div className="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700 text-[10px] font-bold">
+            <button
+              onClick={() => setViewFormat('a4')}
+              className={cn(
+                "px-2.5 py-1 rounded-md transition-all font-bold",
+                viewFormat === 'a4' ? "bg-amber-500 text-slate-950 font-black shadow" : "text-slate-300 hover:text-white"
+              )}
+            >
+              Faktur A4
+            </button>
+            <button
+              onClick={() => setViewFormat('thermal')}
+              className={cn(
+                "px-2.5 py-1 rounded-md transition-all font-bold",
+                viewFormat === 'thermal' ? "bg-amber-500 text-slate-950 font-black shadow" : "text-slate-300 hover:text-white"
+              )}
+            >
+              Struk Thermal
+            </button>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
+          {/* WhatsApp Share */}
+          <Button
+            onClick={handleShareWA}
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1 shadow-md text-[11px] h-8 px-2.5 sm:px-3 rounded-xl border-none active:scale-95 transition-all"
+            title="Kirim ke WhatsApp"
+          >
+            <Phone size={13} /> <span className="hidden sm:inline">WhatsApp</span>
+          </Button>
+
+          {/* Download PDF */}
+          <Button
+            onClick={handleDownloadPDF}
+            disabled={isExporting}
+            size="sm"
+            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black gap-1 shadow-md text-[11px] h-8 px-2.5 sm:px-3 rounded-xl border-none active:scale-95 transition-all"
+            title="Download PDF"
+          >
+            {isExporting ? <Loader2 size={13} className="animate-spin" /> : <Truck size={13} className="hidden" />}
+            <span>{isExporting ? 'Proses...' : 'PDF'}</span>
+          </Button>
+
+          {/* Print Button */}
           <Button
             onClick={handlePrint}
             size="sm"
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1.5 shadow-lg text-xs h-9 px-3.5 rounded-xl border-none active:scale-95 transition-all"
+            className="border font-bold gap-1 text-[11px] h-8 px-2.5 sm:px-3 rounded-xl active:scale-95 transition-all shadow-sm flex items-center justify-center cursor-pointer"
+            style={{ color: '#F8FAFC', backgroundColor: '#1E293B', borderColor: '#334155' }}
+            title="Cetak Faktur"
           >
-            <Printer size={15} /> <span className="hidden sm:inline">Cetak</span> Faktur
+            <Printer size={13} color="#F8FAFC" /> <span className="hidden sm:inline">Cetak</span>
           </Button>
+
+          {/* Close */}
           <Button
             onClick={onClose}
             size="sm"
-            variant="ghost"
-            className="bg-white/10 text-white hover:bg-white/20 h-9 w-9 p-0 rounded-xl active:scale-95 transition-all"
+            className="border h-8 w-8 p-0 rounded-xl active:scale-95 transition-all ml-1 shadow-sm flex items-center justify-center cursor-pointer"
+            style={{ color: '#F8FAFC', backgroundColor: '#1E293B', borderColor: '#334155' }}
+            title="Tutup"
           >
-            <X size={18} />
+            <X size={16} color="#F8FAFC" />
           </Button>
         </div>
       </div>
 
       {/* ── Paper Container (with safe area bottom padding to prevent bottom nav overlap) ── */}
-      <div className="w-full max-w-[800px] pb-36 sm:pb-12 print:pb-0">
-        <SembakoInvoicePaper data={data} mode={mode} />
+      <div className="w-full max-w-[800px] pb-36 sm:pb-12 print:pb-0 flex justify-center">
+        {viewFormat === 'thermal' && !isDelivery ? (
+          <SembakoThermalReceipt data={data} />
+        ) : (
+          <SembakoInvoicePaper data={data} mode={mode} />
+        )}
       </div>
     </div>
   )
 }
+

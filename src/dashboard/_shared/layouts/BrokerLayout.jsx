@@ -25,6 +25,7 @@ import {
 } from '@/lib/hooks/useSembakoData'
 
 import { useBackHandler } from '@/lib/hooks/useBackHandler'
+import { useEdgeSwipeSidebar } from '@/lib/hooks/useEdgeSwipeSidebar'
 
 // ── AI Error Boundary ─────────────────────────────────────────
 // Isolates crash di AIChatBubble agar tidak merusak halaman utama
@@ -172,21 +173,27 @@ export default function BrokerLayout() {
   // Close mobile sidebar on Android hardware back button
   useBackHandler(sidebarOpen, () => setSidebarOpen(false))
 
+  // Global edge-swipe from left screen edge to center to open sidebar
+  useEdgeSwipeSidebar({
+    isOpen: sidebarOpen,
+    onOpen: () => setSidebarOpen(true),
+    onClose: () => setSidebarOpen(false),
+    enabled: !isDesktop
+  })
+
   useEffect(() => {
     const openHandler = () => setSidebarOpen(true)
     window.addEventListener('open-mobile-sidebar', openHandler)
     return () => window.removeEventListener('open-mobile-sidebar', openHandler)
   }, [])
 
-  // Swipe-right-from-left-edge & Pull-To-Refresh
-  const swipeStartX = useRef(null)
+  // Pull-To-Refresh
   const [pullY, setPullY] = useState(0)
   const [isPullRefreshing, setIsPullRefreshing] = useState(false)
   const pullStartY = useRef(null)
   const queryClient = useQueryClient()
 
   const handleTouchStart = (e) => {
-    swipeStartX.current = e.touches[0].clientX
     if (window.scrollY <= 10) {
       pullStartY.current = e.touches[0].clientY
     }
@@ -218,16 +225,6 @@ export default function BrokerLayout() {
     } else {
       setPullY(0)
     }
-
-    if (swipeStartX.current !== null) {
-      const dx = e.changedTouches[0].clientX - swipeStartX.current
-      if (!sidebarOpen && swipeStartX.current < 40 && dx > 60) {
-        setSidebarOpen(true)
-      } else if (sidebarOpen && dx < -50) {
-        setSidebarOpen(false)
-      }
-    }
-    swipeStartX.current = null
     pullStartY.current = null
   }
 
