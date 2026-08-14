@@ -181,10 +181,18 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
       const saved = localStorage.getItem(DRAFT_STOCK_IN_KEY)
       if (saved) {
         const parsed = JSON.parse(saved)
-        setForm(f => ({ ...f, ...parsed, batch_code: parsed.batch_code || f.batch_code }))
+        const validProd = products.some(p => p.id === parsed.product_id) ? parsed.product_id : (preselectedProductId || '')
+        const validSup = suppliers.some(s => s.id === parsed.supplier_id) ? parsed.supplier_id : ''
+        setForm(f => ({
+          ...f,
+          ...parsed,
+          product_id: validProd,
+          supplier_id: validSup,
+          batch_code: parsed.batch_code || f.batch_code
+        }))
       }
     } catch { /* ok */ }
-  }, [])
+  }, [products, suppliers, preselectedProductId])
 
   React.useEffect(() => {
     if (form.product_id || form.qty_masuk || form.buy_price) {
@@ -220,6 +228,13 @@ export function SembakoTambahStokSheet({ preselectedProductId, products = [], su
     e.preventDefault()
     if (!form.product_id) return toast.error('Pilih produk dulu')
     if (!form.supplier_id) return toast.error('Pilih supplier dulu')
+    
+    // Validate supplier existence
+    const validSupplier = suppliers.find(s => s.id === form.supplier_id)
+    if (!validSupplier) {
+      return toast.error('Supplier yang dipilih tidak valid atau sudah tidak ada. Silakan pilih supplier lain.')
+    }
+
     if (!form.qty_masuk || Number(form.qty_masuk) <= 0) return toast.error('Jumlah harus > 0')
     
     if (inputBuyPrice <= 0) return toast.error('Harga beli wajib diisi')

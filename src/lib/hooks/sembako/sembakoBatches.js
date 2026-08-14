@@ -178,8 +178,12 @@ export const useAddStockBatch = () => {
       const randStr = Math.random().toString(36).slice(2, 6).toUpperCase()
       const generatedBatchCode = batch_code || `BTC-${dateStr}-${randStr}`
 
+      const cleanSupplierId = (supplier_id && typeof supplier_id === 'string' && supplier_id.trim() !== '' && supplier_id !== 'null' && supplier_id !== 'undefined') ? supplier_id : null
+
       const payload = {
-        tenant_id, product_id, supplier_id,
+        tenant_id,
+        product_id,
+        supplier_id: cleanSupplierId,
         batch_code: generatedBatchCode,
         qty_masuk: qtyInt,
         qty_sisa: qtyInt,
