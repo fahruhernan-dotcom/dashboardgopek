@@ -1051,10 +1051,6 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     }
   }
 
-  const INVOICE_DRAFT_KEY = 'sembako_invoice_wizard_draft'
-  const EDIT_DRAFT_KEY = editId ? `sembako_edit_draft_v2_${editId}` : null
-  const draftLoadedRef = useRef(false)
-
   // ── Auto Draft Persistence ──────────────────────────────────────────────────
   useEffect(() => {
     if (!open) {
