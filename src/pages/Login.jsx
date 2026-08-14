@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
   Eye, EyeOff, AlertCircle, Loader2,
-  TrendingUp, ShoppingCart, Clock, Shield, Users, Zap, Mail, Lock,
-  Package, FileText, Crown, Store, UserCheck
+  TrendingUp, ShoppingCart, Clock, ShieldCheck, Users, Zap, Mail, Lock,
+  Package, FileText, Store, CheckCircle2, ArrowRight, Sparkles, Building2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getBrokerBasePath, getPeternakBasePath, useAuth } from '../lib/hooks/useAuth'
 import { setRememberMe as saveRememberMe } from '@/lib/supabaseStorage'
 import Particles from '@/components/reactbits/Particles'
-import { cn } from '@/lib/utils'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -41,7 +40,7 @@ export default function Login() {
     const targetPass = overridePass || password
 
     if (!targetEmail || !targetPass) {
-      setError('Masukkan email dan password kamu')
+      setError('Masukkan email dan kata sandi Anda')
       return
     }
     setIsLoading(true)
@@ -63,26 +62,26 @@ export default function Login() {
         resolvedEmail = matchedProf?.email || `${cleanEmail}@sembako.id`
       }
 
-      let { data, error } = await supabase.auth.signInWithPassword({
+      let { data, error: authErr } = await supabase.auth.signInWithPassword({
         email: resolvedEmail,
         password: targetPass
       })
 
-      if (error && !cleanEmail.includes('@') && resolvedEmail !== `${cleanEmail}@sembako.id`) {
+      if (authErr && !cleanEmail.includes('@') && resolvedEmail !== `${cleanEmail}@sembako.id`) {
         const fallbackRes = await supabase.auth.signInWithPassword({
           email: `${cleanEmail}@sembako.id`,
           password: targetPass
         })
         data = fallbackRes.data
-        error = fallbackRes.error
+        authErr = fallbackRes.error
       }
 
-      if (error) {
-        setError('Email atau password salah. Silakan coba lagi.')
+      if (authErr) {
+        setError('Email atau kata sandi salah. Silakan periksa kembali.')
         return
       }
 
-      if (data.user?.app_metadata?.is_superadmin === true) {
+      if (data?.user?.app_metadata?.is_superadmin === true) {
         navigate('/admin')
         toast.success('Selamat datang kembali, Superadmin!')
         return
@@ -136,7 +135,7 @@ export default function Login() {
       navigate(getBrokerBasePath(profile.tenants, profile) + '/beranda')
       toast.success('Selamat datang kembali!')
     } catch (err) {
-      setError('Terjadi kesalahan saat masuk. Coba lagi.')
+      setError('Terjadi kesalahan saat masuk. Silakan coba lagi.')
     } finally {
       setIsLoading(false)
     }
@@ -160,158 +159,188 @@ export default function Login() {
 // ─── DESKTOP LOGIN VIEW ───────────────────────────────────────
 function DesktopLoginView({ email, setEmail, password, setPassword, showPassword, setShowPassword, isLoading, error, handleLogin, rememberMe, setRememberMe }) {
   return (
-    <div className="min-h-screen flex bg-background text-foreground font-sans selection:bg-orange-500/30 overflow-hidden relative text-left">
-      
-      {/* BRAND HEADER (Absolute Left) */}
-      <div className="absolute top-8 left-12 z-50 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0">
-          <ShoppingCart size={20} className="text-white" strokeWidth={2.5} />
-        </div>
-        <div>
-          <div className="font-extrabold text-sm text-foreground flex items-center gap-2">
-            Gopek Sembako <span className="text-[10px] bg-orange-600 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">OS v2.0</span>
-          </div>
-          <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Dashboard Distributor & Broker</div>
-        </div>
-      </div>
+    <div className="min-h-[100dvh] w-full flex flex-col lg:flex-row bg-[#FBFCF8] text-slate-900 font-sans selection:bg-[#0c3d0c]/15 overflow-x-hidden overflow-y-auto relative">
 
-      {/* LEFT PANEL - SEMBAKO BRANDING */}
+      {/* LEFT PANEL - RICH SHOWCASE (55% Width) */}
       <motion.div 
-        initial={{ opacity: 0, x: -20 }}
+        initial={{ opacity: 0, x: -16 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-1/2 relative overflow-hidden hidden lg:flex flex-col justify-center px-16 py-20 bg-slate-50 dark:bg-slate-950/20 border-r border-border/40"
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full lg:w-[55%] relative overflow-y-auto hidden lg:flex flex-col justify-between px-10 xl:px-16 py-10 bg-gradient-to-br from-white via-[#F8FAFC] to-[#ECFDF5]/30 border-r border-slate-200/80 min-h-[100dvh]"
       >
-        <div className="absolute top-[15%] left-[-10%] w-[380px] h-[380px] rounded-full bg-radial-gradient from-orange-500/10 to-transparent blur-3xl pointer-events-none" />
+        {/* Subtle Ambient Glows */}
+        <div className="absolute top-[-10%] left-[-10%] w-[450px] h-[450px] rounded-full bg-emerald-500/[0.07] blur-[90px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[380px] h-[380px] rounded-full bg-[#0c3d0c]/[0.05] blur-[80px] pointer-events-none" />
 
         <Particles
-          particleCount={50}
-          particleColors={['#EA580C', '#F59E0B', '#F97316', '#FCD34D']}
-          particleBaseSize={2}
-          speed={0.2}
-          className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-75"
+          particleCount={40}
+          particleColors={['#0C3D0C', '#16A34A', '#22C55E', '#15803D']}
+          particleBaseSize={1.8}
+          speed={0.25}
+          className="absolute inset-0 pointer-events-none opacity-40"
         />
 
-        <div className="relative z-10 w-full max-w-[500px] mx-auto space-y-6">
+        {/* Brand Header */}
+        <div className="relative z-10 flex items-center gap-3 mb-6 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#0c3d0c] flex items-center justify-center shadow-md shadow-[#0c3d0c]/20 ring-1 ring-white/20 shrink-0">
+            <Store size={20} className="text-white" strokeWidth={2.2} />
+          </div>
+          <div>
+            <div className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
+              Gopek Sembako <span className="text-[10px] bg-[#0c3d0c]/10 text-[#0c3d0c] border border-[#0c3d0c]/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">OS v2.4</span>
+            </div>
+            <div className="text-[10px] text-slate-500 font-semibold tracking-wide">Platform Distribusi & Grosir Sembako</div>
+          </div>
+        </div>
+
+        <div className="relative z-10 w-full max-w-[520px] mx-auto my-auto py-6 space-y-7">
+          
+          {/* Status Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 border border-slate-200/90 shadow-sm backdrop-blur-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[11px] font-semibold text-slate-700 tracking-tight">Sistem Online & Realtime Sync</span>
+          </div>
+
+          {/* Heading */}
           <div className="space-y-3">
-            <h2 className="text-3xl font-black leading-tight text-foreground">
-              Kelola Operasional Sembako Lebih Cepat & Akurat.
-            </h2>
-            <p className="text-xs leading-relaxed text-muted-foreground font-semibold">
-              Sistem manajemen POS toko, kasir grosir, kontrol stok gudang FIFO, dan transparansi laporan profit bersih real-time.
+            <h1 className="text-3xl sm:text-4xl font-black leading-[1.15] tracking-tight text-slate-950">
+              Otomasi Distribusi Sembako, Kasir POS & Finansial Real-Time.
+            </h1>
+            <p className="text-sm leading-relaxed text-slate-600 font-normal max-w-[480px]">
+              Solusi terpadu kasir grosir, kontrol batch stok gudang FIFO, pencatatan piutang pelanggan, dan transparansi laporan laba bersih otomatis.
             </p>
           </div>
 
-          {/* STATS ROW */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* BENTO STATS / PILLARS */}
+          <div className="grid grid-cols-3 gap-3 pt-1">
             {[
-              { icon: <Clock size={16} className="text-orange-500" />, val: "< 1 Detik", label: "Cetak POS & Faktur" },
-              { icon: <Package size={16} className="text-amber-500" />, val: "FIFO Stok", label: "Gudang & Batch" },
-              { icon: <Shield size={16} className="text-emerald-500" />, val: "3 Role", label: "Dev, Owner & Admin" },
+              { icon: <Clock size={16} className="text-[#0c3d0c]" />, val: "< 1 Detik", label: "Cetak POS & Nota" },
+              { icon: <Package size={16} className="text-emerald-700" />, val: "FIFO Multi-Satuan", label: "Dus, Bal, Sak, Pcs" },
+              { icon: <ShieldCheck size={16} className="text-teal-700" />, val: "Log Audit Lengkap", label: "Anti-Selisih Stok" },
             ].map((st, i) => (
               <div 
                 key={i} 
-                className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm"
+                className="bg-white/80 border border-slate-200/90 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.03)] backdrop-blur-sm transition-all hover:border-emerald-600/30 hover:shadow-md"
               >
-                {st.icon}
-                <div className="text-sm font-black text-foreground mt-2">{st.val}</div>
-                <div className="text-[10px] text-muted-foreground font-bold mt-0.5">{st.label}</div>
+                <div className="w-7 h-7 rounded-lg bg-[#0c3d0c]/[0.08] flex items-center justify-center mb-2.5">
+                  {st.icon}
+                </div>
+                <div className="text-xs font-black text-slate-900 tracking-tight">{st.val}</div>
+                <div className="text-[10px] text-slate-500 font-medium mt-0.5">{st.label}</div>
               </div>
             ))}
           </div>
 
-          {/* FEATURE GRID */}
+          {/* 2-COLUMN FEATURE HIGHLIGHTS */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: <ShoppingCart size={14} className="text-orange-500" />, title: "Kasir & Multi-Toko", desc: "Transaksi POS grosir kilat dengan nota termal." },
-              { icon: <Package size={14} className="text-amber-500" />, title: "Stok FIFO Gudang", desc: "Kontrol varian dus/bal & penyesuaian stok." },
-              { icon: <TrendingUp size={14} className="text-emerald-500" />, title: "Margin & Profit", desc: "Hitung otomatis laba bersih dikurangi HPP." },
-              { icon: <FileText size={14} className="text-blue-500" />, title: "Log Audit Perubahan", desc: "Rekam setiap perubahan stok untuk keamanan." },
+              { 
+                icon: <ShoppingCart size={15} className="text-[#0c3d0c]" />, 
+                title: "Kasir Grosir Kilat", 
+                desc: "Cetak struk thermal 58/80mm & faktur PDF instan tanpa jeda loading." 
+              },
+              { 
+                icon: <TrendingUp size={15} className="text-emerald-700" />, 
+                title: "Kalkulasi Margin Otomatis", 
+                desc: "Laba bersih akurat langsung dikurangi HPP batch barang real-time." 
+              },
             ].map((ft, i) => (
               <div 
                 key={i}
-                className="bg-card border border-border/40 rounded-2xl p-4 shadow-sm"
+                className="bg-white/70 border border-slate-200/80 rounded-2xl p-4 shadow-sm backdrop-blur-sm"
               >
-                <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center mb-2">
-                  {ft.icon}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="w-6 h-6 rounded-md bg-[#0c3d0c]/[0.07] flex items-center justify-center shrink-0">
+                    {ft.icon}
+                  </div>
+                  <div className="text-xs font-bold text-slate-900 tracking-tight">{ft.title}</div>
                 </div>
-                <div className="text-xs font-black text-foreground">{ft.title}</div>
-                <div className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed font-semibold">{ft.desc}</div>
+                <p className="text-[11px] text-slate-500 leading-relaxed font-normal">{ft.desc}</p>
               </div>
             ))}
           </div>
 
-          {/* TESTIMONIAL CARD */}
-          <div className="bg-gradient-to-r from-orange-500/5 to-amber-500/5 border border-orange-500/20 border-l-4 border-l-orange-500 rounded-2xl p-4 backdrop-blur-sm shadow-sm">
-            <p className="text-[11px] italic text-foreground/80 leading-relaxed font-semibold">
+          {/* TESTIMONIAL QUOTE */}
+          <div className="bg-white/90 border border-slate-200/90 border-l-[3.5px] border-l-[#0c3d0c] rounded-2xl p-4 shadow-sm backdrop-blur-sm">
+            <p className="text-xs italic text-slate-700 leading-relaxed font-normal">
               "Pencatatan grosir sembako dan piutang toko jadi sangat rapi. Selisih stok kasir otomatis terlacak dari log perubahan."
             </p>
             <div className="flex items-center gap-2.5 mt-3">
-              <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-[10px] font-black flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-[#0c3d0c] text-white text-[10px] font-extrabold flex items-center justify-center shadow-sm">
                 HS
               </div>
               <div>
-                <div className="text-[11px] font-black text-foreground">H. Subagyo</div>
-                <div className="text-[9px] text-muted-foreground font-semibold">Distributor Sembako Jaya, Surabaya</div>
+                <div className="text-xs font-bold text-slate-900">H. Subagyo</div>
+                <div className="text-[10px] text-slate-500">Distributor Sembako Jaya, Surabaya</div>
               </div>
             </div>
           </div>
 
         </div>
+
+        <div className="relative z-10 pt-4 text-xs text-slate-400 text-left shrink-0">
+          © 2026 Gopek Sembako Ecosystem. Hak cipta dilindungi.
+        </div>
       </motion.div>
 
-      {/* RIGHT PANEL - LOGIN FORM */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background border-l border-border/40">
-        <div className="w-full max-w-[420px] bg-card border border-border/60 rounded-3xl p-8 sm:p-10 shadow-xl relative">
+      {/* RIGHT PANEL - LOGIN FORM (45% Width) */}
+      <div className="w-full lg:w-[45%] flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-[#FBFCF8] overflow-y-auto min-h-[100dvh]">
+        <motion.div 
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-[420px] bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-10 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.07)] relative my-auto"
+        >
           
-          <div className="mb-6">
-            <h1 className="text-2xl font-black text-foreground mb-1.5">
+          <div className="mb-7 text-left">
+            <h2 className="text-2xl font-black tracking-tight text-slate-950 mb-1.5">
               Selamat Datang Kembali
-            </h1>
-            <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
-              Masukkan email dan password terdaftar untuk mengakses Dashboard Sembako OS.
+            </h2>
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">
+              Masukkan email atau username terdaftar untuk mengakses Dashboard Sembako OS.
             </p>
           </div>
 
-
-
-          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4 text-left">
             
-            {/* EMAIL FIELD */}
+            {/* EMAIL / USERNAME */}
             <div>
-              <label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
-                Email Akun
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                Email / Username
               </label>
               <div className="relative">
-                <Mail size={16} className="text-muted-foreground/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail size={16} className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Ketik email Anda (contoh: owner@sembako.id)"
+                  placeholder="owner@sembako.id atau username"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-white/[0.02] border border-border/60 rounded-xl text-foreground text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 placeholder:text-muted-foreground/40 transition-all box-border"
+                  className="w-full h-11 pl-10 pr-4 bg-[#F8FAFC] border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-[#0c3d0c] focus:ring-4 focus:ring-[#0c3d0c]/10 placeholder:text-slate-400 transition-all box-border"
                 />
               </div>
             </div>
 
-            {/* PASSWORD FIELD */}
+            {/* PASSWORD */}
             <div>
-              <label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
-                Password
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                Kata Sandi
               </label>
               <div className="relative">
-                <Lock size={16} className="text-muted-foreground/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock size={16} className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full h-11 pl-10 pr-10 bg-slate-50 dark:bg-white/[0.02] border border-border/60 rounded-xl text-foreground text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 placeholder:text-muted-foreground/40 transition-all box-border"
+                  className="w-full h-11 pl-10 pr-10 bg-[#F8FAFC] border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-[#0c3d0c] focus:ring-4 focus:ring-[#0c3d0c]/10 placeholder:text-slate-400 transition-all box-border"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground cursor-pointer flex p-0 border-none bg-transparent"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer flex p-0 border-none bg-transparent"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -319,47 +348,55 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
             </div>
 
             {/* REMEMBER ME */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-1">
               <input
                 type="checkbox"
                 id="rememberMe"
                 checked={rememberMe}
                 onChange={e => setRememberMe(e.target.checked)}
-                className="w-4 h-4 accent-orange-600 cursor-pointer"
+                className="w-4 h-4 accent-[#0c3d0c] rounded cursor-pointer"
               />
-              <label htmlFor="rememberMe" className="text-xs text-muted-foreground font-semibold cursor-pointer">
+              <label htmlFor="rememberMe" className="text-xs text-slate-600 font-medium cursor-pointer select-none">
                 Ingat sesi login saya
               </label>
             </div>
 
-            {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 dark:text-red-400 flex gap-2 items-center">
-                <AlertCircle size={15} className="shrink-0" />
-                <span className="font-semibold">{error}</span>
-              </div>
-            )}
+            {/* ERROR ALERT */}
+            <AnimatePresence>
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 flex gap-2 items-center"
+                >
+                  <AlertCircle size={15} className="shrink-0 text-red-500" />
+                  <span className="font-medium">{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* SUBMIT BUTTON */}
             <button
               type="submit"
               disabled={isLoading || !email || !password}
-              className="w-full h-11 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold rounded-xl shadow-lg shadow-orange-600/20 hover:from-orange-500 hover:to-amber-500 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-11 mt-2 bg-[#0c3d0c] hover:bg-[#072607] text-white font-bold text-sm rounded-xl shadow-md shadow-[#0c3d0c]/20 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <><Loader2 size={18} className="animate-spin" /> Memproses...</>
+                <><Loader2 size={16} className="animate-spin" /> Memproses Masuk...</>
               ) : (
-                <>Masuk ke Dashboard</>
+                <>Masuk ke Dashboard <ArrowRight size={15} /></>
               )}
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-border/40 text-center">
-            <p className="text-[10px] text-muted-foreground leading-relaxed font-semibold">
-              Akses akun terenkripsi & dikelola secara terpusat oleh <strong className="text-orange-600 dark:text-orange-500">Developer Superadmin</strong>.
+          <div className="mt-7 pt-5 border-t border-slate-100 text-center">
+            <p className="text-[11px] text-slate-400 leading-relaxed font-normal">
+              Akses akun terenkripsi SSL & dikelola terpusat oleh <strong className="text-slate-700 font-semibold">Developer Superadmin</strong>.
             </p>
           </div>
 
-        </div>
+        </motion.div>
       </div>
     </div>
   )
@@ -368,92 +405,110 @@ function DesktopLoginView({ email, setEmail, password, setPassword, showPassword
 // ─── MOBILE LOGIN VIEW ────────────────────────────────────────
 function MobileLoginView({ email, setEmail, password, setPassword, showPassword, setShowPassword, isLoading, error, handleLogin, rememberMe, setRememberMe }) {
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans px-4 py-8 flex flex-col justify-center text-left">
+    <div className="min-h-[100dvh] bg-[#FBFCF8] text-slate-900 font-sans px-4 py-8 flex flex-col justify-center text-left">
       
       {/* BRAND HEADER MOBILE */}
       <div className="text-center mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20 mx-auto mb-3">
-          <ShoppingCart size={24} className="text-white" strokeWidth={2.5} />
+        <div className="w-12 h-12 rounded-2xl bg-[#0c3d0c] flex items-center justify-center shadow-md shadow-[#0c3d0c]/20 ring-1 ring-white/20 mx-auto mb-3">
+          <Store size={22} className="text-white" strokeWidth={2.2} />
         </div>
-        <h1 className="text-xl font-black text-foreground flex items-center justify-center gap-1.5">
-          Gopek Sembako <span className="text-[9px] bg-orange-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">OS v2.0</span>
+        <h1 className="text-xl font-black text-slate-900 flex items-center justify-center gap-1.5 tracking-tight">
+          Gopek Sembako <span className="text-[9px] bg-[#0c3d0c]/10 text-[#0c3d0c] border border-[#0c3d0c]/20 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">OS v2.4</span>
         </h1>
-        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-1">Dashboard Distributor & Broker</p>
+        <p className="text-[10px] text-slate-500 font-medium tracking-wide mt-1">Platform Distribusi & Grosir Sembako</p>
       </div>
 
       {/* FORM CARD */}
-      <div className="w-full max-w-[360px] mx-auto bg-card border border-border/60 rounded-3xl p-6 shadow-xl">
+      <div className="w-full max-w-[360px] mx-auto bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_-10px_rgba(15,23,42,0.06)]">
         
-
+        <div className="mb-5">
+          <h2 className="text-lg font-black text-slate-950 tracking-tight">Masuk Akun</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Silakan masuk dengan akun yang terdaftar.</p>
+        </div>
 
         <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
           
           <div>
-            <label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
-              Email Akun
+            <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+              Email / Username
             </label>
-            <input
-              type="text"
-              placeholder="Ketik email Anda (contoh: owner@sembako.id)"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full h-11 px-3.5 bg-slate-555 dark:bg-white/[0.02] border border-border/60 rounded-xl text-foreground text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 placeholder:text-muted-foreground/40 transition-all box-border"
-            />
+            <div className="relative">
+              <Mail size={15} className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="nama@sembako.id atau username"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full h-11 pl-9 pr-3.5 bg-[#F8FAFC] border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-[#0c3d0c] focus:ring-4 focus:ring-[#0c3d0c]/10 placeholder:text-slate-400 transition-all box-border"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
-              Password
+            <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+              Kata Sandi
             </label>
             <div className="relative">
+              <Lock size={15} className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full h-11 pl-3.5 pr-10 bg-slate-555 dark:bg-white/[0.02] border border-border/60 rounded-xl text-foreground text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 placeholder:text-muted-foreground/40 transition-all box-border"
+                className="w-full h-11 pl-9 pr-10 bg-[#F8FAFC] border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-[#0c3d0c] focus:ring-4 focus:ring-[#0c3d0c]/10 placeholder:text-slate-400 transition-all box-border"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground cursor-pointer flex p-0 border-none bg-transparent"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer flex p-0 border-none bg-transparent"
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
           </div>
 
           <div className="flex items-center justify-between py-0.5">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-muted-foreground select-none">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={e => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-border/60 text-orange-600 focus:ring-orange-500/30 accent-orange-600 cursor-pointer"
+                className="w-4 h-4 rounded border-slate-300 accent-[#0c3d0c] cursor-pointer"
               />
               <span>Ingat Sesi Saya</span>
             </label>
           </div>
 
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 dark:text-red-400 flex gap-2 items-center">
-              <AlertCircle size={14} className="shrink-0" />
-              <span className="font-semibold">{error}</span>
-            </div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 flex gap-2 items-center"
+              >
+                <AlertCircle size={14} className="shrink-0 text-red-500" />
+                <span className="font-medium">{error}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <button
             type="submit"
             disabled={isLoading || !email || !password}
-            className="w-full h-11 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold rounded-xl shadow-lg shadow-orange-600/20 hover:from-orange-500 hover:to-amber-500 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-11 bg-[#0c3d0c] hover:bg-[#072607] text-white font-bold text-sm rounded-xl shadow-md shadow-[#0c3d0c]/20 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Memproses...' : 'Masuk ke Dashboard'}
+            {isLoading ? (
+              <><Loader2 size={16} className="animate-spin" /> Memproses...</>
+            ) : (
+              <>Masuk ke Dashboard <ArrowRight size={15} /></>
+            )}
           </button>
         </form>
 
         <div className="mt-5 text-center">
-          <p className="text-[10px] text-muted-foreground font-semibold">
-            Akses dikelola terpusat oleh Developer.
+          <p className="text-[10px] text-slate-400 font-normal">
+            Akses dikelola terpusat oleh Developer Superadmin.
           </p>
         </div>
 
