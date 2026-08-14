@@ -64,8 +64,9 @@ export function NotificationsProvider({ children }) {
     fetchNotifications()
     
     // Realtime subscription
+    const channelId = `public:notifications:${tenant.id}:${Math.random().toString(36).slice(2, 9)}`
     const channel = supabase
-      .channel('public:notifications')
+      .channel(channelId)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
@@ -75,7 +76,9 @@ export function NotificationsProvider({ children }) {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [tenant?.id])
 
@@ -125,7 +128,7 @@ export function NotificationsProvider({ children }) {
 
 export const useNotifications = () => useContext(NotificationsContext) ?? {
   notifications: [], loading: false, unreadCount: 0,
-  markAsRead: async () => {}, markAllAsRead: async () => {}, deleteNotif: async () => {}, refetch: () => {},
+  markAsRead: async () => {}, markAllAsRead: async () => {}, deleteNotif: async () => {}, clearAllNotifications: async () => {}, refetch: () => {},
 }
 
 /**

@@ -80,9 +80,9 @@ export function NotificationBellDropdown({ isMobile = false }) {
     }
     setIsOpen(false)
 
-    const route = notif?.data?.route || notif?.data?.url
+    const route = notif?.data?.route || notif?.data?.url || notif?.action_url
     if (route) {
-      navigate(route)
+      navigate(route, { state: { metadata: notif.metadata || notif.data } })
     }
   }
 

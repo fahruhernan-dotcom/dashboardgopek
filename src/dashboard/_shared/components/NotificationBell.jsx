@@ -159,7 +159,7 @@ function NotifIcon({ type }) {
 
 export default function NotificationBell() {
   const navigate = useNavigate()
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotif } =
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotif, clearAllNotifications } =
     useNotifications()
   const [isOpen, setIsOpen] = useState(false)
   const panelRef = useRef(null)
@@ -526,7 +526,9 @@ export default function NotificationBell() {
               style={{
                 padding: '8px 16px',
                 borderTop: '1px solid rgba(255,255,255,0.04)',
-                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 flexShrink: 0,
               }}
             >
@@ -538,6 +540,26 @@ export default function NotificationBell() {
               >
                 {notifications.length} notifikasi tersimpan
               </span>
+              {notifications.length > 0 && (
+                <button
+                  onClick={clearAllNotifications}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: '#EF4444',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    borderRadius: 4,
+                    transition: 'opacity 0.15s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                >
+                  Bersihkan semua
+                </button>
+              )}
             </div>
           </motion.div>
         )}

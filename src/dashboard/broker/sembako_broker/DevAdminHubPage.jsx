@@ -119,36 +119,71 @@ export default function DevAdminHubPage() {
       return
     }
     setIsResetting(true)
-    const toastId = toast.loading('Sedang mereset database bisnis...')
+    const toastId = toast.loading('Sedang mereset database bisnis & riwayat...')
     try {
       const tenantId = tenant.id
+      const userId = user?.id
 
-      // 1. Delete transactional data in correct order of dependency
+      // 1. Delete notifications & logs
+      try {
+        let notifQuery = supabase.from('notifications').delete()
+        if (userId) {
+          notifQuery = notifQuery.or(`tenant_id.eq.${tenantId},user_id.eq.${userId}`)
+        } else {
+          notifQuery = notifQuery.eq('tenant_id', tenantId)
+        }
+        await notifQuery
+      } catch (e) {
+        console.warn('Notifications delete fallback:', e)
+      }
+
+      try {
+        await supabase.from('notification_events').delete().eq('tenant_id', tenantId)
+      } catch (e) {
+        console.warn('Notification events delete fallback:', e)
+      }
+
+      try {
+        await supabase.from('system_error_logs').delete().eq('tenant_id', tenantId)
+      } catch (e) {
+        console.warn('System error logs delete fallback:', e)
+      }
+
+      // 2. Delete transactional data in correct order of dependency (child tables first)
       const { error: errDeliv } = await supabase.from('sembako_deliveries').delete().eq('tenant_id', tenantId)
       if (errDeliv) throw errDeliv
-
-      const { error: errPay } = await supabase.from('sembako_payroll').delete().eq('tenant_id', tenantId)
-      if (errPay) throw errPay
 
       const { error: errPaym } = await supabase.from('sembako_payments').delete().eq('tenant_id', tenantId)
       if (errPaym) throw errPaym
 
-      const { error: errExpenses } = await supabase.from('sembako_expenses').delete().eq('tenant_id', tenantId)
-      if (errExpenses) throw errExpenses
-
-      const { error: errSales } = await supabase.from('sembako_sales').delete().eq('tenant_id', tenantId)
-      if (errSales) throw errSales
-
-
+      const { error: errReturns } = await supabase.from('sembako_returns').delete().eq('tenant_id', tenantId)
+      if (errReturns) throw errReturns
 
       const { error: errStockOut } = await supabase.from('sembako_stock_out').delete().eq('tenant_id', tenantId)
       if (errStockOut) throw errStockOut
 
-      const { error: errReturns } = await supabase.from('sembako_returns').delete().eq('tenant_id', tenantId)
-      if (errReturns) throw errReturns
+      // Clean sembako_sale_items for sales belonging to this tenant
+      try {
+        const { data: salesList } = await supabase.from('sembako_sales').select('id').eq('tenant_id', tenantId)
+        if (salesList && salesList.length > 0) {
+          const saleIds = salesList.map(s => s.id)
+          await supabase.from('sembako_sale_items').delete().in('sale_id', saleIds)
+        }
+      } catch (e) {
+        console.warn('sembako_sale_items delete fallback:', e)
+      }
+
+      const { error: errSales } = await supabase.from('sembako_sales').delete().eq('tenant_id', tenantId)
+      if (errSales) throw errSales
 
       const { error: errSupPay } = await supabase.from('sembako_supplier_payments').delete().eq('tenant_id', tenantId)
       if (errSupPay) throw errSupPay
+
+      const { error: errPay } = await supabase.from('sembako_payroll').delete().eq('tenant_id', tenantId)
+      if (errPay) throw errPay
+
+      const { error: errExpenses } = await supabase.from('sembako_expenses').delete().eq('tenant_id', tenantId)
+      if (errExpenses) throw errExpenses
 
       const { error: errBatches } = await supabase.from('sembako_stock_batches').delete().eq('tenant_id', tenantId)
       if (errBatches) throw errBatches
@@ -156,7 +191,7 @@ export default function DevAdminHubPage() {
       const { error: errAudit } = await supabase.from('sembako_audit_logs').delete().eq('tenant_id', tenantId)
       if (errAudit) throw errAudit
 
-      // 2. Conditional wipe of catalog/master files
+      // 3. Conditional wipe of catalog/master files
       if (wipeCatalog) {
         const { error: errProd } = await supabase.from('sembako_products').delete().eq('tenant_id', tenantId)
         if (errProd) throw errProd
@@ -177,15 +212,53 @@ export default function DevAdminHubPage() {
         if (errProdReset) throw errProdReset
       }
 
-      toast.success('Database bisnis berhasil di-reset!', { id: toastId })
+      // 4. Clear LocalStorage and React Query Cache
+      try {
+        localStorage.removeItem('ternakos_dev_logs')
+        localStorage.removeItem('gopek_retur_list')
+        localStorage.removeItem(`ternak_os_wizard_draft_${tenantId}`)
+      } catch (e) {
+        /* silent */
+      }
+
+      queryClient.setQueryData(['notifications', tenantId, userId], [])
+      queryClient.removeQueries({ queryKey: ['notifications'] })
       queryClient.invalidateQueries()
-      
+
+      setSystemLogs([])
+
+      toast.success('Database bisnis & riwayat notifikasi berhasil di-reset!', { id: toastId })
       setShowConfirm2(false)
       setConfirmText('')
     } catch (e) {
       toast.error('Gagal melakukan reset database: ' + e.message, { id: toastId })
     } finally {
       setIsResetting(false)
+    }
+  }
+
+  const handleClearNotifications = async () => {
+    if (!tenant?.id) return
+    const toastId = toast.loading('Sedang membersihkan riwayat notifikasi...')
+    try {
+      const tenantId = tenant.id
+      const userId = user?.id
+      let notifQuery = supabase.from('notifications').delete()
+      if (userId) {
+        notifQuery = notifQuery.or(`tenant_id.eq.${tenantId},user_id.eq.${userId}`)
+      } else {
+        notifQuery = notifQuery.eq('tenant_id', tenantId)
+      }
+      await notifQuery
+      await supabase.from('notification_events').delete().eq('tenant_id', tenantId)
+
+      queryClient.setQueryData(['notifications', tenantId, userId], [])
+      queryClient.removeQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+
+      toast.success('Seluruh riwayat notifikasi berhasil dibersihkan!', { id: toastId })
+    } catch (e) {
+      toast.error('Gagal membersihkan notifikasi: ' + e.message, { id: toastId })
     }
   }
 
@@ -430,6 +503,20 @@ export default function DevAdminHubPage() {
 
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
                     <div>
+                      <p className="text-xs font-extrabold text-slate-900">Riwayat Notifikasi In-App</p>
+                      <p className="text-[11px] text-slate-500">Kosongkan seluruh notifikasi lonceng 🔔 tenant</p>
+                    </div>
+                    <Button 
+                      onClick={handleClearNotifications}
+                      variant="outline"
+                      className="border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-xs font-bold h-10 px-4 cursor-pointer shadow-none"
+                    >
+                      Bersihkan Notifikasi
+                    </Button>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                    <div>
                       <p className="text-xs font-extrabold text-slate-900">Tenant Storage State</p>
                       <p className="text-[11px] text-slate-500">Active Tenant: {tenant?.id || 'Default'}</p>
                     </div>
@@ -602,72 +689,134 @@ export default function DevAdminHubPage() {
       {/* Modals Konfirmasi Reset Database */}
       {/* Konfirmasi 1 */}
       <AlertDialog open={showConfirm1} onOpenChange={setShowConfirm1}>
-        <AlertDialogContent className="!bg-slate-900 !border-slate-800 rounded-[28px] p-6 max-w-md text-left text-slate-100 shadow-2xl">
+        <AlertDialogContent 
+          className="rounded-[28px] p-6 max-w-md text-left shadow-2xl border"
+          style={{
+            backgroundColor: '#0F172A',
+            borderColor: 'rgba(255,255,255,0.12)',
+            color: '#F8FAFC',
+          }}
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white font-display font-black tracking-tight uppercase text-xl flex items-center gap-2">
-              <ShieldAlert size={24} className="text-red-500 shrink-0" />
+            <AlertDialogTitle 
+              className="font-display font-black tracking-tight uppercase text-lg flex items-center gap-2.5"
+              style={{ color: '#FFFFFF' }}
+            >
+              <div className="p-2 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20">
+                <ShieldAlert size={20} className="shrink-0" />
+              </div>
               Reset Database (Konfirmasi 1 dari 2)
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-300 font-semibold mt-3 text-xs leading-relaxed">
+            <AlertDialogDescription 
+              className="font-medium mt-3 text-xs leading-relaxed"
+              style={{ color: '#94A3B8' }}
+            >
               Apakah Anda benar-benar yakin ingin melakukan reset data bisnis Anda? Tindakan ini akan menghapus semua data operasional yang dipilih. Ini bersifat permanen dan tidak dapat dibatalkan di masa depan.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-3 mt-6">
-            <AlertDialogCancel className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 rounded-xl h-11 font-bold text-xs cursor-pointer">
+          <AlertDialogFooter className="gap-3 mt-6 flex flex-row items-center justify-end">
+            <AlertDialogCancel 
+              className="rounded-xl h-11 px-5 font-bold text-xs cursor-pointer border transition-all"
+              style={{
+                backgroundColor: '#1E293B',
+                borderColor: '#334155',
+                color: '#E2E8F0',
+              }}
+            >
               Batal
             </AlertDialogCancel>
-            <Button 
+            <button 
+              type="button"
               onClick={() => {
                 setShowConfirm1(false)
                 setTimeout(() => setShowConfirm2(true), 300)
               }}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-xl h-11 font-bold text-xs cursor-pointer flex-1"
+              className="h-11 px-5 rounded-xl font-bold text-xs cursor-pointer flex-1 flex items-center justify-center transition-all shadow-md active:scale-95 border-none"
+              style={{
+                backgroundColor: '#DC2626',
+                color: '#FFFFFF',
+                boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
+              }}
             >
               Lanjutkan ke Konfirmasi Akhir
-            </Button>
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Konfirmasi 2 */}
       <AlertDialog open={showConfirm2} onOpenChange={(v) => { if (!v && !isResetting) { setShowConfirm2(false); setConfirmText(''); } }}>
-        <AlertDialogContent className="!bg-slate-900 !border-slate-800 rounded-[28px] p-6 max-w-md text-left text-slate-100 shadow-2xl">
+        <AlertDialogContent 
+          className="rounded-[28px] p-6 max-w-md text-left shadow-2xl border"
+          style={{
+            backgroundColor: '#0F172A',
+            borderColor: 'rgba(239,68,68,0.3)',
+            color: '#F8FAFC',
+          }}
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-500 font-display font-black tracking-tight uppercase text-xl flex items-center gap-2">
-              <AlertTriangle size={24} className="text-red-500 animate-bounce shrink-0" />
+            <AlertDialogTitle 
+              className="font-display font-black tracking-tight uppercase text-lg flex items-center gap-2.5"
+              style={{ color: '#EF4444' }}
+            >
+              <div className="p-2 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30 animate-pulse">
+                <AlertTriangle size={20} className="shrink-0" />
+              </div>
               PERINGATAN KERAS! (Konfirmasi 2 dari 2)
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-200 font-semibold mt-3 text-xs leading-relaxed">
+            <AlertDialogDescription 
+              className="font-medium mt-3 text-xs leading-relaxed"
+              style={{ color: '#CBD5E1' }}
+            >
               Ini adalah langkah terakhir. Seluruh transaksi operasional, sisa hutang/piutang, serta riwayat stok akan bersih total. 
               <br /><br />
-              Ketik kata kunci <strong className="text-red-400 font-black">"RESET GOPEK"</strong> di bawah untuk mengonfirmasi:
+              Ketik kata kunci <strong style={{ color: '#F87171', fontWeight: 900 }}>"RESET GOPEK"</strong> di bawah untuk mengonfirmasi:
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className="mt-4">
-            <Input 
+            <input 
+              type="text"
               value={confirmText}
               onChange={e => setConfirmText(e.target.value)}
               placeholder="Ketik RESET GOPEK di sini..."
               disabled={isResetting}
-              className="bg-slate-950 border-slate-700 h-12 text-sm font-black text-white rounded-xl focus:border-red-500 focus:ring-red-500/20 placeholder:text-slate-500"
+              autoFocus
+              className="w-full h-12 px-4 rounded-xl text-sm font-black tracking-wider transition-all outline-none border focus:ring-2 focus:ring-red-500/30"
+              style={{
+                backgroundColor: '#090D16',
+                color: '#FFFFFF',
+                borderColor: confirmText === 'RESET GOPEK' ? '#22C55E' : 'rgba(255,255,255,0.18)',
+              }}
             />
           </div>
 
-          <AlertDialogFooter className="gap-3 mt-6">
+          <AlertDialogFooter className="gap-3 mt-6 flex flex-row items-center justify-end">
             <AlertDialogCancel 
               disabled={isResetting}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 rounded-xl h-11 font-bold text-xs cursor-pointer"
+              className="rounded-xl h-11 px-5 font-bold text-xs cursor-pointer border transition-all"
+              style={{
+                backgroundColor: '#1E293B',
+                borderColor: '#334155',
+                color: '#E2E8F0',
+              }}
             >
               Batal
             </AlertDialogCancel>
-            <Button 
+            <button 
+              type="button"
               disabled={isResetting || confirmText !== 'RESET GOPEK'}
               onClick={handleResetDatabase}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-xl h-11 font-bold text-xs cursor-pointer flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="h-11 px-5 rounded-xl font-black text-xs transition-all flex-1 flex items-center justify-center border-none"
+              style={{
+                backgroundColor: isResetting || confirmText !== 'RESET GOPEK' ? '#3B1212' : '#DC2626',
+                color: isResetting || confirmText !== 'RESET GOPEK' ? 'rgba(255,255,255,0.35)' : '#FFFFFF',
+                boxShadow: confirmText === 'RESET GOPEK' ? '0 4px 16px rgba(220, 38, 38, 0.45)' : 'none',
+                cursor: isResetting || confirmText !== 'RESET GOPEK' ? 'not-allowed' : 'pointer',
+              }}
             >
               {isResetting ? 'Mereset Database...' : 'Ya, Reset Seluruh Database Sekarang!'}
-            </Button>
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

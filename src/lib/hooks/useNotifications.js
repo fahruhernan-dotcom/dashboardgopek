@@ -43,8 +43,9 @@ export function useNotifications() {
   useEffect(() => {
     if (!tenantId || !userId) return
 
+    const channelId = `notifications-realtime-${userId}-${Math.random().toString(36).slice(2, 9)}`
     const channel = supabase
-      .channel(`notifications-realtime-${userId}`)
+      .channel(channelId)
       .on(
         'postgres_changes',
         {
@@ -60,7 +61,9 @@ export function useNotifications() {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [tenantId, userId, queryClient])
 
@@ -101,6 +104,44 @@ export function useNotifications() {
     },
   })
 
+  // 5. Mutation: Hapus 1 Notifikasi
+  const deleteNotifMutation = useMutation({
+    mutationFn: async (notificationId) => {
+      if (!notificationId) return
+
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', tenantId, userId] })
+    },
+  })
+
+  // 6. Mutation: Hapus Semua Notifikasi Tenant/User
+  const clearAllNotificationsMutation = useMutation({
+    mutationFn: async () => {
+      if (!tenantId) return
+
+      let query = supabase.from('notifications').delete()
+      if (userId) {
+        query = query.or(`tenant_id.eq.${tenantId},user_id.eq.${userId}`)
+      } else {
+        query = query.eq('tenant_id', tenantId)
+      }
+
+      const { error } = await query
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['notifications', tenantId, userId], [])
+      queryClient.invalidateQueries({ queryKey: ['notifications', tenantId, userId] })
+    },
+  })
+
   const unreadCount = notifications.filter(n => !n.is_read).length
 
   return {
@@ -112,7 +153,10 @@ export function useNotifications() {
     refetch,
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,
+    deleteNotif: deleteNotifMutation.mutate,
+    clearAllNotifications: clearAllNotificationsMutation.mutate,
     isMarkingRead: markAsReadMutation.isPending || markAllAsReadMutation.isPending,
+    isDeleting: deleteNotifMutation.isPending || clearAllNotificationsMutation.isPending,
   }
 }
 
