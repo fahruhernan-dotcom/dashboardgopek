@@ -285,7 +285,7 @@ export function MobileBeranda({
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <p style={{ fontSize: '10px', color: MC.muted, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                            🧾 Transaksi Hari Ini ({todaySales.length})
+                            🧾 Transaksi Penjualan Hari Ini ({todaySales.length})
                           </p>
                           {todaySales.length > 0 && (
                             <button
