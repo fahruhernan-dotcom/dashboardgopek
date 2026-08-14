@@ -100,8 +100,11 @@ export function SembakoInvoicePaper({ data, mode = 'invoice' }) {
 
         {/* Right: Invoice Type & Number */}
         <div className="sm:text-right w-full sm:w-auto bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-xl border sm:border-0 border-slate-100">
-          <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-black tracking-wider uppercase mb-1">
-            {isDelivery ? 'SURAT JALAN' : 'INVOICE RESMI'}
+          <div
+            className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-black tracking-wider uppercase mb-1 shadow-sm"
+            style={{ backgroundColor: '#0F172A', color: '#FFFFFF' }}
+          >
+            <span style={{ color: '#FFFFFF' }}>{isDelivery ? 'SURAT JALAN' : 'INVOICE RESMI'}</span>
           </div>
           <p className="text-xs font-mono font-bold text-slate-900 flex sm:justify-end items-center gap-1">
             <span className="text-slate-500 font-normal">No:</span> {invoiceNo}
