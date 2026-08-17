@@ -10,6 +10,8 @@ jobs:
   build-apk:
     name: Build GPK Android APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -101,3 +103,33 @@ jobs:
             echo "✖ File APK tidak ditemukan di path android/app/build/outputs/apk/debug/app-debug.apk"
             exit 1
           fi
+
+      - name: Prepare Named APK for GitHub Release
+        if: success()
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk "android/app/build/outputs/apk/debug/GPK-${{ env.APP_VERSION }}-b${{ env.APP_BUILD_NUMBER }}.apk"
+          echo "✔ Prepared: GPK-${{ env.APP_VERSION }}-b${{ env.APP_BUILD_NUMBER }}.apk"
+
+      - name: Create or Update GitHub Release (Direct APK Attachment)
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: ${{ env.APP_VERSION }}
+          name: "Release ${{ env.APP_VERSION }} (Build ${{ env.APP_BUILD_NUMBER }})"
+          body: |
+            ## 🚀 GPK Sembako OS — Release ${{ env.APP_VERSION }}
+            
+            - **Versi**: `${{ env.APP_VERSION }}`
+            - **Build Number**: `${{ env.APP_BUILD_NUMBER }}`
+            - **Commit**: `${{ github.sha }}`
+            
+            ### 📱 Download Langsung File APK (Tanpa ZIP):
+            Unduh langsung file APK murni di bawah ini untuk install di HP Android:
+            - ⬇️ **GPK-${{ env.APP_VERSION }}-b${{ env.APP_BUILD_NUMBER }}.apk** (terlampir di Assets rilis ini)
+          files: |
+            android/app/build/outputs/apk/debug/GPK-${{ env.APP_VERSION }}-b${{ env.APP_BUILD_NUMBER }}.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
