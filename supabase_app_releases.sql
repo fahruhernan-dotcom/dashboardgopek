@@ -52,27 +52,17 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- Storage RLS: Allow anyone to read/download APKs
 DROP POLICY IF EXISTS "Public APK Access" ON storage.objects;
-CREATE POLICY "Public APK Access"
+DROP POLICY IF EXISTS "Allow APK Uploads" ON storage.objects;
+DROP POLICY IF EXISTS "Allow APK Updates" ON storage.objects;
+DROP POLICY IF EXISTS "Allow authenticated APK upload" ON storage.objects;
+DROP POLICY IF EXISTS "Allow authenticated APK update" ON storage.objects;
+
+CREATE POLICY "Public APK Download Only"
     ON storage.objects
     FOR SELECT
     USING (bucket_id = 'apk-releases');
 
--- Storage RLS: Allow upload into apk-releases bucket
-DROP POLICY IF EXISTS "Allow APK Uploads" ON storage.objects;
-DROP POLICY IF EXISTS "Allow authenticated APK upload" ON storage.objects;
-CREATE POLICY "Allow APK Uploads"
-    ON storage.objects
-    FOR INSERT
-    WITH CHECK (bucket_id = 'apk-releases');
-
--- Storage RLS: Allow update/overwrite into apk-releases bucket
-DROP POLICY IF EXISTS "Allow APK Updates" ON storage.objects;
-DROP POLICY IF EXISTS "Allow authenticated APK update" ON storage.objects;
-CREATE POLICY "Allow APK Updates"
-    ON storage.objects
-    FOR UPDATE
-    USING (bucket_id = 'apk-releases')
-    WITH CHECK (bucket_id = 'apk-releases');
+-- Note: Upload & Update are handled exclusively by GitHub Actions / Admin via SUPABASE_SERVICE_ROLE_KEY (bypasses RLS)
 
 -- 3. Automatic Trigger: Broadcast in-app notification to all users when a new release is added
 CREATE OR REPLACE FUNCTION public.fn_notify_on_new_app_release()
