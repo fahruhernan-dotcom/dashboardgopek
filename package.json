@@ -1,7 +1,7 @@
 {
   "name": "dasboard-sembako-client",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.9.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "contract:pdf": "vite-node generate_contract_pdf.jsx",
+    "bump": "node scripts/bump-version.mjs",
+    "version:bump": "node scripts/bump-version.mjs",
     "publish:apk": "node scripts/publish-release.mjs",
     "release:apk": "npm run build && npx cap sync android && cd android && gradlew.bat assembleRelease && cd .. && npm run publish:apk"
   },

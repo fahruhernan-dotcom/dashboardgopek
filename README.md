@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-emerald?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.9.6-emerald?style=for-the-badge)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite_6-646CFF?style=for-the-badge&logo=vite&logoColor=FFD62E)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -12,7 +12,7 @@
 
 **Sistem Operasi ERP, Point of Sale (POS), dan Business Intelligence Terintegrasi untuk Distributor, Agen Grosir, Pemasok, dan Broker Sembako / FMCG B2B.**
 
-[Ringkasan](#-tentang-gpk-sembako-os) • [Fitur & Modul](#-fitur-utama--modul-aplikasi) • [Arsitektur Sistem](#-arsitektur-sistem--teknologi) • [Struktur Direktori](#-struktur-direktori-proyek) • [Panduan Instalasi](#-panduan-instalasi--pengembangan) • [Environment Variables](#-konfigurasi-environment-variables) • [Database & Migrasi SQL](#-database-schema--migrasi-postgresql) • [Offline Sync](#-mekanisme-offline-first--sinkronisasi) • [Mobile Build](#-build-aplikasi-mobile-android) • [RBAC & Keamanan](#-keamanan--matriks-hak-akses-rbac)
+[Ringkasan](#-tentang-gpk-sembako-os) • [Fitur & Modul](#-fitur-utama--modul-aplikasi) • [Arsitektur Sistem](#-arsitektur-sistem--teknologi) • [Struktur Direktori](#-struktur-direktori-proyek) • [Panduan Instalasi](#-panduan-instalasi--pengembangan) • [Environment Variables](#-konfigurasi-environment-variables) • [Database & Migrasi SQL](#-database-schema--migrasi-postgresql) • [Offline Sync](#-mekanisme-offline-first--sinkronisasi) • [Mobile Build](#-build-aplikasi-mobile-android) • [Manajemen Versi & CI/CD](#-manajemen-versi--rilis-otomatis-cicd--github-artifacts) • [RBAC & Keamanan](#-keamanan--matriks-hak-akses-rbac)
 
 </div>
 
@@ -465,6 +465,59 @@ Web Code (React/Vite) ──[npm run build]──► /dist ──[npx cap sync a
    - Di Android Studio, pilih menu **Build** ➔ **Generate Signed Bundle / APK...**
    - Pilih **APK** atau **Android App Bundle (AAB)** untuk publikasi ke Google Play Store.
    - Pilih Keystore sertifikat Anda dan tentukan varian build `release`.
+
+---
+
+## 🏷️ Manajemen Versi & Rilis Otomatis (CI/CD & GitHub Artifacts)
+
+Project GPK dilengkapi sistem automasi versi menyeluruh yang menyinkronkan seluruh titik metadata dalam 1 perintah:
+
+### 1. Perintah Bump Versi (Sekali Jalan)
+
+Jalankan perintah berikut sebelum membuat rilis baru:
+
+```bash
+# Otomatis naikkan patch version (misal v0.9.5 ➔ v0.9.6) & set build number ke tanggal hari ini (YYYYMMDD)
+npm run bump
+
+# Naikkan minor version (misal v0.9.6 ➔ v0.10.0)
+npm run bump minor
+
+# Naikkan major version (misal v0.10.0 ➔ v1.0.0)
+npm run bump major
+
+# Custom version dan custom build number manual
+npm run bump v1.0.1 20260817
+```
+
+Perintah di atas secara otomatis memperbarui 4 berkas sekaligus:
+1. `src/dashboard/_shared/pages/akun_page/constants.js` (`APP_VERSION`, `APP_BUILD_NUMBER`, `APP_VERSION_LABEL`)
+2. `package.json` (`version`)
+3. `android/app/build.gradle` (`versionCode`, `versionName`)
+4. `README.md` (Badge Version)
+
+---
+
+### 2. Penamaan ZIP Artifact di GitHub Actions
+
+Setiap kali kode di-push ke branch `main`:
+1. **GitHub Actions CI/CD** mengekstrak metadata versi dan tanggal build.
+2. File ZIP artifact yang di-generate pada tab **Actions** otomatis diberi nama sesuai versi dan build:
+   ```
+   📦 GPK-APK-v0.9.6-b20260817.zip
+   ```
+   *(Tidak lagi bernama generik `GPK-APK.zip`, sehingga riwayat unduhan jelas dan teratur)*.
+
+---
+
+### 3. Otomatisasi Distribusi APK ke Supabase & In-App Auto-Update
+
+Setelah proses build Android selesai di GitHub Actions Runner:
+- File APK otomatis diunggah ke Supabase Storage bucket **`apk-releases`**:
+  - `app-latest.apk` (pointer rilis terbaru untuk download instan)
+  - `app-v0.9.6.apk` (arsip rilis permanen per versi)
+- Record metadata dicatat ke tabel **`public.app_releases`** di PostgreSQL Supabase.
+- Trigger database **`tr_notify_on_new_app_release`** secara instan mengirim notifikasi in-app realtime + push notification (FCM) kepada seluruh pengguna aktif bahwa versi terbaru telah tersedia untuk diperbarui.
 
 ---
 

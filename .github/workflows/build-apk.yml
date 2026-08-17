@@ -59,10 +59,32 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
+      - name: Extract App Version & Build Metadata
+        id: meta
+        run: |
+          node -e "
+            const fs = require('fs');
+            let version = 'v0.9.5';
+            let build = '20260518';
+            try {
+              const c = fs.readFileSync('src/dashboard/_shared/pages/akun_page/constants.js', 'utf8');
+              const vm = c.match(/export const APP_VERSION\s*=\s*['\"]([^'\"]+)['\"]/);
+              const bm = c.match(/export const APP_BUILD_NUMBER\s*=\s*([0-9]+)/);
+              if (vm) version = vm[1];
+              if (bm) build = bm[1];
+            } catch(e) {}
+            const artName = 'GPK-APK-' + version + '-b' + build;
+            console.log('📌 App Version   : ' + version);
+            console.log('📌 Build Number  : ' + build);
+            console.log('📦 Artifact Name : ' + artName);
+            fs.appendFileSync(process.env.GITHUB_ENV, 'APP_VERSION=' + version + '\nAPP_BUILD_NUMBER=' + build + '\nARTIFACT_NAME=' + artName + '\n');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'version=' + version + '\nbuild=' + build + '\nartifact_name=' + artName + '\n');
+          "
+
       - name: Upload GPK APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GPK-APK
+          name: ${{ env.ARTIFACT_NAME || 'GPK-APK-latest' }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Deploy APK to Supabase Storage & Track Release
@@ -74,7 +96,7 @@ jobs:
         run: |
           if [ -f android/app/build/outputs/apk/debug/app-debug.apk ]; then
             echo "🚀 Publishing APK release to Supabase Storage & Database..."
-            node scripts/publish-release.mjs --apk="android/app/build/outputs/apk/debug/app-debug.apk"
+            node scripts/publish-release.mjs --apk="android/app/build/outputs/apk/debug/app-debug.apk" --version="${{ env.APP_VERSION }}" --build="${{ env.APP_BUILD_NUMBER }}"
           else
             echo "✖ File APK tidak ditemukan di path android/app/build/outputs/apk/debug/app-debug.apk"
             exit 1
