@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, ChevronUp, ChevronDown, Info, History, Warehouse, Store, Truck, Undo2, FileX2 } from 'lucide-react'
+import { Trash2, ChevronUp, ChevronDown, Info, History, Warehouse, Store, Building2, Truck, Undo2, FileX2 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -23,10 +23,11 @@ const MotionDiv = motion.div
 export default function SembakoRecycleBin({ tenantId }) {
     // Sembako specific tabs for recycle bin
     const tabs = [
-        { id: 'sembako_sales', label: 'Jual' },
+        { id: 'sembako_sales', label: 'Penjualan' },
         { id: 'sembako_products', label: 'Produk' },
         { id: 'sembako_customers', label: 'Toko' },
-        { id: 'sembako_deliveries', label: 'Kirim' }
+        { id: 'sembako_suppliers', label: 'Supplier' },
+        { id: 'sembako_deliveries', label: 'Pengiriman' }
     ]
 
     const [isOpen, setIsOpen] = useState(false)
@@ -48,6 +49,15 @@ export default function SembakoRecycleBin({ tenantId }) {
             await supabase.from(type).update({ is_deleted: false }).eq('id', item.id)
             if (type === 'sembako_sales') {
                await supabase.from('sembako_sale_items').update({ is_deleted: false }).eq('sale_id', item.id)
+               await supabase.from('sembako_payments').update({ is_deleted: false }).eq('sale_id', item.id)
+            } else if (type === 'sembako_customers') {
+               await supabase.from('sembako_sales').update({ is_deleted: false }).eq('customer_id', item.id)
+               await supabase.from('sembako_payments').update({ is_deleted: false }).eq('customer_id', item.id)
+            } else if (type === 'sembako_suppliers') {
+               await supabase.from('sembako_stock_batches').update({ is_deleted: false }).eq('supplier_id', item.id)
+               await supabase.from('sembako_supplier_payments').update({ is_deleted: false }).eq('supplier_id', item.id)
+            } else if (type === 'sembako_products') {
+               await supabase.from('sembako_stock_batches').update({ is_deleted: false }).eq('product_id', item.id)
             }
             
             toast.success('✅ Berhasil dipulihkan')
@@ -66,12 +76,21 @@ export default function SembakoRecycleBin({ tenantId }) {
                 await supabase.from('sembako_deliveries').delete().eq('sale_id', item.id)
                 await supabase.from('sembako_sale_items').delete().eq('sale_id', item.id)
                 await supabase.from(type).delete().eq('id', item.id)
+            } else if (type === 'sembako_customers') {
+                await supabase.from('sembako_payments').delete().eq('customer_id', item.id)
+                await supabase.from('sembako_sales').delete().eq('customer_id', item.id)
+                await supabase.from(type).delete().eq('id', item.id)
+            } else if (type === 'sembako_suppliers') {
+                await supabase.from('sembako_supplier_payments').delete().eq('supplier_id', item.id)
+                await supabase.from('sembako_stock_batches').delete().eq('supplier_id', item.id)
+                await supabase.from(type).delete().eq('id', item.id)
             } else {
                 await supabase.from(type).delete().eq('id', item.id)
             }
 
             toast.success('🗑️ Data dihapus permanen')
             refetch()
+            queryClient.invalidateQueries()
         } catch (err) {
             logSupabaseError(err, { table: type, operation: 'delete', component: 'SembakoRecycleBin', actionName: 'handleDeletePermanent' })
             toast.error('❌ Gagal menghapus permanen')
@@ -108,7 +127,7 @@ export default function SembakoRecycleBin({ tenantId }) {
                             </div>
 
                             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                <TabsList className="bg-slate-100 border border-slate-200/60 p-1 h-12 rounded-xl grid grid-cols-4 gap-1 mb-6">
+                                <TabsList className="bg-slate-100 border border-slate-200/60 p-1 h-12 rounded-xl grid grid-cols-5 gap-1 mb-6">
                                     {tabs.map(tab => (
                                         <TabsTrigger 
                                             key={tab.id}
@@ -164,6 +183,7 @@ const RECYCLE_ICONS = {
     sembako_sales: History,
     sembako_products: Warehouse,
     sembako_customers: Store,
+    sembako_suppliers: Building2,
     sembako_deliveries: Truck,
 }
 
@@ -172,6 +192,7 @@ function RecycleItem({ item, type, onRestore, onDelete }) {
         if (type === 'sembako_sales') return item.invoice_number || 'Sale'
         if (type === 'sembako_products') return item.product_name
         if (type === 'sembako_customers') return item.customer_name
+        if (type === 'sembako_suppliers') return item.supplier_name || 'Supplier'
         if (type === 'sembako_deliveries') return `Trip ${item.id.slice(0,8)}`
         return 'Item'
     }
@@ -180,6 +201,7 @@ function RecycleItem({ item, type, onRestore, onDelete }) {
         if (type === 'sembako_sales') return `${formatDate(item.transaction_date)} • ${formatIDR(item.total_amount)}`
         if (type === 'sembako_products') return `${item.sku || '-'} • ${item.unit}`
         if (type === 'sembako_customers') return item.address || '-'
+        if (type === 'sembako_suppliers') return `${item.contact_phone || item.phone || '-'} • ${item.address || '-'}`
         if (type === 'sembako_deliveries') return `${formatDate(item.delivery_date)} • ${item.status}`
         return ''
     }

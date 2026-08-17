@@ -6,7 +6,8 @@ import {
   ChevronRight, Calculator, CheckCircle2,
   Calendar, Info, AlertCircle, Trash2, Edit,
   Wallet, Receipt, ChevronDown, Check, Plus, Filter,
-  TrendingDown, TrendingUp, History, MessageCircle, ExternalLink, ShieldCheck, CreditCard, Sparkles
+  TrendingDown, TrendingUp, History, MessageCircle, ExternalLink, ShieldCheck, CreditCard, Sparkles,
+  MoreVertical
 } from 'lucide-react'
 import { toWaLink, CUSTOMER_TYPES } from '@/dashboard/broker/sembako_broker/components/sembakoSaleUtils'
 import {
@@ -14,8 +15,10 @@ import {
   useSembakoCustomerInvoices, useSembakoCustomerPayments,
   useSembakoSupplierInvoices, useRecordSembakoPayment,
   useSembakoSupplierPayments, useRecordSembakoSupplierPayment,
-  useUpdateSembakoCustomer, useUpdateSembakoSupplier
+  useUpdateSembakoCustomer, useUpdateSembakoSupplier,
+  useDeleteSembakoCustomer, useDeleteSembakoSupplier
 } from '@/lib/hooks/useSembakoData'
+import { recordAuditLog } from '@/lib/hooks/useSembakoAudit'
 import {
   formatIDR, formatDate,
   formatIDRShort
@@ -40,6 +43,23 @@ import EmptyState from '@/components/EmptyState'
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const staggerContainer = {
   hidden: {},
@@ -58,8 +78,8 @@ export default function SembakoTokoSupplierDetail() {
   const { type, id } = useParams() // type: 'customer' | 'supplier'
   const isCustomer = type === 'customer'
   const navigate = useNavigate()
+  const { profile, tenant } = useAuth()
   const queryClient = useQueryClient()
-  useAuth()
 
   // Data Queries
   const { data: allCustomers, isLoading: loadingCustomers } = useSembakoCustomers()
@@ -77,6 +97,38 @@ export default function SembakoTokoSupplierDetail() {
 
   const [openModal, setOpenModal] = useState(null) // 'bayar' | 'edit'
   const [selectedInvoice, setSelectedInvoice] = useState(null)
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+  const [deleteTransactions, setDeleteTransactions] = useState(false)
+
+  const deleteCustomer = useDeleteSembakoCustomer()
+  const deleteSupplier = useDeleteSembakoSupplier()
+
+  const handleConfirmDelete = async () => {
+    try {
+      const entityName = profileData?.customer_name || profileData?.supplier_name || (isCustomer ? 'Toko' : 'Supplier')
+      if (isCustomer) {
+        await deleteCustomer.mutateAsync({ id, deleteTransactions })
+      } else {
+        await deleteSupplier.mutateAsync({ id, deleteTransactions })
+      }
+
+      // Record audit log for security & history tracking
+      await recordAuditLog({
+        action_type: isCustomer ? 'DELETE_CUSTOMER' : 'DELETE_SUPPLIER',
+        product_name: entityName,
+        old_value: 'Aktif',
+        new_value: 'Dihapus (Soft Delete)',
+        notes: `Hapus ${isCustomer ? 'Toko' : 'Supplier'} '${entityName}'${deleteTransactions ? ' beserta seluruh riwayat transaksi terkait' : ' (riwayat transaksi dipertahankan)'}`,
+        profile,
+        tenant_id: tenant?.id,
+      })
+
+      setOpenDeleteDialog(false)
+      navigate(-1)
+    } catch (_err) {
+      // toast is already handled inside the mutation hooks
+    }
+  }
 
   const supplierTotalHutang = useMemo(() => {
     if (isCustomer) return 0;
@@ -115,7 +167,7 @@ export default function SembakoTokoSupplierDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-2xl bg-muted hover:bg-muted/80 border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-95 group"
+            className="w-10 h-10 rounded-2xl bg-muted hover:bg-muted/80 border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-95 group cursor-pointer"
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
           </button>
@@ -136,11 +188,56 @@ export default function SembakoTokoSupplierDetail() {
             variant="outline"
             size="sm"
             onClick={() => setOpenModal('edit')}
-            className="bg-card hover:bg-muted border-border/60 text-muted-foreground hover:text-foreground rounded-xl font-bold text-xs gap-2 px-3.5 h-10 shadow-sm"
+            className="bg-card hover:bg-muted border-border/60 text-muted-foreground hover:text-foreground rounded-xl font-bold text-xs gap-2 px-3.5 h-10 shadow-sm cursor-pointer"
           >
             <Edit size={14} className="text-muted-foreground" />
             <span className="hidden sm:inline">Edit Profil</span>
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="w-10 h-10 rounded-xl bg-card hover:bg-muted border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all cursor-pointer shadow-sm active:scale-95"
+                aria-label="Menu Opsi"
+              >
+                <MoreVertical size={18} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52 bg-card border border-border/60 shadow-xl rounded-2xl p-1.5 z-[6000]">
+              <DropdownMenuItem
+                onClick={() => setOpenModal('edit')}
+                className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-foreground rounded-xl cursor-pointer hover:bg-muted focus:bg-muted transition-colors"
+              >
+                <Edit size={15} className="text-muted-foreground" />
+                <span>Edit Profil</span>
+              </DropdownMenuItem>
+
+              {profileData?.phone && (
+                <DropdownMenuItem asChild>
+                  <a
+                    href={toWaLink(profileData.phone) || '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-foreground rounded-xl cursor-pointer hover:bg-muted focus:bg-muted transition-colors"
+                  >
+                    <MessageCircle size={15} className="text-emerald-500" />
+                    <span>Hubungi WhatsApp</span>
+                  </a>
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator className="my-1 bg-border/40" />
+
+              <DropdownMenuItem
+                onClick={() => setOpenDeleteDialog(true)}
+                className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-rose-500 rounded-xl cursor-pointer hover:bg-rose-500/10 focus:bg-rose-500/10 focus:text-rose-500 transition-colors"
+              >
+                <Trash2 size={15} />
+                <span>Hapus {isCustomer ? 'Toko' : 'Supplier'}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -419,9 +516,75 @@ export default function SembakoTokoSupplierDetail() {
             profile={profileData}
             isCustomer={isCustomer}
             onClose={() => { setOpenModal(null); queryClient.invalidateQueries() }}
+            onRequestDelete={() => {
+              setOpenModal(null)
+              setOpenDeleteDialog(true)
+            }}
           />
         </SheetContent>
       </Sheet>
+
+      {/* Alert Dialog Delete Confirmation */}
+      <AlertDialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <AlertDialogContent className="bg-card border border-border/60 rounded-3xl max-w-md p-6 shadow-2xl text-left">
+          <AlertDialogHeader className="space-y-3 text-left">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
+              <Trash2 size={24} />
+            </div>
+            <div>
+              <AlertDialogTitle className="text-foreground font-black text-lg tracking-tight font-display">
+                Hapus {isCustomer ? 'Toko / Pelanggan' : 'Supplier'}?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground text-xs leading-relaxed mt-1.5">
+                Apakah Anda yakin ingin menghapus <strong className="text-foreground font-bold">{profileData?.customer_name || profileData?.supplier_name}</strong>?
+                Data riwayat transaksi lama akan tetap tersimpan secara aman dalam arsip sistem.
+              </AlertDialogDescription>
+            </div>
+
+            {((isCustomer && outstanding > 0) || (!isCustomer && supplierTotalHutang > 0)) && (
+              <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2.5">
+                <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-500" />
+                <div className="leading-relaxed">
+                  <strong className="block font-bold">Peringatan Tagihan:</strong>
+                  Masih terdapat {isCustomer ? 'saldo piutang' : 'sisa hutang belanja'} sebesar <strong className="text-foreground">{formatIDR(isCustomer ? outstanding : supplierTotalHutang)}</strong>.
+                </div>
+              </div>
+            )}
+
+            <div className="p-3.5 bg-muted/60 border border-border/60 rounded-2xl space-y-1.5 mt-2">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={deleteTransactions}
+                  onChange={(e) => setDeleteTransactions(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded border-border text-[#0F172A] focus:ring-0 cursor-pointer accent-[#0F172A] dark:accent-tko-brand-500"
+                />
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-foreground block">
+                    Hapus juga semua riwayat transaksi & nota terkait
+                  </span>
+                  <span className="text-[11px] text-muted-foreground block leading-tight">
+                    {isCustomer
+                      ? 'Nota penjualan & riwayat pembayaran toko ini akan disembunyikan dari laporan aktif.'
+                      : 'Batch stok masuk & riwayat pembayaran ke supplier ini akan disembunyikan dari laporan aktif.'}
+                  </span>
+                </div>
+              </label>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2.5 mt-4">
+            <AlertDialogCancel className="flex-1 h-11 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs border-border/60 cursor-pointer">
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="flex-1 h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs border-none shadow-md shadow-rose-500/20 cursor-pointer"
+            >
+              {deleteCustomer.isPending || deleteSupplier.isPending ? 'Menghapus...' : 'Ya, Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   )
 }
@@ -727,21 +890,22 @@ function PaymentForm({ invoice, isCustomer, parentId, maxAmount, onClose }) {
   )
 }
 
-function EditProfileForm({ profile, isCustomer, onClose }) {
+function EditProfileForm({ profile: targetProfile, isCustomer, onClose, onRequestDelete }) {
+  const { profile: userProfile, tenant } = useAuth()
   const updateCustomer = useUpdateSembakoCustomer()
   const updateSupplier = useUpdateSembakoSupplier()
 
   const [form, setForm] = useState({
-    customer_name: profile?.customer_name || '',
-    supplier_name: profile?.supplier_name || '',
-    customer_type: profile?.customer_type || 'warung',
-    phone: profile?.phone || '',
-    area: profile?.area || '',
-    address: profile?.address || '',
-    payment_terms: profile?.payment_terms || 'cash',
-    credit_limit: profile?.credit_limit || 0,
-    reliability_score: profile?.reliability_score || 5,
-    notes: profile?.notes || '',
+    customer_name: targetProfile?.customer_name || '',
+    supplier_name: targetProfile?.supplier_name || '',
+    customer_type: targetProfile?.customer_type || 'warung',
+    phone: targetProfile?.phone || '',
+    area: targetProfile?.area || '',
+    address: targetProfile?.address || '',
+    payment_terms: targetProfile?.payment_terms || 'cash',
+    credit_limit: targetProfile?.credit_limit || 0,
+    reliability_score: targetProfile?.reliability_score || 5,
+    notes: targetProfile?.notes || '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -749,9 +913,10 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
     e.preventDefault()
     setLoading(true)
     try {
+      const entityName = isCustomer ? form.customer_name : form.supplier_name
       if (isCustomer) {
         await updateCustomer.mutateAsync({
-          id: profile.id,
+          id: targetProfile.id,
           customer_name: form.customer_name,
           customer_type: form.customer_type,
           phone: form.phone,
@@ -763,7 +928,7 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
         })
       } else {
         await updateSupplier.mutateAsync({
-          id: profile.id,
+          id: targetProfile.id,
           supplier_name: form.supplier_name,
           phone: form.phone,
           area: form.area,
@@ -771,6 +936,17 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
           notes: form.notes,
         })
       }
+
+      await recordAuditLog({
+        action_type: isCustomer ? 'EDIT_CUSTOMER' : 'EDIT_SUPPLIER',
+        product_name: entityName,
+        old_value: isCustomer ? targetProfile?.customer_name : targetProfile?.supplier_name,
+        new_value: entityName,
+        notes: `Update profil ${isCustomer ? 'Toko' : 'Supplier'} '${entityName}'`,
+        profile: userProfile,
+        tenant_id: tenant?.id,
+      })
+
       onClose()
     } catch (_err) {
     } finally {
@@ -890,6 +1066,18 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
         </div>
       )}
 
+      {!isCustomer && (
+        <div className="space-y-1.5">
+          <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-1">Catatan Supplier</Label>
+          <Input
+            value={form.notes}
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+            placeholder="Contoh: Supplier rokok gudang barat..."
+            className="bg-muted border-border/60 h-12 text-sm font-bold text-foreground rounded-xl"
+          />
+        </div>
+      )}
+
       <div className="space-y-1.5">
         <Label className="uppercase text-[10px] font-black tracking-widest text-muted-foreground ml-1">Alamat Lengkap</Label>
         <Textarea
@@ -905,11 +1093,32 @@ function EditProfileForm({ profile, isCustomer, onClose }) {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#0F172A] hover:bg-slate-900 text-white dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 h-13 rounded-2xl font-black text-xs uppercase tracking-widest shadow-tko-brand transition-all active:scale-95 border-none"
+          className="w-full bg-[#0F172A] hover:bg-slate-900 text-white dark:bg-tko-brand-500 dark:hover:bg-tko-brand-600 dark:text-tko-forest-950 h-13 rounded-2xl font-black text-xs uppercase tracking-widest shadow-tko-brand transition-all active:scale-95 border-none cursor-pointer"
         >
           {loading ? 'Menyimpan...' : 'Simpan Perubahan Profil'}
         </Button>
       </div>
+
+      {onRequestDelete && (
+        <div className="mt-8 pt-5 border-t border-border/60 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
+              Zona Bahaya
+            </span>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Menghapus {isCustomer ? 'toko' : 'supplier'} ini akan menyembunyikannya dari daftar aktif. Seluruh catatan riwayat transaksi dan audit tetap tersimpan aman.
+          </p>
+          <button
+            type="button"
+            onClick={onRequestDelete}
+            className="w-full h-11 rounded-xl text-rose-500 hover:text-white hover:bg-rose-600 active:scale-[0.99] text-xs font-bold transition-all flex items-center justify-center gap-2 border border-rose-500/30 hover:border-rose-600 cursor-pointer"
+          >
+            <Trash2 size={14} />
+            Hapus {isCustomer ? 'Toko / Pelanggan' : 'Supplier'} Ini
+          </button>
+        </div>
+      )}
     </form>
   )
 }

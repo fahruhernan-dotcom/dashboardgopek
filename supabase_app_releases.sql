@@ -78,37 +78,53 @@ CREATE OR REPLACE FUNCTION public.fn_notify_on_new_app_release()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_user_record RECORD;
 BEGIN
+    -- Check if notifications table exists
+    IF to_regclass('public.notifications') IS NULL THEN
+        RETURN NEW;
+    END IF;
+
     -- Broadcast notification to all active users and their tenants
     FOR v_user_record IN (
-        SELECT DISTINCT tm.tenant_id, tm.user_id
-        FROM public.tenant_members tm
-        JOIN public.tenants t ON t.id = tm.tenant_id
-        WHERE t.is_active IS NOT FALSE
+        SELECT DISTINCT tenant_id, auth_user_id AS user_id
+        FROM (
+            SELECT tenant_id, auth_user_id 
+            FROM public.profiles 
+            WHERE tenant_id IS NOT NULL AND auth_user_id IS NOT NULL
+            UNION
+            SELECT tenant_id, auth_user_id 
+            FROM public.tenant_memberships 
+            WHERE tenant_id IS NOT NULL AND auth_user_id IS NOT NULL
+        ) u
     )
     LOOP
-        INSERT INTO public.notifications (
-            tenant_id,
-            user_id,
-            type,
-            title,
-            body,
-            data,
-            is_read,
-            created_at
-        ) VALUES (
-            v_user_record.tenant_id,
-            v_user_record.user_id,
-            'SYSTEM_ALERT',
-            '🚀 Pembaruan Aplikasi ' || NEW.version || ' Tersedia!',
-            'Telah hadir versi baru dengan perbaikan sistem & fitur terbaru. Buka menu Akun > Periksa Pembaruan untuk update.',
-            jsonb_build_object('version', NEW.version, 'build_number', NEW.build_number, 'route', '/dashboard/akun'),
-            FALSE,
-            NOW()
-        );
+        BEGIN
+            INSERT INTO public.notifications (
+                tenant_id,
+                user_id,
+                type,
+                title,
+                body,
+                data,
+                is_read,
+                created_at
+            ) VALUES (
+                v_user_record.tenant_id,
+                v_user_record.user_id,
+                'SYSTEM_ALERT',
+                '🚀 Pembaruan Aplikasi ' || NEW.version || ' Tersedia!',
+                'Telah hadir versi baru dengan perbaikan sistem & fitur terbaru. Buka menu Akun > Periksa Pembaruan untuk update.',
+                jsonb_build_object('version', NEW.version, 'build_number', NEW.build_number, 'route', '/dashboard/akun'),
+                FALSE,
+                NOW()
+            );
+        EXCEPTION WHEN OTHERS THEN
+            NULL;
+        END;
     END LOOP;
 
     RETURN NEW;

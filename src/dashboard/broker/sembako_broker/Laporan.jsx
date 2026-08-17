@@ -8,6 +8,7 @@ import {
   Package, ShoppingBag, ArrowUpRight, ArrowDownRight, Layers
 } from 'lucide-react'
 import FinancialReportPdfModal from '@/dashboard/broker/sembako_broker/components/FinancialReportPdfModal'
+import { SembakoAuditLogView } from '@/dashboard/broker/sembako_broker/components/SembakoAuditLogView'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { getSubscriptionStatus } from '@/lib/subscriptionUtils'
 import { canViewProfit } from '@/lib/auth/business-roles'
@@ -156,73 +157,117 @@ export default function SembakoLaporan() {
 
   const s = data?.summary || {}
 
+  const [activeMainTab, setActiveMainTab] = useState('keuangan') // 'keuangan' | 'audit'
+
   return (
     <div className="bg-background min-h-screen text-foreground pb-48 sm:pb-24 text-left">
-      {!isDesktop && <BrokerMobileHeader title="Laporan Bisnis" onMenuClick={() => setSidebarOpen(true)} />}
+      {!isDesktop && <BrokerMobileHeader title="Laporan & Audit" onMenuClick={() => setSidebarOpen(true)} />}
       
       <div className="mx-auto max-w-7xl px-3.5 sm:px-6 pt-3 sm:pt-6">
 
-        {/* ── Top Header & Filter Controls ── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
-          <div>
-            <h1 className="hidden md:block text-2xl font-bold text-foreground tracking-tight">
-              Laporan Keuangan & Hasil Bisnis
-            </h1>
-            <p className="hidden md:block text-xs text-muted-foreground mt-0.5">
-              Analisis performa omzet, HPP, margin & likuiditas kas toko
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
-            {/* Preset Selector */}
-            <div className="w-full sm:w-44">
-              <CustomSelect
-                value={preset}
-                onChange={handlePresetChange}
-                options={[
-                  { value: 'hari_ini', label: 'Hari Ini' },
-                  { value: 'minggu_ini', label: 'Minggu Ini' },
-                  { value: 'bulan_ini', label: 'Bulan Ini' },
-                  { value: 'bulan_lalu', label: 'Bulan Kemarin' },
-                  { value: '3_bulan_terakhir', label: '3 Bulan Terakhir' },
-                  { value: 'keseluruhan', label: 'Keseluruhan' },
-                  { value: 'custom', label: 'Kustom Tanggal' }
-                ]}
-                placeholder="Pilih Rentang"
-              />
-            </div>
-
-            {/* Custom Date Pickers */}
-            {preset === 'custom' && (
-              <div className="grid grid-cols-2 sm:flex items-center gap-2">
-                <DatePicker id="start-date" value={startDate} onChange={val => setStartDate(val)} placeholder="Mulai" />
-                <DatePicker id="end-date" value={endDate} onChange={val => setEndDate(val)} placeholder="Sampai" />
-              </div>
+        {/* ── Segmented Main Tab Switch (Keuangan vs Audit) ── */}
+        <div className="flex items-center gap-1.5 p-1 bg-muted rounded-2xl border border-border/60 w-fit mb-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('keuangan')}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer select-none",
+              activeMainTab === 'keuangan'
+                ? "bg-[#0F172A] text-white dark:bg-tko-brand-500 dark:text-tko-forest-950 shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             )}
-
-            {/* PDF Report Export Buttons */}
-            <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setPdfModal({ open: true, type: 'business_result' })}
-                disabled={!data}
-                className="flex items-center justify-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-slate-900 hover:bg-slate-800 text-white transition-all cursor-pointer shadow-md shadow-slate-900/10 active:scale-95 disabled:opacity-50 border-0"
-              >
-                <Printer size={13} />
-                <span className="truncate">PDF Hasil Bisnis</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPdfModal({ open: true, type: 'cashflow' })}
-                disabled={!data}
-                className="flex items-center justify-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/70 hover:bg-muted text-foreground transition-all cursor-pointer disabled:opacity-50"
-              >
-                <FileText size={13} className="text-slate-500" />
-                <span className="truncate">PDF Arus Kas</span>
-              </button>
-            </div>
-          </div>
+          >
+            📊 Laporan Keuangan
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('audit')}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer select-none flex items-center gap-1.5",
+              activeMainTab === 'audit'
+                ? "bg-[#0F172A] text-white dark:bg-tko-brand-500 dark:text-tko-forest-950 shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            🛡️ Log & Audit Aktivitas
+          </button>
         </div>
+
+        {activeMainTab === 'audit' ? (
+          <div className="pt-2">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                Log Audit & Jejak Aktivitas
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Pengawasan internal: Riwayat penghapusan mitra, perubahan profil, penyesuaian stok & transaksi
+              </p>
+            </div>
+            <SembakoAuditLogView />
+          </div>
+        ) : (
+          <>
+            {/* ── Top Header & Filter Controls ── */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
+              <div>
+                <h1 className="hidden md:block text-2xl font-bold text-foreground tracking-tight">
+                  Laporan Keuangan & Hasil Bisnis
+                </h1>
+                <p className="hidden md:block text-xs text-muted-foreground mt-0.5">
+                  Analisis performa omzet, HPP, margin & likuiditas kas toko
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+                {/* Preset Selector */}
+                <div className="w-full sm:w-44">
+                  <CustomSelect
+                    value={preset}
+                    onChange={handlePresetChange}
+                    options={[
+                      { value: 'hari_ini', label: 'Hari Ini' },
+                      { value: 'minggu_ini', label: 'Minggu Ini' },
+                      { value: 'bulan_ini', label: 'Bulan Ini' },
+                      { value: 'bulan_lalu', label: 'Bulan Kemarin' },
+                      { value: '3_bulan_terakhir', label: '3 Bulan Terakhir' },
+                      { value: 'keseluruhan', label: 'Keseluruhan' },
+                      { value: 'custom', label: 'Kustom Tanggal' }
+                    ]}
+                    placeholder="Pilih Rentang"
+                  />
+                </div>
+
+                {/* Custom Date Pickers */}
+                {preset === 'custom' && (
+                  <div className="grid grid-cols-2 sm:flex items-center gap-2">
+                    <DatePicker id="start-date" value={startDate} onChange={val => setStartDate(val)} placeholder="Mulai" />
+                    <DatePicker id="end-date" value={endDate} onChange={val => setEndDate(val)} placeholder="Sampai" />
+                  </div>
+                )}
+
+                {/* PDF Report Export Buttons */}
+                <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setPdfModal({ open: true, type: 'business_result' })}
+                    disabled={!data}
+                    className="flex items-center justify-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-slate-900 hover:bg-slate-800 text-white transition-all cursor-pointer shadow-md shadow-slate-900/10 active:scale-95 disabled:opacity-50 border-0"
+                  >
+                    <Printer size={13} />
+                    <span className="truncate">PDF Hasil Bisnis</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPdfModal({ open: true, type: 'cashflow' })}
+                    disabled={!data}
+                    className="flex items-center justify-center gap-1.5 px-3 h-10 rounded-xl font-bold text-xs bg-card border border-border/70 hover:bg-muted text-foreground transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <FileText size={13} className="text-slate-500" />
+                    <span className="truncate">PDF Arus Kas</span>
+                  </button>
+                </div>
+              </div>
+            </div>
 
         {isLoading ? <LoadingSkeleton /> : isError ? (
           <SembakoErrorState error={error} onRetry={refetch} />
@@ -289,6 +334,8 @@ export default function SembakoLaporan() {
               <InvoiceCollapsible sales={data.sales} />
             </>
           </div>
+        )}
+        </>
         )}
       </div>
 

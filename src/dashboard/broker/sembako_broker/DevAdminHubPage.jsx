@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/lib/hooks/useAuth'
 import SembakoRecycleBin from '@/dashboard/broker/sembako_broker/components/SembakoRecycleBin'
+import { SembakoAuditLogView } from '@/dashboard/broker/sembako_broker/components/SembakoAuditLogView'
 import KelolaAkunPage from '@/dashboard/broker/sembako_broker/KelolaAkunPage'
 import { cn } from '@/lib/utils'
 import {
@@ -334,12 +335,18 @@ export default function DevAdminHubPage() {
       {/* Main Tabs Navigation */}
       <main className="relative z-10 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-slate-200/70 border border-slate-300/60 p-1.5 h-14 rounded-2xl grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+          <TabsList className="bg-slate-200/70 border border-slate-300/60 p-1.5 h-auto rounded-2xl grid grid-cols-2 md:grid-cols-5 gap-2 mb-6">
             <TabsTrigger 
               value="logs" 
               className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#0F172A] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
             >
               <Activity size={16} /> Error & System Logs
+            </TabsTrigger>
+            <TabsTrigger 
+              value="audit" 
+              className="rounded-xl text-xs font-black uppercase tracking-wider gap-2 data-[state=active]:bg-[#0F172A] data-[state=active]:text-white text-slate-700 hover:text-slate-900 transition-all h-11 cursor-pointer"
+            >
+              <ShieldCheck size={16} /> Audit Trail
             </TabsTrigger>
             <TabsTrigger 
               value="accounts" 
@@ -360,6 +367,21 @@ export default function DevAdminHubPage() {
               <Trash2 size={16} /> Recycle Bin Data
             </TabsTrigger>
           </TabsList>
+
+          {/* TAB: AUDIT TRAIL TENANT */}
+          <TabsContent value="audit" className="mt-0">
+            <Card className="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm">
+              <div className="mb-5">
+                <h2 className="text-xl font-black text-slate-900 font-display uppercase tracking-tight">
+                  Tenant Audit Trail & Security Activity
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Rekaman seluruh aktivitas bisnis, mutasi stok, manipulasi nota, serta penghapusan/edit data mitra toko & supplier.
+                </p>
+              </div>
+              <SembakoAuditLogView />
+            </Card>
+          </TabsContent>
 
           {/* TAB 1: ERROR & SYSTEM LOGS CONSOLE */}
           <TabsContent value="logs" className="mt-0 space-y-4">

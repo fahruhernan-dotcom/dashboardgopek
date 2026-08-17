@@ -427,6 +427,21 @@ function RiwayatKeluar() {
 
 function getActionStyle(action_type) {
   const type = String(action_type || '').toUpperCase()
+  if (type.includes('DELETE_SUPPLIER') || type.includes('HAPUS_SUPPLIER')) {
+    return { label: '🗑️ HAPUS SUPPLIER', bg: 'rgba(239,68,68,0.15)', color: '#F87171', border: 'rgba(239,68,68,0.3)' }
+  }
+  if (type.includes('DELETE_CUSTOMER') || type.includes('HAPUS_TOKO') || type.includes('HAPUS_CUSTOMER')) {
+    return { label: '🗑️ HAPUS TOKO', bg: 'rgba(239,68,68,0.15)', color: '#F87171', border: 'rgba(239,68,68,0.3)' }
+  }
+  if (type.includes('DELETE') || type.includes('HAPUS')) {
+    return { label: '🗑️ HAPUS DATA', bg: 'rgba(239,68,68,0.15)', color: '#F87171', border: 'rgba(239,68,68,0.3)' }
+  }
+  if (type.includes('EDIT_SUPPLIER')) {
+    return { label: '✏️ EDIT SUPPLIER', bg: 'rgba(168,85,247,0.15)', color: '#C084FC', border: 'rgba(168,85,247,0.3)' }
+  }
+  if (type.includes('EDIT_CUSTOMER')) {
+    return { label: '✏️ EDIT TOKO', bg: 'rgba(168,85,247,0.15)', color: '#C084FC', border: 'rgba(168,85,247,0.3)' }
+  }
   if (type.includes('ADJ') || type.includes('ADJUST')) {
     return { label: '⚖ PENYESUAIAN STOK', bg: 'rgba(245,158,11,0.15)', color: '#FBBF24', border: 'rgba(245,158,11,0.3)' }
   }
@@ -437,10 +452,10 @@ function getActionStyle(action_type) {
     return { label: '🛒 PENJUALAN / KELUAR', bg: 'rgba(56,189,248,0.15)', color: '#38BDF8', border: 'rgba(56,189,248,0.3)' }
   }
   if (type.includes('EDIT')) {
-    return { label: '✏️ EDIT PRODUK', bg: 'rgba(168,85,247,0.15)', color: '#C084FC', border: 'rgba(168,85,247,0.3)' }
+    return { label: '✏️ EDIT DATA', bg: 'rgba(168,85,247,0.15)', color: '#C084FC', border: 'rgba(168,85,247,0.3)' }
   }
   if (type.includes('TAMBAH')) {
-    return { label: '✨ PRODUK BARU', bg: 'rgba(20,184,166,0.15)', color: '#2DD4BF', border: 'rgba(20,184,166,0.3)' }
+    return { label: '✨ DATA BARU', bg: 'rgba(20,184,166,0.15)', color: '#2DD4BF', border: 'rgba(20,184,166,0.3)' }
   }
   return { label: `📋 ${type}`, bg: 'rgba(15,23,42,0.12)', color: '#0F172A', border: 'rgba(15,23,42,0.2)' }
 }

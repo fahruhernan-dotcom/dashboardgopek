@@ -105,16 +105,32 @@ export const useUpdateSembakoSupplier = () => {
 export const useDeleteSembakoSupplier = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (arg) => {
+      const id = typeof arg === 'object' ? arg.id : arg
+      const deleteTransactions = typeof arg === 'object' ? Boolean(arg.deleteTransactions) : false
+
       const { error } = await supabase.from('sembako_suppliers')
         .update({ is_deleted: true }).eq('id', id)
       if (error) {
         logSupabaseError(error, { table: 'sembako_suppliers', operation: 'update', component: 'useSembakoData', actionName: 'sembako.supplier.delete' })
         throw error
       }
+
+      // If requested, also soft delete all batches & payments linked to this supplier
+      if (deleteTransactions) {
+        await Promise.all([
+          supabase.from('sembako_stock_batches').update({ is_deleted: true }).eq('supplier_id', id),
+          supabase.from('sembako_supplier_payments').update({ is_deleted: true }).eq('supplier_id', id),
+        ])
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sembako-suppliers'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-batches'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-all-batches'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-supplier-payments'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-supplier-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-dashboard-stats'] })
       toast.success('Supplier berhasil dihapus')
     },
     onError: (err) => toast.error(normalizeSupabaseError(err).message),

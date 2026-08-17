@@ -96,16 +96,30 @@ export const useUpdateSembakoCustomer = () => {
 export const useDeleteSembakoCustomer = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (arg) => {
+      const id = typeof arg === 'object' ? arg.id : arg
+      const deleteTransactions = typeof arg === 'object' ? Boolean(arg.deleteTransactions) : false
+
       const { error } = await supabase.from('sembako_customers')
         .update({ is_deleted: true }).eq('id', id)
       if (error) {
         logSupabaseError(error, { table: 'sembako_customers', operation: 'update', component: 'useSembakoData', actionName: 'sembako.customer.delete' })
         throw error
       }
+
+      // If requested, also soft delete all sales & payments linked to this customer
+      if (deleteTransactions) {
+        await Promise.all([
+          supabase.from('sembako_sales').update({ is_deleted: true }).eq('customer_id', id),
+          supabase.from('sembako_payments').update({ is_deleted: true }).eq('customer_id', id),
+        ])
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sembako-customers'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-sales'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-customer-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['sembako-customer-payments'] })
       queryClient.invalidateQueries({ queryKey: ['sembako-dashboard-stats'] })
       toast.success('Toko berhasil dihapus')
     },
