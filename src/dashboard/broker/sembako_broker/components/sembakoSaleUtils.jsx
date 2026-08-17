@@ -665,3 +665,54 @@ export function formatRokokPackaging(quantity) {
 
   return parts.length > 0 ? `(${parts.join(' + ')})` : ''
 }
+
+/**
+ * Format raw Supabase/PostgreSQL/JavaScript errors into friendly actionable Indonesian messages.
+ * @param {Error|string|object} err
+ * @param {string} fallback
+ * @returns {string}
+ */
+export function formatFriendlyErrorMessage(err, fallback = 'Gagal menyimpan transaksi') {
+  if (!err) return fallback
+  const msg = typeof err === 'string' ? err : (err.message || err.details || '')
+  const low = msg.toLowerCase()
+
+  // Foreign key / Missing customer relation
+  if (low.includes('violates foreign key constraint') && (low.includes('customer_id') || low.includes('sembako_sales_customer_id_fkey'))) {
+    return 'Toko atau Pelanggan yang dipilih tidak valid atau belum terdaftar. Silakan pilih kembali toko pada Langkah 1.'
+  }
+  // Foreign key on products or batches
+  if (low.includes('violates foreign key constraint') && low.includes('product_id')) {
+    return 'Salah satu produk yang dipilih tidak ditemukan dalam database. Silakan pilih ulang produk.'
+  }
+  if (low.includes('violates foreign key constraint')) {
+    return 'Terdapat relasi data yang tidak cocok (toko/produk). Silakan periksa kembali data sebelum menyimpan.'
+  }
+
+  // Stock deficit
+  if (low.includes('stok') && low.includes('tidak cukup')) {
+    return msg
+  }
+
+  // Duplicate constraint
+  if (low.includes('duplicate key') || low.includes('unique constraint') || low.includes('23505')) {
+    return 'Nomor transaksi/invoice ini sudah terdaftar. Silakan coba simpan kembali untuk membuat nomor invoice baru.'
+  }
+
+  // Row level security / permissions
+  if (low.includes('row-level security') || low.includes('permission denied') || low.includes('42501') || low.includes('pgrst301')) {
+    return 'Sesi login Anda telah berakhir atau hak akses tidak mencukupi. Silakan refresh halaman dan login ulang.'
+  }
+
+  // Network / fetch errors
+  if (low.includes('failed to fetch') || low.includes('network') || low.includes('offline') || low.includes('timeout')) {
+    return 'Koneksi internet bermasalah. Periksa jaringan Anda dan coba beberapa saat lagi.'
+  }
+
+  // If already a clean human-readable message without SQL keywords
+  if (msg && !msg.includes('violates') && !msg.includes('constraint') && !msg.includes('syntax') && !msg.includes('relation') && !msg.includes('null value in column') && !msg.includes('table "')) {
+    return msg
+  }
+
+  return fallback
+}

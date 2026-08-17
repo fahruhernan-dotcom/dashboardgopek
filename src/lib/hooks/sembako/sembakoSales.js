@@ -83,6 +83,7 @@ export function processSaleRow(sale, returnsData = [], itemsBySaleId = {}) {
   return {
     ...sale,
     items,
+    sembako_sale_items: items,
     subtotal: initialSubtotal,
     delivery_cost: deliveryCost,
     other_cost: otherCost,
@@ -274,7 +275,7 @@ export const useCreateSembakoSale = () => {
         }).select().single()
       if (saleErr) {
         logSupabaseError(saleErr, { table: 'sembako_sales', operation: 'insert', component: 'useSembakoData', actionName: 'sembako.sale.create' })
-        throw saleErr
+        throw normalizeSupabaseError(saleErr)
       }
 
       const itemsToInsert = items.map(item => {
@@ -301,7 +302,7 @@ export const useCreateSembakoSale = () => {
           error: itemErr,
           metadata: { table: 'sembako_sale_items', operation: 'insert', partial: true, step: 'sale_items_insert', sale_id: sale.id },
         })
-        throw itemErr
+        throw normalizeSupabaseError(itemErr)
       }
 
       try {

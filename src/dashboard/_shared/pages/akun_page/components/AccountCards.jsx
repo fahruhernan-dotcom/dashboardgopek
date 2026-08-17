@@ -4,7 +4,7 @@ import {
   Check, X, Package, Receipt, Sun, Globe, Bell, Settings, Phone,
   FileText, LogOut, ChevronRight, ArrowUpRight, Info, LayoutGrid,
   ClipboardList, BarChart2, Users, ShoppingCart, Truck, Warehouse,
-  AlertTriangle, CreditCard, BellOff,
+  AlertTriangle, CreditCard, BellOff, RefreshCw,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -12,7 +12,9 @@ import { useTheme, THEME_PRESETS } from '@/lib/hooks/useTheme'
 import { useLanguage } from '@/lib/i18n/useLanguage'
 import { useBrowserNotifications } from '@/lib/hooks/useBrowserNotifications'
 import { useNotificationPreferences } from '@/lib/hooks/useNotifications'
-import { T, PLAN_INFO, PERMISSION_MATRIX, APP_VERSION, cardStyle } from '../constants'
+import { useAppUpdate } from '@/lib/hooks/useAppUpdate'
+import { AppUpdateModal } from '@/components/ui/AppUpdateModal'
+import { T, PLAN_INFO, PERMISSION_MATRIX, APP_VERSION, APP_VERSION_LABEL, cardStyle } from '../constants'
 import { Section, SectionLabel, InfoRow } from './Primitives'
 
 // ─── Section 1: Profile Hero ──────────────────────────────────
@@ -901,7 +903,30 @@ export function PreferencesCard() {
 
 export function HelpAboutCard({ navigate, canDeleteBusiness, onDeleteClick }) {
   const { t } = useLanguage()
+  const {
+    checkForUpdate,
+    hasUpdate,
+    isModalOpen,
+    setIsModalOpen,
+    latestRelease,
+    isMandatory,
+    startDownload,
+    currentVersion,
+    currentVersionLabel,
+  } = useAppUpdate()
+
   const items = [
+    {
+      icon: <RefreshCw size={14} className={hasUpdate ? "text-emerald-500 animate-spin" : ""} style={{ color: hasUpdate ? '#10B981' : T.textDim }} />,
+      label: 'Periksa Pembaruan Aplikasi',
+      sub: hasUpdate ? `Versi baru ${latestRelease?.version || ''} tersedia!` : `Versi ${currentVersion} (Terkini)`,
+      badge: hasUpdate ? (
+        <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+          Ada Update!
+        </span>
+      ) : null,
+      onClick: () => checkForUpdate(true)
+    },
     { icon: <HelpCircle size={14} />, label: t('help_center'),   sub: t('help_center_sub'),  onClick: () => navigate('/faq') },
     { icon: <Phone size={14} />,      label: t('help_contact'),  sub: t('help_contact_sub'), onClick: () => navigate('/hubungi-kami') },
     { icon: <FileText size={14} />,   label: t('help_terms'),    sub: null,                  onClick: () => navigate('/terms') },
@@ -932,16 +957,28 @@ export function HelpAboutCard({ navigate, canDeleteBusiness, onDeleteClick }) {
               {it.icon}
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{it.label}</div>
-              {it.sub && <div style={{ fontSize: 11, color: T.textDim, marginTop: 1 }}>{it.sub}</div>}
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {it.label}
+                {it.badge}
+              </div>
+              {it.sub && <div style={{ fontSize: 11, color: it.badge ? '#10B981' : T.textDim, marginTop: 1, fontWeight: it.badge ? 600 : 400 }}>{it.sub}</div>}
             </div>
             <ChevronRight size={14} color={T.textMute} />
           </button>
         ))}
       </div>
       <div style={{ marginTop: 8, padding: '10px 14px', textAlign: 'center', fontSize: 11, color: T.textMute }}>
-        Sembako OS · {APP_VERSION}
+        Sembako OS · {currentVersionLabel || APP_VERSION_LABEL || APP_VERSION}
       </div>
+
+      <AppUpdateModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        currentVersion={currentVersion}
+        latestRelease={latestRelease}
+        isMandatory={isMandatory}
+        onDownload={startDownload}
+      />
     </Section>
   )
 }

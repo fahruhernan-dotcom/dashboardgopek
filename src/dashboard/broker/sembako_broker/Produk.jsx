@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
-import { Plus, Search, X, ChevronDown, ToggleLeft, ToggleRight, Trash2, Package, FileSpreadsheet } from 'lucide-react'
+import { Plus, Search, X, ChevronDown, ToggleLeft, ToggleRight, Trash2, Package, FileSpreadsheet, AlertTriangle } from 'lucide-react'
 import ImportCsvModal from '@/components/ui/ImportCsvModal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -94,7 +94,7 @@ import { recordAuditLog } from '@/lib/hooks/useSembakoAudit'
 
 // ── Sheet overlay ─────────────────────────────────────────────────────────────
 
-function ProductSheet({ product, onClose }) {
+function ProductSheet({ product, onClose, onDelete }) {
   useBackHandler(true, onClose)
   const { profile } = useAuth()
   const isEdit = !!product?.id
@@ -571,6 +571,23 @@ function ProductSheet({ product, onClose }) {
           >
             {isLoading ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Tambah Produk'}
           </button>
+
+          {/* Danger Zone: Hapus Produk */}
+          {isEdit && onDelete && (
+            <div style={{ marginTop: 6, paddingTop: 14, borderTop: '1px solid var(--border-soft)' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onDelete(product)
+                }}
+                className="w-full h-11 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-center gap-2 hover:bg-rose-100/60 active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <Trash2 size={15} />
+                <span>Hapus Produk Ini</span>
+              </button>
+            </div>
+          )}
         </form>
       </motion.div>
     </motion.div>
@@ -748,14 +765,6 @@ function ProductCard({ product, onEdit, onDelete }) {
           ⚠ {warning}
         </p>
       )}
-
-      {/* Delete button — top right */}
-      <button
-        onClick={e => { e.stopPropagation(); onDelete(product) }}
-        style={{ position: 'absolute', top: 12, right: 12, background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5 }}
-      >
-        <Trash2 size={14} color="#F87171" />
-      </button>
     </motion.div>
   )
 }
@@ -941,29 +950,80 @@ export default function Produk() {
           <ProductSheet
             product={sheet === 'new' ? null : sheet}
             onClose={() => setSheet(null)}
+            onDelete={handleDelete}
           />
         )}
       </AnimatePresence>
 
       <AlertDialog open={!!productToDelete} onOpenChange={(v) => !v && setProductToDelete(null)}>
-        <AlertDialogContent className="bg-[#0C1319] border border-white/10 rounded-2xl max-w-sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-500 font-black text-base uppercase tracking-wide">
-              Hapus Produk?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-[#4B6478] text-sm font-medium">
-              Hapus "{productToDelete?.product_name}"? Data tidak bisa dipulihkan.
-            </AlertDialogDescription>
+        <AlertDialogContent className="bg-white dark:bg-[#0C1319] border border-slate-200 dark:border-white/10 rounded-3xl max-w-md p-6 shadow-2xl">
+          <AlertDialogHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-slate-900 dark:text-white font-black text-base tracking-tight font-['Sora']">
+                  Konfirmasi Hapus Produk
+                </AlertDialogTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Tindakan ini akan menghapus produk dari katalog aktif.
+                </p>
+              </div>
+            </div>
+
+            {/* Target Product Summary Card */}
+            {productToDelete && (
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1.5 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Nama Produk</span>
+                  {productToDelete.category && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                      {productToDelete.category}
+                    </span>
+                  )}
+                </div>
+                <p className="font-bold text-sm text-slate-900 dark:text-white">
+                  {productToDelete.product_name}
+                </p>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60 dark:border-white/10">
+                  <span className="text-slate-500">Harga Jual:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    Rp {fmt(productToDelete.sell_price)} / {productToDelete.unit}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Warning if stock > 0 */}
+            {productToDelete && (productToDelete.current_stock || 0) > 0 ? (
+              <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-left space-y-1">
+                <p className="text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                  <span>⚠️</span> Masih Memiliki Stok Aktif!
+                </p>
+                <p className="text-[11px] text-rose-600/90 dark:text-rose-300/80 leading-relaxed">
+                  Produk ini masih memiliki stok <strong>{fmt(productToDelete.current_stock)} {productToDelete.unit}</strong>.
+                  Menghapusnya dapat mempengaruhi keakuratan nilai inventaris gudang.
+                </p>
+              </div>
+            ) : (
+              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-left">
+                <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
+                  💡 <strong>Tip:</strong> Jika produk hanya sementara tidak dijual, Anda cukup menonaktifkannya melalui toggle <em>"Produk Aktif"</em> di formulir edit agar riwayat transaksi tetap aman.
+                </p>
+              </div>
+            )}
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 mt-2">
-            <AlertDialogCancel className="flex-1 h-11 bg-white/5 border-white/10 text-white font-black uppercase text-xs tracking-wider hover:bg-white/10">
+
+          <AlertDialogFooter className="gap-2.5 mt-5">
+            <AlertDialogCancel className="flex-1 h-11 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 text-slate-700 dark:text-white font-bold text-xs border-none cursor-pointer">
               Batal
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteProduct}
-              className="flex-1 h-11 bg-red-500 hover:bg-red-600 text-white font-black uppercase text-xs tracking-wider border-none"
+              className="flex-1 h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs tracking-wide border-none shadow-lg shadow-rose-600/20 cursor-pointer"
             >
-              Hapus
+              Ya, Hapus Produk
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

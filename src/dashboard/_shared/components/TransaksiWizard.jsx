@@ -183,10 +183,15 @@ export default function TransaksiWizard({ isOpen, onClose }) {
     if (saved) {
       const p = JSON.parse(saved)
       setMode(p.mode)
-      setCurrentStep(p.currentStep || 0)
       setStep1Data(p.step1Data)
       setStep2Data(p.step2Data)
       setStep3Data(p.step3Data || { enabled: false, include_driver_wage: true, include_fuel_cost: true, driver_wage: 0 })
+      
+      let targetStep = p.currentStep || 0
+      if (targetStep > 1 && !p.step1Data) {
+        targetStep = p.mode ? 1 : 0
+      }
+      setCurrentStep(targetStep)
     }
     setHasDraft(false)
   }

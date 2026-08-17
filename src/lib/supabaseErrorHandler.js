@@ -42,7 +42,30 @@ export function normalizeSupabaseError(error) {
     return new AppError('NOT_FOUND', 'Data tidak ditemukan.', 404)
   }
 
-  // 4. Custom exceptions (Postgres RAISE EXCEPTION or Business Logic)
+  // 4. PostgreSQL Constraint Violations
+  // 4a. Foreign Key Constraint (23503)
+  if (errCode === '23503' || errMessage.toLowerCase().includes('violates foreign key constraint')) {
+    const lowMsg = errMessage.toLowerCase()
+    if (lowMsg.includes('customer_id') || lowMsg.includes('customer_id_fkey')) {
+      return new AppError('INVALID_CUSTOMER', 'Toko / Pelanggan yang dipilih tidak valid atau belum tersimpan. Silakan pilih ulang toko pada Langkah 1.', 400)
+    }
+    if (lowMsg.includes('product_id') || lowMsg.includes('product_id_fkey')) {
+      return new AppError('INVALID_PRODUCT', 'Salah satu produk yang dipilih tidak ditemukan di database. Silakan periksa kembali daftar produk.', 400)
+    }
+    return new AppError('FOREIGN_KEY_VIOLATION', 'Terdapat relasi data (toko/produk) yang tidak cocok. Silakan periksa kembali data sebelum menyimpan.', 400)
+  }
+
+  // 4b. Unique Constraint / Duplicate Key (23505)
+  if (errCode === '23505' || errMessage.toLowerCase().includes('violates unique constraint') || errMessage.toLowerCase().includes('duplicate key')) {
+    return new AppError('DUPLICATE_RECORD', 'Data atau nomor transaksi ini sudah pernah tersimpan sebelumnya. Silakan coba simpan kembali.', 409)
+  }
+
+  // 4c. Not Null Constraint (23502)
+  if (errCode === '23502' || errMessage.toLowerCase().includes('violates not-null constraint')) {
+    return new AppError('REQUIRED_FIELD_MISSING', 'Ada informasi wajib yang belum diisi. Harap lengkapi semua isian formulir.', 400)
+  }
+
+  // 5. Custom exceptions (Postgres RAISE EXCEPTION or Business Logic)
   const msgUpper = errMessage.toUpperCase()
   
   if (msgUpper.includes('QUOTA_EXCEEDED') || msgUpper.includes('QUOTA')) {
@@ -63,5 +86,5 @@ export function normalizeSupabaseError(error) {
   }
 
   // Fallback for all other errors
-  return new AppError(errCode || 'UNKNOWN_ERROR', errMessage || 'Terjadi kesalahan yang tidak diketahui.', status)
+  return new AppError(errCode || 'UNKNOWN_ERROR', errMessage || 'Terjadi kesalahan sistem yang tidak diketahui.', status)
 }

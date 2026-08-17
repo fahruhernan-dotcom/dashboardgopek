@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronLeft, Loader2, Search, Check, ChevronDown, Truck, Bike, Package2, Car, Fuel, Cigarette, Utensils, CircleParking, Package } from 'lucide-react'
+import { Plus, X, ChevronLeft, Loader2, Search, Check, ChevronDown, Truck, Bike, Package2, Car, Fuel, Cigarette, Utensils, CircleParking, Package, AlertCircle } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { PhoneInput } from '@/components/ui/PhoneInput'
@@ -22,6 +22,7 @@ import {
   PAYMENT_TERMS_DAYS, PAYMENT_TERMS_LABEL,
   CUSTOMER_TYPE_OPTIONS,
   RokokUnitCalculator,
+  formatFriendlyErrorMessage,
 } from './sembakoSaleUtils'
 import { SembakoSuccessCard } from './SembakoSuccessCard'
 
@@ -130,17 +131,20 @@ function MobileCustomerSearch({ customers, value, onSelect, onAddNew, onClose })
 }
 
 // ─── Quick Add Customer Card ──────────────────────────────────────────────────
-function QuickAddCustomer({ form, onChange, onSave, onCancel, saving }) {
+function QuickAddCustomer({ form, onChange, onSave, onCancel, saving, error }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 6 }}
       className="rounded-2xl p-4 space-y-3"
-      style={{ background: SURFACE, border: `1px solid ${ACCENT}` }}
+      style={{ background: SURFACE, border: error ? '1.5px solid #EF4444' : `1px solid ${ACCENT}` }}
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-black" style={{ color: TEXT }}>Toko Baru</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-black" style={{ color: TEXT }}>Toko Baru</span>
+          {error && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Wajib Diisi</span>}
+        </div>
         <button onClick={onCancel} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.07)', color: MUTED }}>
           <X size={14} />
         </button>
@@ -148,7 +152,20 @@ function QuickAddCustomer({ form, onChange, onSave, onCancel, saving }) {
       <div className="space-y-2.5">
         <div>
           <label className={labelCn}>Nama Toko *</label>
-          <input className={inputCn} value={form.customer_name} onChange={e => onChange({ ...form, customer_name: e.target.value })} placeholder="Contoh: Toko Berkah" />
+          <input
+            autoFocus
+            className={`${inputCn} ${error ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500/20' : ''}`}
+            value={form.customer_name}
+            onChange={e => onChange({ ...form, customer_name: e.target.value })}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                onSave()
+              }
+            }}
+            placeholder="Contoh: Toko Berkah"
+          />
+          {error && <p className="text-[11px] font-bold text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={12} /> {error}</p>}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -172,11 +189,11 @@ function QuickAddCustomer({ form, onChange, onSave, onCancel, saving }) {
         <button
           onClick={onSave}
           disabled={saving}
-          className="w-full h-11 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-opacity"
+          className="w-full h-11 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-opacity cursor-pointer"
           style={{ background: ACCENT, color: '#fff', opacity: saving ? 0.6 : 1 }}
         >
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-          {saving ? 'Menyimpan...' : 'Simpan Toko'}
+          {saving ? 'Menyimpan Toko...' : 'Simpan Toko'}
         </button>
       </div>
     </motion.div>
@@ -690,8 +707,12 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     return null
   }
 
-  const [step, setStep]           = useState(() => getSavedInvoiceDraft()?.step ?? 0)
+  const [step, setStep]           = useState(() => {
+    const d = getSavedInvoiceDraft()
+    return (d?.step && d?.custId) ? d.step : 0
+  })
   const [custId, setCustId]       = useState(() => getSavedInvoiceDraft()?.custId ?? '')
+  const [custError, setCustError] = useState('')
   const [txnDate, setTxnDate]     = useState(() => getSavedInvoiceDraft()?.txnDate ?? format(new Date(), 'yyyy-MM-dd'))
   const [dueDate, setDueDate]     = useState(() => {
     const d = getSavedInvoiceDraft()?.dueDate
@@ -768,7 +789,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     if (EDIT_DRAFT_KEY) localStorage.removeItem(EDIT_DRAFT_KEY)
     lastPrefillKeyRef.current = null
     const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return format(d, 'yyyy-MM-dd') }
-    setStep(0); setCustId(''); setTxnDate(format(new Date(), 'yyyy-MM-dd')); setDueDate(tomorrow())
+    setStep(0); setCustId(''); setCustError(''); setTxnDate(format(new Date(), 'yyyy-MM-dd')); setDueDate(tomorrow())
     setItems([{ product_id: '', product_name: '', unit: '', selectedUnit: '', priceMode: 'per_slop', quantity: 0, price_per_unit: 0, cogs_per_unit: 0 }])
     setDeliveryCost(0); setOtherCost(0); setSelectedCostChips([]); setOtherCostNotes(''); setNotes('')
     setPayAmount(0); setPayMethod('cash')
@@ -858,14 +879,34 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       setOtherCostNotes('')
     }
 
-    if (Array.isArray(editSale.sembako_sale_items) && editSale.sembako_sale_items.length > 0) {
-      setItems(editSale.sembako_sale_items.map(it => {
+    // Prefill Delivery data if exists
+    const deliv = Array.isArray(editSale.sembako_deliveries) ? editSale.sembako_deliveries[0] : editSale.sembako_deliveries
+    if (deliv || (editSale.delivery_cost || 0) > 0) {
+      setUseDelivery(true)
+      if (deliv) {
+        if (deliv.status) setDeliveryStatus(deliv.status)
+        if (deliv.employee_id) setDeliveryDriver(deliv.employee_id)
+        if (deliv.vehicle_type) setDeliveryVehicle(deliv.vehicle_type)
+        if (deliv.vehicle_plate) setDeliveryPlate(deliv.vehicle_plate)
+      }
+    } else {
+      setUseDelivery(false)
+    }
+
+    const sourceItems = (Array.isArray(editSale.sembako_sale_items) && editSale.sembako_sale_items.length > 0)
+      ? editSale.sembako_sale_items
+      : (Array.isArray(editSale.items) && editSale.items.length > 0)
+        ? editSale.items
+        : []
+
+    if (sourceItems.length > 0) {
+      setItems(sourceItems.map(it => {
         const matchPkg = (it.product_name || '').match(/\[(\d+(?:\.\d+)?)\s*([^\]]+)\]/)
-        let qty = it.quantity
-        let selectedUnit = it.unit
-        let price = it.sell_price || it.price_per_unit || 0
+        let qty = Number(it.quantity || it.quantity_kg || 0)
+        let selectedUnit = it.selectedUnit || it.unit || 'slop'
+        let price = Number(it.sell_price || it.price_per_unit || it.unit_price || 0)
         let cleanName = (it.product_name || '').replace(/\s*\[\d+[^\]]+\]/g, '').trim()
-        let priceMode = 'per_slop'
+        let priceMode = it.priceMode || 'per_slop'
 
         if (matchPkg) {
           const inputQty = Number(matchPkg[1])
@@ -874,7 +915,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           if (factor > 1 && inputQty > 0) {
             qty = inputQty
             selectedUnit = inputUnit
-            price = it.sell_price || it.price_per_unit || 0
+            price = Number(it.sell_price || it.price_per_unit || 0)
             priceMode = 'per_slop'
           }
         }
@@ -882,15 +923,15 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
         return {
           product_id: it.product_id,
           product_name: cleanName,
-          unit: it.unit,
+          unit: it.unit || 'slop',
           selectedUnit: selectedUnit,
           priceMode: priceMode,
           quantity: qty,
           price_per_unit: price,
-          cogs_per_unit: it.cogs_per_unit
+          cogs_per_unit: Number(it.cogs_per_unit || 0)
         }
       }))
-      // Data lengkap — buka di step 1 (barang) supaya langsung bisa review/edit
+      // Data lengkap — buka di step 1 (barang) supaya langsung bisa review/edit/tambah
       setStep(1)
     } else {
       // Items kosong (data lama) — buka di step 1 juga, customer sudah prefill, tinggal isi barang
@@ -914,6 +955,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   // ── Handlers ────────────────────────────────────────────────────────────────
   function handleSelectCustomer(id) {
     setCustId(id)
+    setCustError('')
     const c = customers.find(x => x.id === id)
     if (c?.payment_terms && PAYMENT_TERMS_DAYS[c.payment_terms]) {
       const d = new Date(txnDate)
@@ -923,11 +965,28 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   }
 
   async function handleSaveQuickCust() {
-    if (!newCustForm.customer_name) { toast.error('Nama toko wajib diisi'); return }
+    const trimmedName = (newCustForm.customer_name || '').trim()
+    if (!trimmedName) {
+      setCustError('Nama toko wajib diisi')
+      toast.error('Nama toko wajib diisi')
+      return null
+    }
+    setCustError('')
     try {
-      const res = await createCustomer.mutateAsync(newCustForm)
-      if (res?.id) { handleSelectCustomer(res.id); setQuickAddCust(false) }
+      const payload = {
+        ...newCustForm,
+        customer_name: trimmedName,
+      }
+      const res = await createCustomer.mutateAsync(payload)
+      if (res?.id) {
+        handleSelectCustomer(res.id)
+        setQuickAddCust(false)
+        setNewCustForm({ customer_name: '', customer_type: 'warung', phone: '', address: '', payment_terms: 'cash' })
+        toast.success(`Toko "${trimmedName}" berhasil ditambahkan`)
+        return res.id
+      }
     } catch { /* handled by hook */ }
+    return null
   }
 
   async function handleSaveQuickProd() {
@@ -1043,6 +1102,13 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
   }
 
   async function handleSubmit() {
+    if (!custId) {
+      setStep(0)
+      setCustError('Pilih atau tambahkan toko terlebih dahulu')
+      toast.error('Pilih toko / customer dulu sebelum menyimpan')
+      return
+    }
+
     const validItems = items
       .filter(i => i.product_id && Number(i.quantity) > 0)
       .map(i => {
@@ -1072,7 +1138,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
     if (!validItems.length) { toast.error('Tambahkan minimal 1 produk'); return }
 
     try {
-      const custName = selectedCust?.customer_name || 'Umum'
+      const custName = selectedCust?.customer_name || 'Toko Mitra'
 
       let finalNotes = notes.trim()
       if (otherCost > 0 && (selectedCostChips.length > 0 || otherCostNotes.trim())) {
@@ -1093,6 +1159,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           },
           items: validItems,
         })
+        if (EDIT_DRAFT_KEY) localStorage.removeItem(EDIT_DRAFT_KEY)
         handleClose()
         return
       }
@@ -1156,11 +1223,18 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
       clearInvoiceDraft()
     } catch (err) {
       console.error(err)
-      toast.error(err?.message || 'Gagal menyimpan transaksi')
+      toast.error(formatFriendlyErrorMessage(err, 'Gagal menyimpan transaksi'))
     }
   }
 
   const handleSaveInvoice = () => {
+    if (!custId) {
+      setStep(0)
+      setCustError('Pilih atau tambahkan toko terlebih dahulu')
+      toast.error('Pilih toko / customer dulu sebelum menyimpan')
+      return
+    }
+
     const validItems = items
       .filter(i => i.product_id && Number(i.quantity) > 0)
     if (!validItems.length) { toast.error('Tambahkan minimal 1 produk'); return }
@@ -1202,7 +1276,11 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
           if (d.deliveryPlate) setDeliveryPlate(d.deliveryPlate)
           if (d.deliveryArea) setDeliveryArea(d.deliveryArea)
           if (d.fuelCost !== undefined) setFuelCost(d.fuelCost)
-          if (d.step !== undefined) setStep(d.step)
+          if (d.step !== undefined && d.custId) {
+            setStep(d.step)
+          } else {
+            setStep(0)
+          }
         } else {
           clearInvoiceDraft()
         }
@@ -1290,10 +1368,35 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
 
   const STEPS = ['Pilih Toko', 'Input Produk', 'Pengiriman', 'Summary']
 
-  const goNext = () => {
-    if (step === 0 && !custId) {
-      toast.error('Pilih toko / customer dulu sebelum lanjut'); return
+  const goNext = async () => {
+    // 1. Validasi Step 0 (Pilih / Tambah Toko)
+    if (step === 0) {
+      if (quickAddCust) {
+        if (newCustForm.customer_name?.trim()) {
+          const newId = await handleSaveQuickCust()
+          if (!newId) return
+        } else {
+          setCustError('Nama toko baru wajib diisi atau batalkan form untuk memilih toko')
+          toast.error('Nama toko baru wajib diisi')
+          return
+        }
+      } else if (!custId) {
+        setCustError('Pilih atau tambahkan toko terlebih dahulu')
+        toast.error('Pilih toko / customer dulu sebelum lanjut')
+        return
+      }
+      setCustError('')
     }
+
+    // Safety guard: selalu pastikan custId ada sebelum ke step > 0
+    if (!custId && !quickAddCust) {
+      setStep(0)
+      setCustError('Pilih atau tambahkan toko terlebih dahulu')
+      toast.error('Pilih toko / customer dulu sebelum lanjut')
+      return
+    }
+
+    // 2. Validasi Step 1 (Input Produk)
     if (step === 1) {
       const validItems = items
         .filter(i => i.product_id && Number(i.quantity) > 0)
@@ -1424,11 +1527,21 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                 ════════════════════════════════════════ */}
                 {step === 0 && (
                   <>
+                    {custError && !custId && !quickAddCust && (
+                      <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-2.5 animate-in fade-in duration-200">
+                        <AlertCircle size={18} className="shrink-0 text-red-500" />
+                        <div className="flex-1">
+                          <p className="font-black text-red-600 dark:text-red-400">Toko Belum Dipilih</p>
+                          <p className="text-[11px] font-medium text-red-500/90 mt-0.5">Silakan pilih toko dari daftar atau tambah toko baru untuk melanjutkan.</p>
+                        </div>
+                      </div>
+                    )}
+
                     <AnimatePresence mode="wait">
                       {!quickAddCust ? (
                         <motion.div key="cust-pick" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
                           <div>
-                            <label className={labelCn}>Toko / Customer</label>
+                            <label className={labelCn}>Toko / Customer *</label>
                             {customersLoading ? (
                               <div className="h-12 rounded-xl animate-pulse" style={{ background: 'rgba(15,23,42,0.06)' }} />
                             ) : customers.length === 0 ? (
@@ -1455,16 +1568,20 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                                 placeholder="-- Pilih toko / customer --"
                                 options={customerOptions}
                                 onChange={handleSelectCustomer}
-                                onAddNew={() => setQuickAddCust(true)}
+                                onAddNew={() => { setCustError(''); setQuickAddCust(true); }}
+                                style={{
+                                  border: custError && !custId ? '1.5px solid #EF4444' : undefined,
+                                  borderRadius: '14px',
+                                }}
                               />
                             ) : (
                               // Mobile: tap to open fullscreen search
                               <button
-                                onClick={() => setShowCustSearch(true)}
+                                onClick={() => { setCustError(''); setShowCustSearch(true); }}
                                 className="w-full h-12 rounded-xl px-4 flex items-center justify-between text-sm font-semibold transition-colors"
                                 style={{
                                   background: INPUT_BG,
-                                  border: `1px solid ${BORDER}`,
+                                  border: custError && !custId ? '1.5px solid #EF4444' : `1px solid ${BORDER}`,
                                   color: custId ? TEXT : MUTED,
                                 }}
                               >
@@ -1530,8 +1647,9 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                             form={newCustForm}
                             onChange={setNewCustForm}
                             onSave={handleSaveQuickCust}
-                            onCancel={() => setQuickAddCust(false)}
+                            onCancel={() => { setCustError(''); setQuickAddCust(false); }}
                             saving={createCustomer.isPending}
+                            error={custError}
                           />
                         </motion.div>
                       )}
@@ -1560,6 +1678,37 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                 ════════════════════════════════════════ */}
                 {step === 1 && (
                   <>
+                    {/* Active Store Banner */}
+                    <div
+                      className="rounded-2xl p-3 flex items-center justify-between transition-all"
+                      style={{ background: '#F1F5F9', border: `1px solid ${BORDER}` }}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm" style={{ background: '#E2E8F0' }}>
+                          🏪
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: MUTED }}>Toko / Pelanggan</p>
+                          <p className="font-black text-xs truncate" style={{ color: TEXT }}>
+                            {selectedCust?.customer_name || <span className="text-red-500 font-bold">⚠️ Belum dipilih</span>}
+                            {selectedCust?.payment_terms && (
+                              <span className="text-[10px] font-semibold text-slate-500 ml-1.5 font-sans">
+                                ({PAYMENT_TERMS_LABEL[selectedCust.payment_terms] || selectedCust.payment_terms})
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setStep(0)}
+                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition-colors shrink-0 cursor-pointer hover:bg-slate-300"
+                        style={{ background: '#E2E8F0', color: TEXT }}
+                      >
+                        Ganti
+                      </button>
+                    </div>
+
                     <div className="flex items-center justify-between">
                       <label className={labelCn}>Item Produk</label>
                       {productsLoading
@@ -1642,6 +1791,37 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                 ════════════════════════════════════════ */}
                 {step === 2 && (
                   <>
+                    {/* Active Store Banner */}
+                    <div
+                      className="rounded-2xl p-3 flex items-center justify-between transition-all"
+                      style={{ background: '#F1F5F9', border: `1px solid ${BORDER}` }}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm" style={{ background: '#E2E8F0' }}>
+                          🏪
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: MUTED }}>Toko / Pelanggan</p>
+                          <p className="font-black text-xs truncate" style={{ color: TEXT }}>
+                            {selectedCust?.customer_name || <span className="text-red-500 font-bold">⚠️ Belum dipilih</span>}
+                            {selectedCust?.payment_terms && (
+                              <span className="text-[10px] font-semibold text-slate-500 ml-1.5 font-sans">
+                                ({PAYMENT_TERMS_LABEL[selectedCust.payment_terms] || selectedCust.payment_terms})
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setStep(0)}
+                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition-colors shrink-0 cursor-pointer hover:bg-slate-300"
+                        style={{ background: '#E2E8F0', color: TEXT }}
+                      >
+                        Ganti
+                      </button>
+                    </div>
+
                     {/* Opsi Pengiriman: Terkirim vs Scheduled vs Tanpa Kurir */}
                     <div className="space-y-2">
                       <label className={labelCn}>Status & Metode Pengiriman</label>
@@ -1885,9 +2065,29 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
                 ════════════════════════════════════════ */}
                 {step === 3 && (
                   <>
+                    {!custId && (
+                      <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-xs text-red-600 dark:text-red-400 flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <AlertCircle size={18} className="shrink-0 text-red-500" />
+                          <span className="font-bold">Toko belum dipilih!</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setStep(0)}
+                          className="px-3 py-1.5 bg-red-600 text-white rounded-xl font-bold text-xs shrink-0 cursor-pointer"
+                        >
+                          Pilih Toko
+                        </button>
+                      </div>
+                    )}
+
                     {/* Summary card */}
                     <div className="rounded-2xl p-4 space-y-2" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
-                      <SummaryLine label="Toko / Customer" value={selectedCust?.customer_name || 'Umum'} bold />
+                      <SummaryLine
+                        label="Toko / Customer"
+                        value={selectedCust?.customer_name || <span className="text-red-500 font-bold">⚠️ Belum Dipilih</span>}
+                        bold
+                      />
                       <SummaryLine label="Jumlah Item" value={`${items.filter(i => i.product_id).length} Item`} />
                       <div className="h-px my-1" style={{ background: BORDER }} />
                       <SummaryLine label="Total Barang" value={formatIDR(totalAmount)} bold />
@@ -2159,7 +2359,7 @@ export function SembakoCreateInvoiceSheet({ open, onOpenChange, editId }) {
               >
                 {(createSale.isPending || updateSale.isPending)
                   ? <><Loader2 size={18} className="animate-spin" /> Menyimpan...</>
-                  : 'Simpan Invoice'
+                  : (editId ? 'Simpan Perubahan' : 'Simpan Invoice')
                 }
               </button>
             )}

@@ -54,7 +54,9 @@ export const T = {
   shadow:         '0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.03)',
 }
 
-export const APP_VERSION = 'v0.9.4 build 2026.05'
+export const APP_VERSION = 'v0.9.5'
+export const APP_BUILD_NUMBER = 20260518
+export const APP_VERSION_LABEL = 'v0.9.5 build 2026.05'
 
 export const INDONESIA_PROVINCES = [
   'Aceh','Bali','Banten','Bengkulu','DI Yogyakarta','DKI Jakarta',
