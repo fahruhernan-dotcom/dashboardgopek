@@ -193,6 +193,28 @@ async function main() {
                       process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 
                       process.env.VITE_SUPABASE_ANON_KEY
 
+  // === DEBUG: Tampilkan info env tanpa mengekspos nilai secret ===
+  console.log('\n🔍 === DEBUG ENV INFO ===')
+  console.log(`  VITE_SUPABASE_URL        : ${supabaseUrl}`)
+  console.log(`  SUPABASE_SERVICE_ROLE_KEY : ${process.env.SUPABASE_SERVICE_ROLE_KEY ? `SET (${process.env.SUPABASE_SERVICE_ROLE_KEY.length} chars, starts: ${process.env.SUPABASE_SERVICE_ROLE_KEY.substring(0, 20)}...)` : '❌ NOT SET'}`)
+  console.log(`  VITE_SUPABASE_SERVICE_ROLE_KEY : ${process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ? `SET (${process.env.VITE_SUPABASE_SERVICE_ROLE_KEY.length} chars)` : '❌ NOT SET'}`)
+  console.log(`  VITE_SUPABASE_ANON_KEY   : ${process.env.VITE_SUPABASE_ANON_KEY ? `SET (${process.env.VITE_SUPABASE_ANON_KEY.length} chars, starts: ${process.env.VITE_SUPABASE_ANON_KEY.substring(0, 20)}...)` : '❌ NOT SET'}`)
+  
+  // Decode JWT payload to check role
+  try {
+    const payload = JSON.parse(Buffer.from(supabaseKey.split('.')[1], 'base64').toString())
+    console.log(`  🔑 Key Role (JWT)        : ${payload.role}`)
+    if (payload.role === 'anon') {
+      console.log('  ⚠️  WARNING: Menggunakan ANON key! Upload akan GAGAL karena RLS!')
+      console.log('  ℹ️  Pastikan SUPABASE_SERVICE_ROLE_KEY di GitHub Secrets berisi service_role key, BUKAN anon key!')
+    } else if (payload.role === 'service_role') {
+      console.log('  ✅ Menggunakan SERVICE_ROLE key - RLS akan di-bypass')
+    }
+  } catch (e) {
+    console.log(`  ⚠️  Gagal decode JWT: ${e.message}`)
+  }
+  console.log('========================\n')
+
   if (!supabaseKey) {
     log.error('SUPABASE_SERVICE_ROLE_KEY atau VITE_SUPABASE_ANON_KEY tidak ditemukan di environment!')
     process.exit(1)
@@ -220,6 +242,7 @@ async function main() {
 
   if (uploadError) {
     log.error(`Gagal mengunggah file APK ke Storage: ${uploadError.message}`)
+    log.error(`Detail error: ${JSON.stringify(uploadError)}`)
     process.exit(1)
   }
 
