@@ -35,9 +35,12 @@ dist-ssr
 *service-account*.json
 *.pem
 *.key
+google-services.json
+android/app/google-services.json
 
 # Supabase
 supabase/.temp/
 .temp/
+
 
 
