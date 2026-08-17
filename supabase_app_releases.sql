@@ -26,12 +26,11 @@ CREATE POLICY "Public can view app releases"
     FOR SELECT
     USING (true);
 
--- Allow authenticated users / admins to insert or update releases
-DROP POLICY IF EXISTS "Authenticated users can manage releases" ON public.app_releases;
-CREATE POLICY "Authenticated users can manage releases"
+-- Allow public and authenticated to insert or update releases
+DROP POLICY IF EXISTS "Public and authenticated can manage releases" ON public.app_releases;
+CREATE POLICY "Public and authenticated can manage releases"
     ON public.app_releases
     FOR ALL
-    TO authenticated
     USING (true)
     WITH CHECK (true);
 
@@ -58,20 +57,22 @@ CREATE POLICY "Public APK Access"
     FOR SELECT
     USING (bucket_id = 'apk-releases');
 
--- Storage RLS: Allow authenticated users to upload/overwrite APK
+-- Storage RLS: Allow upload into apk-releases bucket
+DROP POLICY IF EXISTS "Allow APK Uploads" ON storage.objects;
 DROP POLICY IF EXISTS "Allow authenticated APK upload" ON storage.objects;
-CREATE POLICY "Allow authenticated APK upload"
+CREATE POLICY "Allow APK Uploads"
     ON storage.objects
     FOR INSERT
-    TO authenticated
     WITH CHECK (bucket_id = 'apk-releases');
 
+-- Storage RLS: Allow update/overwrite into apk-releases bucket
+DROP POLICY IF EXISTS "Allow APK Updates" ON storage.objects;
 DROP POLICY IF EXISTS "Allow authenticated APK update" ON storage.objects;
-CREATE POLICY "Allow authenticated APK update"
+CREATE POLICY "Allow APK Updates"
     ON storage.objects
     FOR UPDATE
-    TO authenticated
-    USING (bucket_id = 'apk-releases');
+    USING (bucket_id = 'apk-releases')
+    WITH CHECK (bucket_id = 'apk-releases');
 
 -- 3. Automatic Trigger: Broadcast in-app notification to all users when a new release is added
 CREATE OR REPLACE FUNCTION public.fn_notify_on_new_app_release()

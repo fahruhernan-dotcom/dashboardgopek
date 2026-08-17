@@ -74,5 +74,8 @@ jobs:
         run: |
           if [ -f android/app/build/outputs/apk/debug/app-debug.apk ]; then
             echo "🚀 Publishing APK release to Supabase Storage & Database..."
-            node scripts/publish-release.mjs --apk="android/app/build/outputs/apk/debug/app-debug.apk" || echo "Publish script finished with fallback"
+            node scripts/publish-release.mjs --apk="android/app/build/outputs/apk/debug/app-debug.apk"
+          else
+            echo "✖ File APK tidak ditemukan di path android/app/build/outputs/apk/debug/app-debug.apk"
+            exit 1
           fi
