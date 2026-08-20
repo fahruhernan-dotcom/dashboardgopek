@@ -52,61 +52,154 @@ export default class ErrorBoundary extends Component {
   
   render() {
     if (this.state.hasError) {
+      const err = this.state.error
+      const copyError = () => {
+        const text = `=== ERROR BOUNDARY LOG ===\nMessage: ${err?.message}\nStack: ${err?.stack}\nUserAgent: ${navigator.userAgent}`
+        navigator.clipboard?.writeText?.(text).then(() => {
+          alert('Log error berhasil disalin!')
+        }).catch(() => {
+          prompt('Salin log error:', text)
+        })
+      }
+
+      const resetSession = () => {
+        try {
+          localStorage.clear()
+          sessionStorage.clear()
+        } catch {
+          /* ok */
+        }
+        window.location.href = '/login'
+      }
+
       return (
         <div style={{
-          padding: '40px 20px',
-          textAlign: 'center',
+          minHeight: '80vh',
+          padding: '24px 16px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '12px'
+          justifyContent: 'center',
+          fontFamily: "'Sora', -apple-system, BlinkMacSystemFont, sans-serif"
         }}>
           <div style={{
-            width: 56, height: 56,
-            borderRadius: '50%',
-            background: 'rgba(248,113,113,0.10)',
-            border: '1px solid rgba(248,113,113,0.20)',
+            background: '#111C24',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '16px',
+            padding: '20px',
+            maxWidth: '480px',
+            width: '100%',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+            textAlign: 'center',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 24
+            flexDirection: 'column',
+            gap: '12px'
           }}>
-            ⚠️
+            <div style={{
+              width: 52, height: 52,
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              margin: '0 auto'
+            }}>
+              ⚠️
+            </div>
+            
+            <h2 style={{
+              fontSize: 16,
+              fontWeight: 800,
+              color: '#F87171',
+              margin: 0
+            }}>
+              Terjadi Kesalahan Tampilan
+            </h2>
+            
+            <div style={{
+              background: 'rgba(0,0,0,0.3)',
+              padding: '10px 12px',
+              borderRadius: '10px',
+              border: '1px solid rgba(255,255,255,0.06)',
+              textAlign: 'left'
+            }}>
+              <p style={{
+                fontSize: 12,
+                color: '#F1F5F9',
+                fontWeight: 600,
+                margin: '0 0 6px 0',
+                wordBreak: 'break-word'
+              }}>
+                {err?.message || 'Unknown render error'}
+              </p>
+              {err?.stack && (
+                <pre style={{
+                  fontSize: 10,
+                  color: '#94A3B8',
+                  margin: 0,
+                  maxHeight: '100px',
+                  overflowY: 'auto',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all'
+                }}>
+                  {err.stack.slice(0, 500)}
+                </pre>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => this.setState({ hasError: false, error: null })}
+                style={{
+                  flex: 1,
+                  background: '#16A34A',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Coba Lagi
+              </button>
+              <button
+                onClick={copyError}
+                style={{
+                  flex: 1,
+                  background: '#0284C7',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                📋 Salin Log
+              </button>
+              <button
+                onClick={resetSession}
+                style={{
+                  flex: 1,
+                  background: 'rgba(239,68,68,0.2)',
+                  color: '#F87171',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  borderRadius: 8,
+                  padding: '10px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                🔄 Reset
+              </button>
+            </div>
           </div>
-          <p style={{
-            fontFamily: 'Sora',
-            fontSize: 16,
-            fontWeight: 700,
-            color: '#F1F5F9',
-            margin: 0
-          }}>
-            Terjadi kesalahan
-          </p>
-          <p style={{
-            fontSize: 13,
-            color: '#4B6478',
-            margin: 0
-          }}>
-            {this.state.error?.message || 'Unknown error'}
-          </p>
-          <button
-            onClick={() => this.setState({
-              hasError: false, error: null
-            })}
-            style={{
-              background: '#021a02',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              padding: '8px 16px',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginTop: 4
-            }}
-          >
-            Coba Lagi
-          </button>
         </div>
       )
     }
