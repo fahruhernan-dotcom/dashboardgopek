@@ -15,10 +15,14 @@ db.version(2).stores({
   audit_logs: 'id, tenant_id, timestamp'
 })
 
-// Initialize default app metadata if empty
+// Initialize default app metadata if empty safely
 db.on('ready', async () => {
-  const lastSync = await db.app_metadata.get('last_sync_timestamp')
-  if (!lastSync) {
-    await db.app_metadata.put({ key: 'last_sync_timestamp', value: null })
+  try {
+    const lastSync = await db.app_metadata.get('last_sync_timestamp')
+    if (!lastSync) {
+      await db.app_metadata.put({ key: 'last_sync_timestamp', value: null })
+    }
+  } catch (err) {
+    console.warn('[Dexie] ready hook warning (handled):', err)
   }
 })
