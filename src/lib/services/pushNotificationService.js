@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 let isInitialized = false
 
 /**
- * Inisialisasi Push Notifications pada Android / iOS
+ * Inisialisasi Push Notifications pada Android / iOS secara aman (crash-proof)
  * @param {Object} params
  * @param {string} params.tenantId - ID Tenant aktif
  * @param {string} params.userId - ID User terautentikasi
@@ -23,13 +23,18 @@ export async function initPushNotifications({ tenantId, userId, onNavigate }) {
 
   try {
     // 1. Periksa dan minta izin notifikasi OS
-    let permStatus = await PushNotifications.checkPermissions()
-
-    if (permStatus.receive === 'prompt') {
-      permStatus = await PushNotifications.requestPermissions()
+    let permStatus
+    try {
+      permStatus = await PushNotifications.checkPermissions()
+      if (permStatus?.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions()
+      }
+    } catch (permErr) {
+      console.warn('[PushNotification] Error checking/requesting permissions:', permErr)
+      return { supported: true, granted: false, reason: 'permission_check_failed' }
     }
 
-    if (permStatus.receive !== 'granted') {
+    if (permStatus?.receive !== 'granted') {
       return { supported: true, granted: false, reason: 'permission_denied' }
     }
 
@@ -45,85 +50,103 @@ export async function initPushNotifications({ tenantId, userId, onNavigate }) {
           vibration: true,
           lights: true,
           lightColor: '#10B981',
-          sound: 'default',
         })
       } catch (channelErr) {
-        console.warn('[PushNotification] Error createChannel:', channelErr)
+        console.warn('[PushNotification] Error createChannel (non-fatal):', channelErr)
       }
     }
 
-    // 3. Daftarkan perangkat ke FCM
-    await PushNotifications.register()
+    // 3. Listener: Sukses mendapatkan token FCM
+    try {
+      await PushNotifications.addListener('registration', async (token) => {
+        if (!token?.value || !tenantId || !userId) return
+        console.log('[PushNotification] FCM Token Berhasil Diperoleh:', token.value.slice(0, 15) + '...')
 
-    // 4. Listener: Sukses mendapatkan token FCM
-    await PushNotifications.addListener('registration', async (token) => {
-      if (!token?.value || !tenantId || !userId) return
-      console.log('[PushNotification] FCM Token Berhasil Diperoleh:', token.value.slice(0, 15) + '...')
+        try {
+          // Coba panggil helper function atomic upsert di Supabase
+          const { error: rpcErr } = await supabase.rpc('register_device_token', {
+            p_tenant_id: tenantId,
+            p_device_token: token.value,
+            p_platform: Capacitor.getPlatform() || 'android',
+            p_device_name: navigator?.userAgent?.slice(0, 100) || 'Android Device',
+          })
 
-      try {
-        // Coba panggil helper function atomic upsert di Supabase
-        const { error: rpcErr } = await supabase.rpc('register_device_token', {
-          p_tenant_id: tenantId,
-          p_device_token: token.value,
-          p_platform: Capacitor.getPlatform() || 'android',
-          p_device_name: navigator?.userAgent?.slice(0, 100) || 'Android Device',
-        })
+          if (rpcErr) {
+            console.warn('[PushNotification] RPC register_device_token gagal, mencoba direct table upsert:', rpcErr.message)
+            // Fallback langsung ke tabel device_tokens
+            const { error: tableErr } = await supabase.from('device_tokens').upsert({
+              tenant_id: tenantId,
+              user_id: userId,
+              device_token: token.value,
+              platform: Capacitor.getPlatform() || 'android',
+              device_name: navigator?.userAgent?.slice(0, 100) || 'Android Device',
+              is_active: true,
+              last_seen: new Date().toISOString()
+            }, { onConflict: 'device_token' })
 
-        if (rpcErr) {
-          console.warn('[PushNotification] RPC register_device_token gagal, mencoba direct table upsert:', rpcErr.message)
-          // Fallback langsung ke tabel device_tokens
-          const { error: tableErr } = await supabase.from('device_tokens').upsert({
-            tenant_id: tenantId,
-            user_id: userId,
-            device_token: token.value,
-            platform: Capacitor.getPlatform() || 'android',
-            device_name: navigator?.userAgent?.slice(0, 100) || 'Android Device',
-            is_active: true,
-            last_seen: new Date().toISOString()
-          }, { onConflict: 'device_token' })
-
-          if (tableErr) {
-            console.error('[PushNotification] Direct upsert device_tokens gagal:', tableErr)
+            if (tableErr) {
+              console.error('[PushNotification] Direct upsert device_tokens gagal:', tableErr)
+            } else {
+              console.log('[PushNotification] Device token tersimpan via direct table upsert')
+            }
           } else {
-            console.log('[PushNotification] Device token tersimpan via direct table upsert')
+            console.log('[PushNotification] Device token tersimpan via RPC')
           }
-        } else {
-          console.log('[PushNotification] Device token tersimpan via RPC')
+        } catch (err) {
+          console.error('[PushNotification] Gagal menyimpan token ke Supabase:', err)
         }
-      } catch (err) {
-        console.error('[PushNotification] Gagal menyimpan token ke Supabase:', err)
-      }
-    })
+      })
+    } catch (listenerErr) {
+      console.warn('[PushNotification] Error adding registration listener:', listenerErr)
+    }
 
     // 4. Listener: Error registrasi
-    await PushNotifications.addListener('registrationError', (error) => {
-      console.error('[PushNotification] Registration error:', error)
-    })
+    try {
+      await PushNotifications.addListener('registrationError', (error) => {
+        console.warn('[PushNotification] Registration error (non-fatal):', error)
+      })
+    } catch (err) {
+      console.warn('[PushNotification] Error adding registrationError listener:', err)
+    }
 
     // 5. Listener: Notifikasi diterima saat aplikasi aktif di foreground
-    await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      // In-app banner / trigger query refresh
-      window.dispatchEvent(new CustomEvent('gopek:push-received', { detail: notification }))
-    })
+    try {
+      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        window.dispatchEvent(new CustomEvent('gopek:push-received', { detail: notification }))
+      })
+    } catch (err) {
+      console.warn('[PushNotification] Error adding pushNotificationReceived listener:', err)
+    }
 
     // 6. Listener: User tap notifikasi dari status bar Android
-    await PushNotifications.addListener('pushNotificationActionPerformed', (notificationAction) => {
-      const data = notificationAction?.notification?.data
-      const targetRoute = data?.route || data?.url
+    try {
+      await PushNotifications.addListener('pushNotificationActionPerformed', (notificationAction) => {
+        const data = notificationAction?.notification?.data
+        const targetRoute = data?.route || data?.url
 
-      if (targetRoute) {
-        if (typeof onNavigate === 'function') {
-          onNavigate(targetRoute)
-        } else {
-          window.location.href = targetRoute
+        if (targetRoute) {
+          if (typeof onNavigate === 'function') {
+            onNavigate(targetRoute)
+          } else {
+            window.location.href = targetRoute
+          }
         }
-      }
-    })
+      })
+    } catch (err) {
+      console.warn('[PushNotification] Error adding pushNotificationActionPerformed listener:', err)
+    }
+
+    // 7. Daftarkan perangkat ke FCM
+    try {
+      await PushNotifications.register()
+    } catch (regErr) {
+      console.warn('[PushNotification] PushNotifications.register warning (non-fatal):', regErr)
+    }
 
     isInitialized = true
     return { supported: true, granted: true }
   } catch (error) {
-    console.error('[PushNotification] Error inisialisasi push notification:', error)
-    return { supported: true, error: error.message }
+    console.warn('[PushNotification] Inisialisasi push notification ditangani dengan aman:', error)
+    return { supported: true, error: error?.message || 'init_failed' }
   }
 }

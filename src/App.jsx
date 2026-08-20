@@ -44,19 +44,36 @@ const pageImporters = {
   kelolaAkun:       () => import('./dashboard/broker/sembako_broker/DevAdminHubPage'),
 }
 
-// Prefetch semua modul halaman di background secara senyap
+// Prefetch modul halaman secara bertahap (staggered) di background saat sistem benar-benar idle
 export function prefetchAppModules() {
   if (typeof window === 'undefined') return
-  const prefetcher = () => {
-    Object.values(pageImporters).forEach(importFn => {
-      try { importFn() } catch { /* silnet cache preload */ }
-    })
+  const importFns = Object.values(pageImporters)
+  let idx = 0
+
+  const prefetchNext = () => {
+    if (idx >= importFns.length) return
+    const fn = importFns[idx++]
+    try {
+      fn()
+    } catch {
+      /* silent cache preload fallback */
+    }
+    // Stagger loading each module by 800ms to preserve mobile memory and CPU
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(prefetchNext, { timeout: 2000 })
+    } else {
+      setTimeout(prefetchNext, 800)
+    }
   }
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(prefetcher, { timeout: 3000 })
-  } else {
-    setTimeout(prefetcher, 1500)
-  }
+
+  // Mulai prefetch 3 detik setelah dashboard utama stabil dimuat
+  setTimeout(() => {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(prefetchNext, { timeout: 4000 })
+    } else {
+      setTimeout(prefetchNext, 1200)
+    }
+  }, 3000)
 }
 
 const SembakoBeranda          = React.lazy(pageImporters.beranda)
@@ -167,13 +184,20 @@ function AppContentLayout() {
   useCapacitorBackNavigation()
 
   useEffect(() => {
-    if (user?.id && tenant?.id) {
+    if (!user?.id || !tenant?.id) return
+
+    // Tunda 1.5 detik agar inisialisasi awal dashboard & Supabase query selesai terlebih dahulu
+    const timer = setTimeout(() => {
       initPushNotifications({
         tenantId: tenant.id,
         userId: user.id,
         onNavigate: (route) => navigate(route),
+      }).catch((err) => {
+        console.warn('[App] Push notification init warning (handled):', err)
       })
-    }
+    }, 1500)
+
+    return () => clearTimeout(timer)
   }, [user?.id, tenant?.id, navigate])
 
   return (

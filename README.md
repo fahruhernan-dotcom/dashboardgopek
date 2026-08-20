@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.9.6-emerald?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.9.7-emerald?style=for-the-badge)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite_6-646CFF?style=for-the-badge&logo=vite&logoColor=FFD62E)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)

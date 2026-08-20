@@ -1,5 +1,5 @@
 -- =============================================================================
--- GOPEK / SEMBAKO OS - REGISTER & SET USER MUHILHAM4141@GMAIL.COM AS ADMIN
+-- GOPEK / SEMBAKO OS - REGISTER & SET USER KIREKPLASTIK78@GMAIL.COM AS OWNER
 -- Jalankan script ini di Supabase SQL Editor:
 -- (Supabase Dashboard -> SQL Editor -> New Query -> Paste & Run)
 -- =============================================================================
@@ -10,9 +10,9 @@ DO $$
 DECLARE
     v_user_id UUID;
     v_tenant_id UUID := '00000000-0000-0000-0000-000000000002';
-    v_email TEXT := 'muhilham4141@gmail.com';
-    v_password TEXT := 'admin123';
-    v_full_name TEXT := 'Muh Ilham (Admin)';
+    v_email TEXT := 'kirekplastik78@gmail.com';
+    v_password TEXT := 'Rafiananta10';
+    v_full_name TEXT := 'Owner Kirek Plastik';
     v_business_name TEXT := 'Broker Dashboard Sembako & Rokok';
 BEGIN
     -- 1. Pastikan Default Tenant Tersedia
@@ -48,26 +48,27 @@ BEGIN
             crypt(v_password, gen_salt('bf', 10)),
             NOW(),
             '{"provider":"email","providers":["email"]}'::jsonb,
-            jsonb_build_object('full_name', v_full_name),
+            jsonb_build_object('full_name', v_full_name, 'email', v_email),
             NOW(),
             NOW()
         );
-        RAISE NOTICE 'User auth ADMIN baru berhasil dibuat dengan ID: %', v_user_id;
+        RAISE NOTICE 'User auth baru dibuat dengan ID: %', v_user_id;
     ELSE
-        -- Update password & langsung konfirmasi email
+        -- Update password, role, & konfirmasi email
         UPDATE auth.users 
         SET encrypted_password = crypt(v_password, gen_salt('bf', 10)),
             email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
             aud = 'authenticated',
             role = 'authenticated',
             raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb,
-            raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('full_name', v_full_name),
+            raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('full_name', v_full_name, 'email', v_email),
             updated_at = NOW()
         WHERE id = v_user_id;
-        RAISE NOTICE 'User auth ADMIN ditemukan (ID: %), password diperbarui.', v_user_id;
+        RAISE NOTICE 'User auth ditemukan (ID: %), password & metadata berhasil diupdate.', v_user_id;
     END IF;
 
-    -- 3. Sinkronkan auth.identities (id menggunakan tipe UUID)
+    -- 3. Sinkronkan auth.identities
+    -- Catatan: Kolom "id" harus bertipe UUID (v_user_id), sedangkan provider_id bertipe TEXT (v_user_id::text)
     DELETE FROM auth.identities WHERE user_id = v_user_id;
 
     INSERT INTO auth.identities (
@@ -90,12 +91,19 @@ BEGIN
         NOW()
     );
 
-    -- 4. Update atau Insert ke tabel profiles
+    -- 4. Set Owner ID di tabel tenants
+    UPDATE tenants
+    SET owner_id = v_user_id,
+        business_name = COALESCE(business_name, v_business_name),
+        updated_at = NOW()
+    WHERE id = v_tenant_id;
+
+    -- 5. Update atau Insert ke tabel profiles
     IF EXISTS (SELECT 1 FROM profiles WHERE auth_user_id = v_user_id OR LOWER(email) = LOWER(v_email)) THEN
         UPDATE profiles 
         SET auth_user_id = v_user_id,
-            role = 'admin',
-            app_role = 'admin',
+            role = 'owner',
+            app_role = 'owner',
             user_type = 'broker',
             sub_type = 'distributor_sembako',
             tenant_id = v_tenant_id,
@@ -128,8 +136,8 @@ BEGIN
             v_tenant_id,
             v_full_name,
             v_email,
-            'admin',
-            'admin',
+            'owner',
+            'owner',
             'broker',
             'distributor_sembako',
             v_business_name,
@@ -140,7 +148,7 @@ BEGIN
         );
     END IF;
 
-    -- 5. Update atau Insert ke tabel tenant_memberships
+    -- 6. Update atau Insert ke tabel tenant_memberships
     IF EXISTS (
         SELECT 1 FROM information_schema.tables 
         WHERE table_schema = 'public' AND table_name = 'tenant_memberships'
@@ -151,8 +159,8 @@ BEGIN
             gen_random_uuid(),
             v_user_id,
             v_tenant_id,
-            'admin',
-            'admin',
+            'owner',
+            'owner',
             v_full_name,
             v_email,
             true,
@@ -161,8 +169,8 @@ BEGIN
         )
         ON CONFLICT (auth_user_id, tenant_id) 
         DO UPDATE SET 
-            role = 'admin',
-            app_role = 'admin',
+            role = 'owner',
+            app_role = 'owner',
             full_name = EXCLUDED.full_name,
             email = EXCLUDED.email,
             onboarded = true,
@@ -170,10 +178,10 @@ BEGIN
     END IF;
 
     RAISE NOTICE '=======================================================';
-    RAISE NOTICE 'SUCCESS: Akun ADMIN berhasil diset!';
+    RAISE NOTICE 'SUCCESS: Akun OWNER berhasil diset!';
     RAISE NOTICE 'Email   : %', v_email;
     RAISE NOTICE 'Password: %', v_password;
-    RAISE NOTICE 'Role    : admin';
+    RAISE NOTICE 'Role    : owner';
     RAISE NOTICE 'Tenant  : %', v_tenant_id;
     RAISE NOTICE '=======================================================';
 END $$;
