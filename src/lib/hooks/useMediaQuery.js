@@ -2,15 +2,29 @@ import { useSyncExternalStore } from 'react'
 
 export function useMediaQuery(query) {
   const subscribe = (callback) => {
-    if (typeof window === 'undefined') return () => {}
-    const mq = window.matchMedia(query)
-    mq.addEventListener('change', callback)
-    return () => mq.removeEventListener('change', callback)
+    if (typeof window === 'undefined' || !window.matchMedia) return () => {}
+    try {
+      const mq = window.matchMedia(query)
+      if (mq?.addEventListener) {
+        mq.addEventListener('change', callback)
+        return () => mq.removeEventListener('change', callback)
+      } else if (mq?.addListener) {
+        mq.addListener(callback)
+        return () => mq.removeListener(callback)
+      }
+    } catch {
+      return () => {}
+    }
+    return () => {}
   }
 
   const getSnapshot = () => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia(query).matches
+    if (typeof window === 'undefined' || !window.matchMedia) return false
+    try {
+      return Boolean(window.matchMedia(query)?.matches)
+    } catch {
+      return false
+    }
   }
 
   const getServerSnapshot = () => {

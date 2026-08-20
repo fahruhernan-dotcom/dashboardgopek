@@ -369,40 +369,6 @@ export default function SembakoBeranda() {
     const piutangTrend = m1Outstanding !== 0 ? ((m0Outstanding - m1Outstanding) / m1Outstanding) * 100 : null
     const txTrend = m1Sales.length !== 0 ? ((m0Sales.length - m1Sales.length) / m1Sales.length) * 100 : null
 
-    // ── Diagnostic Logging for Verification ──
-    console.group('[Dashboard Audit Log]')
-    console.log('Total sales loaded:', sales.length)
-    let debugRevenue = 0, debugNetProfit = 0, debugPiutang = 0, debugPaid = 0, debugRealized = 0, debugUnrealized = 0
-    sales.forEach((s, i) => {
-      const net = Number(s.net_profit) || 0
-      const total = Number(s.total_amount) || 0
-      const paid = Number(s.paid_amount) || 0
-      const remaining = Number(s.remaining_amount) || 0
-      
-      const ratio = total > 0 ? Math.max(0, Math.min(1, paid / total)) : 1
-      const realized = Math.round(net * ratio)
-      const unrealized = net - realized
-
-      debugRevenue += total
-      debugNetProfit += net
-      debugPiutang += remaining
-      debugPaid += paid
-      debugRealized += realized
-      debugUnrealized += unrealized
-
-      console.log(`Invoice #${i+1} (ID: ${s.id?.slice(0,6)}) | Rev: ${total} | Paid: ${paid} | Outstanding: ${remaining} | Profit: ${net} | Realized: ${realized} | Unrealized: ${unrealized} | Status: ${s.payment_status}`)
-    })
-    console.log('----------------------------------------')
-    console.log(`Calculated Total Revenue:        Rp${debugRevenue}`)
-    console.log(`Calculated Total Net Profit:     Rp${debugNetProfit}`)
-    console.log(`Calculated Total Piutang:        Rp${debugPiutang}`)
-    console.log(`Calculated Total Paid (Invoices):Rp${debugPaid}`)
-    console.log(`Calculated Total Realized Profit:Rp${debugRealized}`)
-    console.log(`Calculated Total Unrealized:     Rp${debugUnrealized}`)
-    console.log(`Calculated Total Cash In (Net):  Rp${totalCashIn}`)
-    console.log(`Calculated Cash Balance:         Rp${cashBalance}`)
-    console.groupEnd()
-
     return { weeklyChartData, monthlyChartData, insight, kpiTrends: { piutangTrend, txTrend }, cashSummary, unrealizedProfitSnapshot }
   }, [sales, batches, expenses, payroll, suppliers, supplierPayments, employees])
 
